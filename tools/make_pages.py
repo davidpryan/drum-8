@@ -37,7 +37,8 @@ sys.path.insert(0, str(SRC / "base" / "tools"))
 import make_site as base_site  # noqa: E402  (fm1-base's: the installer, the backup page, the package format)
 from make_site import product_of, strip_module  # noqa: E402
 
-REPO = "https://github.com/charlesvestal/fm1-loom"
+import os  # noqa: E402
+REPO = os.environ.get("LOOM_REPO") or "https://github.com/charlesvestal/fm1-loom"   # (LOOM_REPO: a fork's site links its own)
 # the app's look (app/pages.c THEMES[0], "tape deck"): its eight track inks, and the site's palette from it: dark is the
 # FM-1's screen, light the same browns on cream paper. Every page of the site wears it (dress()), whatever names its own
 # stylesheet gives the colours, with a header to go between them.
