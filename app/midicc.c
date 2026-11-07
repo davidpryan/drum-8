@@ -153,7 +153,10 @@ static void key_midi(int ch, int note, int on, int vel)
 {
     int trk = sel_trk(), t = ch < NTRK ? ch : ch > CH_MASTER ? inst_trk() : -1;
     int srec = ui.rec_armed && !playing(), cmode = ui.chordmode && ui.page == P_STEPS && !is_drum(trk);
-    uint8_t *m = &md[note & 127];
+    uint8_t *m;
+    if (trk < NTRK && !is_drum(trk))
+        note = lock_note(note);                    /* SCALE LOCK: the note as the keys would give it (its off too) */
+    m = &md[note & 127];
     if (!on) {                                     /* a release: let go from whatever counted it */
         if ((*m & MD_SREC) && srec)
             step_rec_key_up();

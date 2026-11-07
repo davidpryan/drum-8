@@ -113,6 +113,9 @@ static int ordinal(const uint8_t *t, int n, int k)
     return -1;
 }
 static int key_note(int k) { return KEY_BASE + k + ui.oct * 12; }
+/* SCALE LOCK (Setup's SEL list): a synth track's note from the keys or MIDI in snaps to the conductor's key and scale
+ * (the nearest scale note, a tie down), before it is played, remembered or written to a step */
+static int lock_note(int n) { return proj.rsv[3] & SCALE_LOCK ? scale_snap(n, seq.brain_key, seq.brain_scale) : n; }
 /* a drum track's keys: the 11 keys on the black keys, spread over the white keys too (a key is note 1..11,
  * as the steps hold it) */
 static int key_sound(int k)
@@ -1345,7 +1348,7 @@ static void keyboard_down(int k)
         return;
     }
     {
-        int note = is_drum(trk) ? key_sound(k) : key_note(k);
+        int note = is_drum(trk) ? key_sound(k) : lock_note(key_note(k));
         ui.kmode[k] = KM_PLAY;
         ui.knote[k] = (uint8_t)note;
         engine_key(trk, note, 1, 127);
@@ -1545,7 +1548,7 @@ static void key_down(int k)
         if (!is_seqt(trk))
             return;
         if (p == P_STEPS && ui.chordmode && !is_drum(trk)) {   /* chord mode: a key writes the chord */
-            int note = key_note(k);
+            int note = lock_note(key_note(k));
             ui.kmode[k] = KM_STEPCHORD;
             ui.knote[k] = (uint8_t)note;
             engine_key(trk, note, 1, 127);
@@ -2667,6 +2670,10 @@ static void list_change_do(int32_t e)
             proj.rsv[3] = (uint8_t)(d > 0 ? proj.rsv[3] | CC_IN_ENDLESS : proj.rsv[3] & ~CC_IN_ENDLESS);
             mark_dirty();
             break;
+        case A_SCALE_LOCK:
+            proj.rsv[3] = (uint8_t)(d > 0 ? proj.rsv[3] | SCALE_LOCK : proj.rsv[3] & ~SCALE_LOCK);
+            mark_dirty();
+            break;
         default: break;
         }
         break;
@@ -3682,7 +3689,7 @@ static void action_run(int a)
     case A_FOLLOW: case A_USB_AUDIO: case A_COUNT_IN: case A_THEME: case A_LARGE_TYPE: case A_PLAYMODE: case A_FTYPE: case A_FX_HP: case A_FX_LP:
     case A_FX_SEND: case A_PUMP_BY: case A_PUMP_REL: case A_PUMP_ACC: case A_LEVEL: case A_SCENE_AT: case A_AUTOSAVE:
     case A_MIDI_OUT: case A_LOOP_FREE: case A_CC_OUT: case A_SCENES_OUT: case A_MIDI_CC: case A_USB_HOST: case A_KIT_FILTER:
-    case A_CC_IN: case A_FX_WIDTH:
+    case A_CC_IN: case A_FX_WIDTH: case A_SCALE_LOCK:
         return;   /* (ALGORITHM sets them; SEL
                                                                                     * leaves the list) */
     case A_REMOVE_NOTE: act_remove_note(lst.sel); break;
@@ -4754,6 +4761,14 @@ void ui_frame(void)
             ui.bar = 0;
     }
     eng_midi_trk = (uint8_t)inst_trk();          /* channels 12-16's track, for midi_track() in the interrupt */
+    {                                            /* the tracks whose MIDI notes the interrupt snaps (SCALE LOCK, synths) */
+        unsigned m = 0;
+        if (proj.rsv[3] & SCALE_LOCK)
+            for (int t = 0; t < NTRK; t++)
+                if (!is_drum(t))
+                    m |= 1u << t;
+        eng_lock = (uint8_t)m;
+    }
     cc_in_drain();                               /* MIDI in: the CC map, the scenes (midicc.c) */
     if (seq.crop_dirty) {                        /* a queued loop reached its bar line */
         seq.crop_dirty = 0;

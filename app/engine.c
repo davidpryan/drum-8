@@ -911,6 +911,8 @@ static void perf_tick(uint32_t n)
 }
 
 /* ---------------------------------------------------------------- MIDI in --- */
+volatile uint8_t eng_lock;                          /* bit t: track t's notes from MIDI in snap to the conductor's key and
+                                                     * scale (SCALE LOCK on, a synth; ui_frame sets it with eng_midi_trk) */
 volatile uint8_t eng_midi_trk;                      /* channels 12-16's track (the main loop's inst_trk(), set once a
                                                     * frame before cc_in_drain): the keys' instrument, not trk_sel */
 static int midi_track(int ch)                      /* the track a channel plays: 1-8 theirs, 12-16 the one playing
@@ -943,6 +945,8 @@ static void midi_in(uint32_t pkt)
             if (ty == 0x90)
                 ccq_put(pkt);
         } else if (t >= 0) {                        /* played and recorded, not sent back out (seq_key_midi) */
+            if (eng_lock >> t & 1u)
+                d1 = (uint8_t)scale_snap(d1, seq.brain_key, seq.brain_scale);
             seq_key_midi(&seq, t, d1, ty == 0x90, d2);
             if (t == eng_midi_trk)                  /* the track on the screen: the main loop's key too (midicc.c key_midi:
                                                      * step record, chord mode, the notes a step writes) */

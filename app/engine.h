@@ -77,6 +77,7 @@ void engine_scene(int scene, int when);                  /* a scene: now (seq_se
 /* MIDI's fixed channels (from 0): tracks 1-8 on 0-7, FX I and FX II on 8 and 9, the master and the scenes on 10;
  * 11-15 the track playing (eng_midi_trk, the main loop's inst_trk()) */
 enum { CH_FX1 = NTRK, CH_FX2, CH_MASTER };
+extern volatile uint8_t eng_lock;                        /* bit t: track t's MIDI notes snap to the conductor's scale */
 extern volatile uint8_t eng_midi_trk;                    /* channels 12-16's track: set once a frame (ui_frame,
                                                           * before cc_in_drain) from inst_trk() */
 
