@@ -1,0 +1,19 @@
+# trx kick (Hortator's BDTRX, dsp/hort.c): the last of a key's models; put on a key it comes with Hortator's defaults
+# (TUNE -4: 60) on both pages of knobs, and plays
+wait 300
+expect trk 1
+tap EDIT
+expect page Engine
+tapkey b1
+knob 1 d1.model 30
+wait 60
+expect par1.d1.model 30
+expect par1.d1.k1 60
+expect par1.d1.k2 68
+expect par1.d1.k5 14
+expect par1.d1.k8 24
+shot trxkick.png
+tapkey b1
+wait 500
+expect peak_db_max 0
+shot trxkick2.png

@@ -1248,6 +1248,93 @@ int main(void)
         }
         kit_default();
     }
+    printf("-- trx kick (Hortator's BDTRX, dsp/hort.c): its pitch is Hortator's law, 61.4 Hz x 2^(TUNE / 12), TUNE the\n");
+    printf("   knob about 64 and the hit's note; the track's length moves its DECAY; a fifth hit takes the oldest's slot\n");
+    {
+        static const struct { int tune, note; float hz; } BT[] = {{60, 0, 48.73f}, {64, 0, 61.4f}, {76, 0, 122.8f},
+                                                                  {64, -12, 30.7f}, {60, 7, 73.02f}};
+        char name[128];
+        float t_def, t_long;
+        int i, s2;
+        FILE *w = 0;
+        kit_default();
+        key_model(0, DM_BDTRX);
+        wav_open(&w, "build/host/drum_bdtrx.wav");
+        h = one_hit(0, 127, 0, 0, 0, w);
+        if (w)
+            wav_close(w);
+        snprintf(name, sizeof name, "  the defaults: %.1f dBFS (the kicks' -6), ends at %.2f s", (double)dbfs(h.peak), (double)h.tend);
+        check(name, !nan_seen && dbfs(h.peak) > -7.0f && dbfs(h.peak) < -5.0f && h.tend > 0.2f && h.tend < 2.0f);
+        t_def = h.tend;
+        par[knob_par(0, 2)] = 0;                       /* no SWEEP, no SUB: the body alone, past its 5 ms drop */
+        par[knob_par(0, 6)] = 0;
+        par[knob_par(0, 1)] = 100;
+        for (i = 0; i < (int)(sizeof BT / sizeof BT[0]); i++) {
+            float hz, cents;
+            par[knob_par(0, 0)] = (uint8_t)BT[i].tune;
+            {   /* (pitch_of plays note 0: the note through the hit) */
+                int b, n = 0, j, i0 = SR / 10, i1 = SR / 2, c, best = 0;
+                double bestm = -1.0;
+                drumline_init(dl, par);
+                drumline_hit(dl, 0, 127, BT[i].note, 0, 0);
+                for (b = 0; b * BLK < i1; b++) {
+                    render();
+                    for (j = 0; j < BLK; j++, n++)
+                        if (n >= i0 && n < i1)
+                            pbuf[n - i0] = (L[j] + R[j]) * 0.7071f;
+                }
+                n = i1 - i0;
+                for (c = -200; c <= 200; c++) {
+                    double f = (double)BT[i].hz * pow(2.0, (double)c / 1200.0), re = 0.0, im = 0.0;
+                    double wq = 6.283185307179586 * f / SR;
+                    for (j = 0; j < n; j++) {
+                        double hw = 0.5 - 0.5 * cos(6.283185307179586 * (double)j / (double)(n - 1));
+                        double x = (double)pbuf[j] * hw;
+                        re += x * cos(wq * (double)j);
+                        im -= x * sin(wq * (double)j);
+                    }
+                    if (re * re + im * im > bestm) {
+                        bestm = re * re + im * im;
+                        best = c;
+                    }
+                }
+                hz = BT[i].hz * (float)pow(2.0, (double)best / 1200.0);
+            }
+            cents = 1200.0f * fm_log2f(hz / BT[i].hz);
+            snprintf(name, sizeof name, "  tune %d, note %+d: %.2f Hz (%.2f, %+.0f cents)", BT[i].tune, BT[i].note,
+                     (double)hz, (double)BT[i].hz, (double)cents);
+            check(name, cents > -15.0f && cents < 15.0f);
+        }
+        key_model(0, DM_BDTRX);
+        par[TP_R] = 96;                                /* the track's length: 2x */
+        h = one_hit(0, 127, 0, 0, 0, 0);
+        t_long = h.tend;
+        par[TP_R] = 64;
+        snprintf(name, sizeof name, "  the track's length at 2x: ends at %.2f s (%.2f)", (double)t_long, (double)t_def);
+        check(name, t_long > t_def * 1.5f && t_long < t_def * 2.6f);
+        for (s2 = 0; s2 < 6; s2++)                     /* six keys of it at once: four slots, the oldest hits end */
+            key_model(s2, DM_BDTRX);
+        drumline_init(dl, par);
+        nan_seen = 0;
+        for (s2 = 0; s2 < 6; s2++)
+            drumline_hit(dl, s2, 127, 0, 0, 0);
+        {
+            float pk = 0.0f;
+            int b;
+            for (b = 0; b < SR * 3 / BLK; b++) {
+                render();
+                for (i = 0; i < BLK; i++)
+                    pk = fm_maxf(pk, fm_maxf(fm_fabsf(L[i]), fm_fabsf(R[i])));
+            }
+            snprintf(name, sizeof name, "  six hits at once (four slots): peak %.1f dBFS, silent after 3 s", (double)dbfs(pk));
+            render();
+            for (i = 0; i < BLK; i++)
+                if (L[i] != 0.0f || R[i] != 0.0f)
+                    pk = 99.0f;
+            check(name, !nan_seen && pk > 0.5f && pk < 4.0f);
+        }
+        kit_default();
+    }
     printf("%s\n", bad ? "DRUMLINE TESTS FAILED" : "drumline tests passed");
     return bad != 0;
 }
