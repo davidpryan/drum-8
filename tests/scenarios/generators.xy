@@ -1,0 +1,59 @@
+# WARP-8's generators (a kit's Steps list, "generate"; ui.c act_euclid, act_mutate, act_grids): each writes the
+# pattern as one undo. EUCLID and MUTATE the lane shown, GRIDS the kit's first three keys
+wait 300
+listen
+expect trk 1
+tap SEQ
+expect page Steps
+tapkey b0
+# EUCLID: four hits over sixteen steps, on the beats
+tap SEL
+row EUCLID HITS
+tap SEL
+wait 40
+said EUCLID
+expect note 1 1 1 1
+expect note 1 1 5 1
+expect note 1 1 9 1
+expect note 1 1 13 1
+expect note 1 1 2 0
+# five hits, turned two steps later: 3, 7, 10, 13, 16
+tap SEL
+row EUCLID HITS
+turn ALGO 1
+row EUCLID ROTATE
+turn ALGO 2
+tap SEL
+wait 40
+expect note 1 1 1 0
+expect note 1 1 3 1
+expect note 1 1 7 1
+expect note 1 1 10 1
+expect note 1 1 13 1
+expect note 1 1 16 1
+# undo: the four on the beats again
+press HOME
+tap REC
+release HOME
+wait 40
+expect note 1 1 1 1
+expect note 1 1 3 0
+# MUTATE at 100 %: the hits on the beats stay
+tap SEL
+row MUTATE
+turn ALGO 7
+tap SEL
+wait 40
+said MUTATED
+expect note 1 1 1 1
+expect note 1 1 5 1
+expect note 1 1 9 1
+expect note 1 1 13 1
+# GRIDS at the map's middle, half full: a kick on the one; the snare's lane written (key 2 on step 5 or 13)
+tap SEL
+row GRIDS X
+tap SEL
+wait 40
+said GRIDS
+expect note 1 1 1 1
+shot generators.png

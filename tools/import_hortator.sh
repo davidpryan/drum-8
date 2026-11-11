@@ -17,6 +17,8 @@ for f in dsp.c dm_dsp.c dm_state.h phys_dsp.c dm_kick.c dm_snare.c dm_metal.c dm
          dm_efmm.c; do
     sed 's/__attribute__((section(".pool")))/HORT_POOL/' "$SRC/$f" > "$DST/$f"
 done
+# Grids' drum map (Mutable Instruments, GPL-3.0-or-later): the nodes app/gen_grids.h reads
+cp "$SRC/grids_tables.h" "$DST/grids_tables.h"
 # its factory presets (tools/gen_hort_presets.py reads them)
 cp "$1/tools/presets.json" "$(dirname "$0")/hort_presets.json"
 git -C "$1" rev-parse HEAD > "$DST/UPSTREAM"

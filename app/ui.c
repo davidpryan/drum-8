@@ -2559,6 +2559,12 @@ static void list_change_do(int32_t e)
         case A_SAVE_PRESET: ui.pick_slot = (uint8_t)((ui.pick_slot + d + NUSER_PRESETS) % NUSER_PRESETS); break;
         case A_KIT: ui.pick_kit = (uint8_t)((ui.pick_kit + d + NKITS) % NKITS); break;
         case A_DRUM_SOUND: ui.pick_dsound = (uint8_t)((ui.pick_dsound + d + NHPRESET) % NHPRESET); break;
+        case A_EUCLID: ui.pick_euc = (uint8_t)((ui.pick_euc + d + 16) % 16); break;
+        case A_EUCLID_ROT: ui.pick_eurot = (uint8_t)((ui.pick_eurot + d + 16) % 16); break;
+        case A_MUTATE: ui.pick_mut = (uint8_t)((ui.pick_mut + d + 10) % 10); break;
+        case A_GRIDS_X: ui.pick_gx = (uint8_t)((ui.pick_gx + d + 17) % 17); break;
+        case A_GRIDS_Y: ui.pick_gy = (uint8_t)((ui.pick_gy + d + 17) % 17); break;
+        case A_GRIDS_FILL: ui.pick_gfill = (uint8_t)((ui.pick_gfill + d + 17) % 17); break;
         case A_SAVE_KIT: ui.pick_kslot = (uint8_t)((ui.pick_kslot + d + NUSER_KITS) % NUSER_KITS); break;
         case A_LOAD_PROJ: ui.pick_slot = (uint8_t)((ui.pick_slot + d + NPROJ) % NPROJ); break;
         case A_SAVE_TO: ui.pick_save = (uint8_t)((ui.pick_save + d + NPROJ) % NPROJ); break;
@@ -2997,6 +3003,86 @@ static void act_paste_key(void)
     engine_set_all(trk);
     mark_dirty();
     say("PASTED", DL_SOUND_NAME[sk]);
+}
+/* ---- WARP-8's generators: each writes the playing pattern of the kit shown, as one undo. A lane is a key's bit on
+ * the steps (seq/pattern.h kit_*); the other keys' steps, the steps' tricks, chances and locks stay ---- */
+#include "gen_grids.h"
+static void lane_put(tpat_t *tp, int s, int key, int on)   /* key (0..10) on or off step s */
+{
+    if (kit_has(&tp->st[s], key + 1) != (on != 0))
+        kit_toggle(&tp->st[s], key + 1);
+}
+static tpat_t *gen_begin(int *trk)                       /* the kit's pattern, kept for undo; 0: not a kit */
+{
+    *trk = sel_trk();
+    if (!is_drum(*trk))
+        return 0;
+    undo_pat(*trk, cur_pat(*trk), 0);
+    return tpat(*trk);
+}
+/* EUCLID: HITS spread as evenly as they go over the pattern's length, turned ROTATE steps later, on the lane shown
+ * (step i has a hit where (i x hits) mod length < hits: the Bresenham spread) */
+static void act_euclid(void)
+{
+    int trk, key = ui.dsound % DL_NSOUND, hits = gen_hits(), rot = gen_rot();
+    tpat_t *tp = gen_begin(&trk);
+    char t[16];
+    if (!tp)
+        return;
+    int n = tp->len < 1 ? 1 : tp->len > NSTEP ? NSTEP : tp->len;
+    if (hits > n)
+        hits = n;
+    for (int i = 0; i < n; i++)
+        lane_put(tp, i, key, ((i - rot % n + n) % n * hits) % n < hits);
+    mark_dirty();
+    num_s((uint32_t)n, s_cat(num_s((uint32_t)hits, t), " of "));
+    say("EUCLID", t);
+}
+/* MUTATE: the lane shown, varied by the amount: a hit off the beat may move a step either way or drop out (the
+ * amount's half), an empty step may take one (its eighth); the hits on the beats (every fourth step) stay */
+static void act_mutate(void)
+{
+    static uint32_t seed = 0x2545F491u;
+    int trk, key = ui.dsound % DL_NSOUND, amt = gen_mut();
+    tpat_t *tp = gen_begin(&trk);
+    uint8_t on[NSTEP];
+    if (!tp)
+        return;
+    int n = tp->len < 1 ? 1 : tp->len > NSTEP ? NSTEP : tp->len;
+    uint32_t r = seed ^ plat_ms() * 2654435761u;
+    for (int i = 0; i < n; i++)
+        on[i] = (uint8_t)kit_has(&tp->st[i], key + 1);
+    for (int i = 0; i < n; i++) {
+        int was = kit_has(&tp->st[i], key + 1);
+        r ^= r << 13, r ^= r >> 17, r ^= r << 5;
+        if (was && i % 4 && (int)(r % 200u) < amt) {     /* moves, or drops out */
+            int to = (i + ((r >> 8 & 1u) ? 1 : n - 1)) % n;
+            on[i] = 0;
+            if ((r >> 9 & 1u) && !kit_has(&tp->st[to], key + 1))
+                on[to] = 1;
+        } else if (!was && (int)(r % 800u) < amt)
+            on[i] = 1;
+    }
+    for (int i = 0; i < n; i++)
+        lane_put(tp, i, key, on[i]);
+    seed = r | 1u;
+    mark_dirty();
+    say("MUTATED", DL_SOUND_NAME[key]);
+}
+/* GRIDS: the kick, the snare and the hats of Mutable Instruments' drum map at X, Y (gen_grids.h), as full as FILL,
+ * onto the kit's first three keys over the pattern's length */
+static void act_grids(void)
+{
+    int trk, x = gen_g(ui.pick_gx), y = gen_g(ui.pick_gy), fill = gen_g(ui.pick_gfill);
+    tpat_t *tp = gen_begin(&trk);
+    if (!tp)
+        return;
+    int n = tp->len < 1 ? 1 : tp->len > NSTEP ? NSTEP : tp->len;
+    for (int i = 0; i < n; i++)
+        for (int ch = 0; ch < 3; ch++)
+            lane_put(tp, i, ch, grids_hit(i, ch, x, y, fill));
+    mark_dirty();
+    say("GRIDS", "kick snare hat");
 }
 /* DRUM SOUND: one of Hortator's factory presets (HPRESET) on the key shown: its model and the model's eight knobs. The
  * key's volume, pan, play mode, envelope, filter and sends stay */
@@ -3700,6 +3786,9 @@ static void action_run(int a)
     case A_SAVE_PRESET: act_save_preset(ui.pick_slot % NUSER_PRESETS); return;
     case A_KIT: act_kit(ui.pick_kit % NKITS); break;
     case A_DRUM_SOUND: act_drum_sound(ui.pick_dsound % NHPRESET); break;
+    case A_EUCLID: case A_EUCLID_ROT: act_euclid(); break;
+    case A_MUTATE: act_mutate(); break;
+    case A_GRIDS_X: case A_GRIDS_Y: case A_GRIDS_FILL: act_grids(); break;
     case A_SAVE_KIT: act_save_kit(ui.pick_kslot % NUSER_KITS); return;
     case A_INIT:
         undo_sound(sel_trk());

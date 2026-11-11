@@ -261,6 +261,7 @@ static struct {
     uint32_t solo_tap_t;
     uint16_t preset_i, pick_preset;               /* (more than 255 presets and user slots) */
     uint8_t pick_engine, pick_slot, pick_fx, pick_weave, pick_save;   /* (pick_save: SAVE TO's slot) */
+    uint8_t pick_euc, pick_eurot, pick_mut, pick_gx, pick_gy, pick_gfill;   /* the generators' picks (gen_*) */
     uint8_t pick_dsound;                             /* a kit key's DRUM SOUND: a Hortator preset (HPRESET) */
     uint8_t pick_kit, pick_kslot;                    /* a kit track's KIT (0..3 factory, 4.. user) and SAVE KIT */
     uint8_t pick_bt;                                 /* Bluetooth audio's FORGET: the remembered device */
@@ -289,7 +290,8 @@ enum { A_CLEAR_NOTES, A_CLEAR_LOCKS, A_CLEAR_BOTH, A_COPY_PAT, A_PASTE_PAT, A_RO
        A_KIT, A_SAVE_KIT, A_MIDI_CC, A_USB_HOST, A_BT_MIDI, A_BT_AUDIO, A_BT_ADEV, A_BT_DEVICE, A_BT_DEV, A_BT_LOOK,
        A_BT_FORGET, A_BT_DISCONNECT, A_CLEAR, A_ROTATE, A_PASTE, A_COPY_EMPTY, A_CLEAR_BAR,
        A_COPY_SOUND, A_PASTE_SOUND, A_COPY_KEY, A_PASTE_KEY, A_COPY_SCENE, A_PASTE_SCENE, A_DUP_SLOT, A_KIT_FILTER,
-       A_SHIFT, A_LARGE_TYPE, A_CC_IN, A_FX_WIDTH, A_SCALE_LOCK, A_DRUM_SOUND, NACTIONS };
+       A_SHIFT, A_LARGE_TYPE, A_CC_IN, A_FX_WIDTH, A_SCALE_LOCK, A_DRUM_SOUND,
+       A_EUCLID, A_EUCLID_ROT, A_MUTATE, A_GRIDS_X, A_GRIDS_Y, A_GRIDS_FILL, NACTIONS };
 static const char *const ACTION_NAME[NACTIONS] = {
     "CLEAR NOTES", "CLEAR LOCKS", "CLEAR NOTES AND LOCKS", "COPY PATTERN", "PASTE PATTERN", "ROTATE FORWARD",
     "ROTATE BACK", "DUPLICATE BAR", "ENGINE", "PRESET", "SCRAMBLE", "SAVE AS PRESET", "RESET SOUND", "FOLLOWS CONDUCTOR",
@@ -301,7 +303,7 @@ static const char *const ACTION_NAME[NACTIONS] = {
     "USB PORT", "BT MIDI", "BT AUDIO", "AUDIO DEVICE", "MIDI DEVICE", "DEVICE", "LOOK AGAIN", "FORGET", "DISCONNECT",
     "CLEAR", "ROTATE", "PASTE", "COPY TO EMPTY", "CLEAR BAR", "COPY SOUND", "PASTE SOUND", "COPY DRUM", "PASTE DRUM",
     "COPY SCENE", "PASTE SCENE", "DUPLICATE SLOT", "KIT FILTER", "SHIFT NOTES", "LARGE TYPE", "CC IN", "PING WIDTH", "SCALE LOCK",
-    "DRUM SOUND"};
+    "DRUM SOUND", "EUCLID HITS", "EUCLID ROTATE", "MUTATE", "GRIDS X", "GRIDS Y", "GRIDS FILL"};
 static const char *const CLEAR_WHAT[3] = {"notes", "locks", "notes and locks"};
 /* a pick ALGORITHM sets at once (a setting: SEL only leaves the list), as against a choice SEL then carries out */
 static int pick_sets(int a)
@@ -2802,6 +2804,12 @@ static void list_page_section(int p)              /* a page's knobs under its na
         lst.n = (uint8_t)n;
 }
 static int pick_amount(int v) { return v ? v : 1; }   /* SHIFT NOTES', ROTATE's amount (never 0) */
+/* WARP-8's generators (a kit's Steps list, ui.c act_euclid, act_mutate, act_grids): what their picks mean. Each pick
+ * starts at 0 and means its usual value there: four hits, no turn, 30 %, the map's middle, half full */
+static int gen_hits(void) { return (ui.pick_euc + 3) % 16 + 1; }          /* EUCLID HITS 1..16 */
+static int gen_rot(void) { return ui.pick_eurot % 16; }                   /* EUCLID ROTATE 0..15 steps later */
+static int gen_mut(void) { return ((ui.pick_mut + 2) % 10 + 1) * 10; }    /* MUTATE 10..100 % */
+static int gen_g(uint8_t v) { return (v + 8) % 17 * 127 / 16; }           /* GRIDS X, Y, FILL 0..127, 17 places */
 /* Steps and Bar: the pattern's actions, then the bar's */
 static void list_steps(int trk)
 {
@@ -2828,6 +2836,24 @@ static void list_steps(int trk)
         list_add(ACTION_NAME[A_SHIFT], sh_t, LK_PICK, A_SHIFT);
     }
     list_add(ACTION_NAME[A_DOUBLE], 0, LK_ACTION, A_DOUBLE);
+    if (is_drum(trk)) {                              /* WARP-8: the generators. Each writes the pattern (one undo):
+                                                      * EUCLID and MUTATE the lane shown, GRIDS the kit's first three
+                                                      * keys (kick, snare, hat) */
+        static char eh_t[8], er_t[8], mu_t[8], gx_t[8], gy_t[8], gf_t[8];
+        list_head("generate");
+        num_s((uint32_t)gen_hits(), eh_t);
+        list_add(ACTION_NAME[A_EUCLID], eh_t, LK_PICK, A_EUCLID);
+        num_s((uint32_t)gen_rot(), er_t);
+        list_add(ACTION_NAME[A_EUCLID_ROT], er_t, LK_PICK, A_EUCLID_ROT);
+        s_cat(num_s((uint32_t)gen_mut(), mu_t), "%");
+        list_add(ACTION_NAME[A_MUTATE], mu_t, LK_PICK, A_MUTATE);
+        num_s((uint32_t)gen_g(ui.pick_gx), gx_t);
+        list_add(ACTION_NAME[A_GRIDS_X], gx_t, LK_PICK, A_GRIDS_X);
+        num_s((uint32_t)gen_g(ui.pick_gy), gy_t);
+        list_add(ACTION_NAME[A_GRIDS_Y], gy_t, LK_PICK, A_GRIDS_Y);
+        num_s((uint32_t)gen_g(ui.pick_gfill), gf_t);
+        list_add(ACTION_NAME[A_GRIDS_FILL], gf_t, LK_PICK, A_GRIDS_FILL);
+    }
     num_s((uint32_t)ui.bar + 1u, s_cat(bar_t, "bar "));
     list_head(bar_t);
     list_add(ACTION_NAME[A_COPY_BAR], 0, LK_ACTION, A_COPY_BAR);
