@@ -398,7 +398,8 @@ int main(void)
                     par[TP_DRUM(0, DP_K1 + k)] = DM_DEFAULT[m][k];
                     continue;
                 }
-                if (nan_seen || d2 < (m == DM_SAMPLE && k == 2 ? -120.0f : m >= DM_909CH && k == 1 && !e ? -36.0f
+                if (nan_seen || d2 < (m == DM_SAMPLE && k == 2 ? -120.0f : DM_ISHORT(m) ? -30.0f
+                                      : m >= DM_909CH && k == 1 && !e ? -36.0f
                                                                                        : -26.0f) || d2 > 1.0f) {
                                                        /* (the sample's start at 99 %: its tail, faded to silence; a
                                                         * 909 cymbal's shortest decay, 9W9's 15 / 20 ms tick) */
@@ -1104,7 +1105,7 @@ int main(void)
             static uint8_t par2[NTP];
             drumline_t *dl2 = (drumline_t *)dbuf2;
             int n1, n2, ok;
-            /* two strings on this kit, then one on the other: the oldest of this kit's ends */
+            /* two strings on this kit (the second takes the one line), then one on the other: this kit's ends */
             memcpy(par2, par, sizeof par2);
             drumline_init(dl, par);
             drumline_init(dl2, par2);
@@ -1116,8 +1117,8 @@ int main(void)
             render();
             n1 = drumline_voices(dl);
             n2 = drumline_voices(dl2);
-            check("strings across kits: two at once in all, a third (another kit's) takes the oldest", n1 == 1 && n2 == 1);
-            /* nine 909 hits over the two kits: eight sound, finite; then a kit set up again lets its slots go */
+            check("strings across kits: one at once in all (WARP-8), another kit's takes it", n1 == 0 && n2 == 1);
+            /* ten 909 hits over the two kits: N909 sound, finite; then a kit set up again lets its slots go */
             kit_default();
             for (s = 0; s < 5; s++)
                 key_model(s, DM_909KICK + s);
@@ -1140,8 +1141,8 @@ int main(void)
             for (s = 0; s < 2; s++)
                 drumline_hit(dl, s, 127, 0, 0, 0);
             render();
-            check("909s across kits: eight at once in all, finite; a kit set up again frees its slots",
-                  ok && drumline_voices(dl) == 5 && !nan_seen);
+            check("909s across kits: four at once in all (WARP-8), finite; a kit set up again frees its slots",
+                  ok && drumline_voices(dl) == 4 && !nan_seen);
             for (b = 0; b < 4 * SR / BLK; b++)          /* (the low tom's 1.7 s, the kick's 1.4) */
                 render();
             check("the 909s end within 4 s", !drumline_sounding(dl));
@@ -1248,8 +1249,8 @@ int main(void)
         }
         kit_default();
     }
-    printf("-- trx kick (Hortator's BDTRX, dsp/hort.c): its pitch is Hortator's law, 61.4 Hz x 2^(TUNE / 12), TUNE the\n");
-    printf("   knob about 64 and the hit's note; the track's length moves its DECAY; a fifth hit takes the oldest's slot\n");
+    printf("-- bdtrx (Hortator's BDTRX, dsp/hort.c): its pitch is Hortator's law, 61.4 Hz x 2^(TUNE / 12), TUNE the\n");
+    printf("   knob about 64 and the hit's note; the track's length moves its DECAY; a ninth hit takes the oldest's slot\n");
     {
         static const struct { int tune, note; float hz; } BT[] = {{60, 0, 48.73f}, {64, 0, 61.4f}, {76, 0, 122.8f},
                                                                   {64, -12, 30.7f}, {60, 7, 73.02f}};
@@ -1312,11 +1313,11 @@ int main(void)
         par[TP_R] = 64;
         snprintf(name, sizeof name, "  the track's length at 2x: ends at %.2f s (%.2f)", (double)t_long, (double)t_def);
         check(name, t_long > t_def * 1.5f && t_long < t_def * 2.6f);
-        for (s2 = 0; s2 < 6; s2++)                     /* six keys of it at once: four slots, the oldest hits end */
+        for (s2 = 0; s2 < 10; s2++)                    /* ten keys of it at once: eight slots, the oldest hits end */
             key_model(s2, DM_BDTRX);
         drumline_init(dl, par);
         nan_seen = 0;
-        for (s2 = 0; s2 < 6; s2++)
+        for (s2 = 0; s2 < 10; s2++)
             drumline_hit(dl, s2, 127, 0, 0, 0);
         {
             float pk = 0.0f;
@@ -1326,12 +1327,12 @@ int main(void)
                 for (i = 0; i < BLK; i++)
                     pk = fm_maxf(pk, fm_maxf(fm_fabsf(L[i]), fm_fabsf(R[i])));
             }
-            snprintf(name, sizeof name, "  six hits at once (four slots): peak %.1f dBFS, silent after 3 s", (double)dbfs(pk));
+            snprintf(name, sizeof name, "  ten hits at once (eight slots): peak %.1f dBFS, silent after 3 s", (double)dbfs(pk));
             render();
             for (i = 0; i < BLK; i++)
                 if (L[i] != 0.0f || R[i] != 0.0f)
                     pk = 99.0f;
-            check(name, !nan_seen && pk > 0.5f && pk < 4.0f);
+            check(name, !nan_seen && pk > 0.5f && pk < 6.0f);
         }
         kit_default();
     }

@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include "synth.h"
 #include "sample.h"
+#include "hort.h"
 
 #define DL_NSOUND 11                 /* keys: the black keys, a model instance each */
 #define NDVOICE 8
@@ -47,15 +48,16 @@ enum { DM_KICK, DM_SNARE, DM_HIHAT, DM_CLAP, DM_SHAKER, DM_TAMB, DM_RESO, DM_CON
         * region (fm1-base device/res.c: written after an update; silent until then) */
        DM_909CH, DM_909OH, DM_909RIDE, DM_909CRASH,
        /* Hortator's models (DEADACTIVE, GPL-3.0-only: dsp/hort.c), each hit in one of the kits' shared NHORT slots
-        * (drumline.c hort_own), eight knobs as Hortator's SOUND pages: trx kick, its BDTRX (a measured digital sine
-        * kick). In hort.h's order (HM_*) */
-       DM_BDTRX,
+        * (drumline.c hort_own), up to eight knobs as Hortator's SOUND pages: all of Hortator's but SAMPL and ACID, in
+        * hort.h's order (HM_*: k808 .. cyefm) */
+       DM_HORT0, DM_HORT_END = DM_HORT0 + NHM - 1,
        NDM };                                        /* (saved by number: a new model goes last; development builds
                                                       * had 21 more, 11..31: project.c keys_fix) */
 #define DM_ISX(m) ((m) >= DM_XKICK && (m) <= DM_XNOISE)
 #define DM_IS909(m) ((m) >= DM_909KICK && (m) <= DM_909CRASH)
-#define DM_ISHORT(m) ((m) >= DM_BDTRX && (m) < NDM)
-#define N909 8                                       /* 909 hits sounding at once, every kit together (a ninth takes
+#define DM_ISHORT(m) ((m) >= DM_HORT0 && (m) <= DM_HORT_END)
+#define DM_BDTRX (DM_HORT0 + HM_BDTRX)
+#define N909 4                                       /* 909 hits sounding at once, every kit together (a fifth takes
                                                       * the oldest's slot) */
 extern const char *const DM9_SHAPE_N[7];             /* a 909 model's shape (its 9W9 distortion): diode .. crush */
 extern const char *const DM9_SIZE_N[3];              /* the 909 tom's size: low mid high */
@@ -78,7 +80,7 @@ extern const char *const DL_SOUND_NAME[DL_NSOUND];     /* the default kit's key 
 extern const uint8_t DL_DEFAULT_KIT[DL_NSOUND][DP_N];  /* DP_* of each key of a new drum track */
 
 typedef struct drumline drumline_t;
-#define DRUMLINE_BYTES 2560                            /* 8 voices (each with its key's envelope and filter state),
+#define DRUMLINE_BYTES 2496                            /* 8 voices (each with its key's envelope and filter state),
                                                         * four sample windows (80 B each), the dynamic filter (the
                                                         * strings' lines and the 909 slots: drumline.c, every kit's) */
 

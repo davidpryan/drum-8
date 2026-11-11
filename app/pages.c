@@ -4266,11 +4266,15 @@ static void pic_drumline(int32_t x0, int32_t y0, int32_t w, int32_t h, const uin
         static const char *const PAD[] = {"kick", "snare", "hat", "clap", "shakr", "tamb", "strng", "cong", "tom", "fm",
                                              "smpl", "xkick", "xsnr", "xhat", "xclap", "xtom", "xrim", "xfm",
                                              "xnois", "clang", "sophi", "9kick", "9snr", "9tom", "9rim", "9clap",
-                                             "9hat", "9open", "9ride", "9crsh", "bdtrx"};
+                                             "9hat", "9open", "9ride", "9crsh",
+#define HP(id, name, pad, pad4, trig, rend, n) pad,
+                                             HORT_MODELS(HP)};
         static const char *const PAD4[] = {"kick", "snr", "hat", "clap", "shk", "tmb", "strg", "cga", "tom", "fm",
                                               "smp", "xkck", "xsnr", "xhat", "xclp", "xtom", "xrim", "xfm",
                                               "xnoi", "clng", "soph", "9kck", "9snr", "9tom", "9rim", "9clp",
-                                              "9hat", "9opn", "9rid", "9crs", "btrx"};   /* (large type: four letters at most) */
+                                              "9hat", "9opn", "9rid", "9crs",
+#define HP4(id, name, pad, pad4, trig, rend, n) pad4,
+                                              HORT_MODELS(HP4)};   /* (large type: four letters at most) */
         _Static_assert(sizeof PAD / sizeof PAD[0] == NDM && sizeof PAD4 / sizeof PAD4[0] == NDM, "a pad name for each model");
         const char *nm = (LARGE ? PAD4 : PAD)[p[TP_DRUM(k, DP_MODEL)] % NDM];
         char t[4];

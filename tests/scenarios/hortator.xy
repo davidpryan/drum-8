@@ -1,13 +1,13 @@
-# trx kick (Hortator's BDTRX, dsp/hort.c): the last of a key's models; put on a key it comes with Hortator's defaults
+# bdtrx (Hortator's BDTRX, dsp/hort.c; Hortator's models follow the kit's own 30): put on a key it comes with Hortator's defaults
 # (TUNE -4: 60) on both pages of knobs, and plays
 wait 300
 expect trk 1
 tap EDIT
 expect page Engine
 tapkey b1
-knob 1 d1.model 30
+knob 1 d1.model 52
 wait 60
-expect par1.d1.model 30
+expect par1.d1.model 52
 expect par1.d1.k1 60
 expect par1.d1.k2 68
 expect par1.d1.k5 14

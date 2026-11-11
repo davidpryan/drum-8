@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # After Felucca's tools/gen_tables.py, Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
 """The fixed-point tables Hortator's drum models read (app/dsp/hort.c), as Felucca's tools/gen_tables.py makes
-them: SINE, SVF_G, DECAY_K; and POW2_192, 2^(i/192) - 1 in Q16, for pow2_q16 (Felucca reads its pitch table there).
+them: SINE, SVF_G, DECAY_K, TANH_Q15; and POW2_192, 2^(i/192) - 1 in Q16, for pow2_q16 (Felucca reads its pitch table there).
   tools/gen_hort_tables.py app/dsp/hort_tables.inc     (the result is committed, as digisophie_sin.inc is)"""
 import math
 import sys
@@ -26,6 +26,7 @@ def main(path):
     L += arr("SVF_G", "uint16_t", [int(4096 * math.tan(math.pi * min(f, 0.45 * FS) / FS)) for f in fc])
     dms = [5.0 * (800 ** (v / 127)) for v in range(128)]
     L += arr("DECAY_K", "uint16_t", [min(65535, int(65536 * math.exp(-6.9 / (m / 1000 * FS)))) for m in dms])
+    L += arr("TANH_Q15", "int16_t", [int(32767 * math.tanh(i / 256 * 2)) for i in range(257)])
     L += arr("POW2_192", "uint16_t", [int(round(65536 * (2 ** (i / 192) - 1))) for i in range(192)])
     open(path, "w").write("\n".join(L) + "\n")
 
