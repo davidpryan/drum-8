@@ -170,7 +170,7 @@ def main():
     B = Path(sys.argv[1])
     out = Path(sys.argv[2]) if len(sys.argv) > 2 else ROOT / "build" / "demos" / "device"
     out.mkdir(parents=True, exist_ok=True)
-    host = ROOT / "app" / "build" / "host" / "loom_host"
+    host = ROOT / "app" / "build" / "host" / "warp_host"
     if not host.exists():
         sys.exit("device_projects: build the host simulator first (./build.sh --host)")
     specs = {}

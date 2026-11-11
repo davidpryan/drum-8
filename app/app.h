@@ -9,7 +9,7 @@
 #include "dsp/synth.h"
 #include "dsp/fx.h"
 
-#define APP_NAME "LOOM-8"
+#define APP_NAME "WARP-8"
 #define APP_BLOCK 256u                  /* frames a render (5.8 ms): fm1-base's USB audio input takes 256-frame halves
                                          * at most (felucca-bsp usb.c); LOOM-8's own platform had 512-frame halves,
                                          * each rendered as two 256-frame calls, which is what the simulator always did */
@@ -127,7 +127,7 @@ void loom_lights(uint32_t buttons, uint32_t keys, int glow, uint32_t dim_keys, i
 /* a debug build (not tools/build.py --release): GLO's last page, Debug, with the load, the voices and CORES */
 #define DEBUG_BUILD (APP_VERSION[0] == 'D' && APP_VERSION[1] == 'E' && APP_VERSION[2] == 'V' && \
                      (!APP_VERSION[3] || APP_VERSION[3] == 'T'))   /* DEV, or the load test's DEVTEST */
-#define PROJ_MAGIC 0x384D4F4Cu          /* "LOM8" (was "XXY1": XY-1's projects start fresh) */
+#define PROJ_MAGIC 0x38505257u          /* "WRP8" (LOOM-8's is "LOM8": its projects, presets and kits start fresh here) */
 #define PROJ_FORMAT 20u                 /* (10, 0.5-beta's, to 12 load too: project.c migrate_old; older ones do not)
                                          * 20: an FX track's PING WIDTH (TP_FX_WIDTH, its TP_X1; older: 127, full);
                                          * 19: the random player's octaves up (TP_RUP), the tracks' last parameter;

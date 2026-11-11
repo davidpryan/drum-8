@@ -196,7 +196,7 @@ static int smp_frame(const uint8_t *p, uint32_t n)
     rp_start(cmd);
     switch (cmd) {
     case SB_INFO: {
-        const char *nm = "LOOM-8 " APP_VERSION;
+        const char *nm = APP_NAME " " APP_VERSION;
         for (i = 0; nm[i] && i < 24u; i++)
             rp_byte((uint8_t)nm[i]);
         rp_byte(0);

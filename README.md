@@ -1,3 +1,41 @@
+# WARP-8
+
+A drum machine firmware for the M-VAVE FM-1: [LOOM-8](https://github.com/charlesvestal/fm1-loom)'s sequencer, mixer,
+effects and pages, with its synth engines taken out and [Hortator](https://github.com/DeadActive/hortator)'s drum
+models put into the kit. A fork of LOOM-8 by Charles Vestal; the drum models are DEADACTIVE's, on Leo Kuroshita's
+Felucca. GPL-3.0-only as a whole (`LICENSING.md`).
+
+**Status: builds and passes its tests in the simulator. Not yet run on an FM-1.**
+
+What is different from LOOM-8:
+
+- **Every track can be a kit.** A new project is eight kits of eleven keys. The engines left are kit, sample, slice
+  and MIDI out; knit, rayon, jacquard, bellows, cane, voile and acid do not play (a track saved with one loads as a
+  sample track).
+- **73 drum models on a key**: LOOM-8's 30 and 43 of Hortator's 45 (all but SAMPL and ACID), with Hortator's own
+  knobs on the key's two pages: the 808 and 909 family, Plaits' kicks, snares and hats, SKIN, FM, and the TRX and EFM
+  voices measured from the Machinedrum.
+- **DRUM SOUND** in a kit key's SELECT list: 143 of Hortator's factory presets, each a model and its knobs, onto the
+  key shown.
+- **Six more factory kits** made of those presets: TRX, EFM, 808, 909, Modern, Hard.
+- **Voices**: eight Hortator hits at once over all kits, four of LOOM-8's 909 models, one string, eight sample or
+  slice voices (LOOM-8: sixteen synth voices, eight 909, two strings, three kits).
+- **Its own identity**: the package is `warp.fwsc`, identity `FM-1_18`, USB name `WARP-8 FM-1`, and its projects carry
+  their own tag, so it starts fresh on an FM-1 that had LOOM-8 (LOOM-8's projects are not read; a LOOM-8 backup's
+  kits and presets still restore).
+
+Not done: an install page and site of its own (`tools/make_pages.py`, `app/web/` and the manual are still LOOM-8's),
+the screen reader's words file, the tests in `tests/parked/`, and the dead engines' source and pages, which are still
+in the tree. Bringing in a newer Hortator: `tools/import_hortator.sh PATH`, then `tools/gen_hort_models.py` and
+`tools/gen_hort_presets.py`.
+
+Build it as LOOM-8 (`BUILDING.md`): `./build.sh` makes `app/build/warp.fwsc`, `./build.sh --host` the simulator,
+`tests/run_tests.sh` runs the tests.
+
+What follows is LOOM-8's own README, for everything the two share.
+
+---
+
 # LOOM-8 for the M-VAVE FM-1
 
 LOOM-8 turns the M-VAVE FM-1 into a pocket groovebox: eight instrument tracks, each in its own colour, on

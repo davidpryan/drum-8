@@ -13,10 +13,10 @@ The build (fm1-base's `tools/build.py`, run by `./build.sh`, driven by `app/fm1.
 
 | File | What |
 | --- | --- |
-| `loom.bin` | the firmware app |
+| `warp.bin` | the firmware app |
 | `loader/ota.bin` | the update loader (felucca-bsp's) |
-| `loom.fwsc` | the installable package (app + loader) |
-| `loom-res.bin` | the resource region: the 909 cymbals' samples, written after the firmware (fm1-base `device/res.c`) |
+| `warp.fwsc` | the installable package (app + loader) |
+| `warp-res.bin` | the resource region: the 909 cymbals' samples, written after the firmware (fm1-base `device/res.c`) |
 
 ## Prerequisites (macOS)
 
@@ -48,8 +48,8 @@ On Linux x86-64 the toolchain runs natively and Docker is not needed.
 ## Build
 
 ```
-./build.sh                    # the firmware: app/build/loom.fwsc
-./build.sh --host             # the host simulator: app/build/host/loom_host
+./build.sh                    # the firmware: app/build/warp.fwsc
+./build.sh --host             # the host simulator: app/build/host/warp_host
 ./build.sh --web              # the browser emulator: app/build/emu/ (fm1-base's page; LOOM-8's bits: app/web/emu/)
 ```
 
@@ -75,11 +75,11 @@ Runs, on the build machine: the units' own tests (the synth, the drumline, the F
 that must not move a sample, then the tests compare); the user sample bank's tool (`tests/host/bank_test.py`: its
 layout over the three flash windows, the rates, the bounds) and an upload played through the app
 (`tests/scenarios/upload.xy`); fm1-base's update-path tests
-against `app/build/loom.fwsc`; the browser build; and the whole app in fm1-base's simulator
+against `app/build/warp.fwsc`; the browser build; and the whole app in fm1-base's simulator
 (`tests/scenarios/*.xy`, backup and restore among them), with its screenshots and audio in `app/build/scenarios/`
 and the layout audit. Silent: the audio goes to WAV files. fm1-base's own tests: `base/tests/run_tests.sh`.
 
-`app/build/host/loom_host SCRIPT OUTDIR` runs one script: fm1-base's commands are at the top of
+`app/build/host/warp_host SCRIPT OUTDIR` runs one script: fm1-base's commands are at the top of
 `base/host/plat_host.c`, LOOM-8's own at the top of `app/host.c`. `tools/gen_screens.sh` makes the manual's
 screenshots (`tools/manual_screens.xy`).
 
@@ -88,12 +88,12 @@ screenshots (`tools/manual_screens.xy`).
 From the command line (needs `pip3 install mido python-rtmidi`):
 
 ```
-python3 base/tools/fm1_install.py app/build/loom.fwsc
+python3 base/tools/fm1_install.py app/build/warp.fwsc
 python3 base/tools/fm1_install.py --info     # identity of the connected FM-1
 ```
 
-After the firmware it writes `loom-res.bin` from beside the package (the 909 cymbals; a few seconds, and at once when
-the FM-1 has them already); `base/tools/fm1_resources.py app/build/loom-res.bin` writes it alone.
+After the firmware it writes `warp-res.bin` from beside the package (the 909 cymbals; a few seconds, and at once when
+the FM-1 has them already); `base/tools/fm1_resources.py app/build/warp-res.bin` writes it alone.
 
 Installing firmware is at your own risk. Hold OCT− and OCT+ for 5 seconds for the update mode. Two failed starts
 in a row bring up a safe mode with USB on; the web installer can put M-VAVE's firmware back.
@@ -113,7 +113,7 @@ A release is built on GitHub from its tag, so anyone can check that the package 
 [`zvenson/fm1-build` at `v1`](https://github.com/zvenson/fm1-build/tree/v1) (as X0X and Melodee do). The builder
 checks out the tagged commit, installs JieLi's Linux toolchain and the AC79 SDK at its fixed tag, runs
 `./build.sh --release X.Y` (with fm1-base and felucca-bsp at the commits this one links) and `tests/run_tests.sh`
-(a failing test stops the release), then signs build provenance for `loom-X.Y.fwsc` and `loom-X.Y-app.bin`. The
+(a failing test stops the release), then signs build provenance for `warp-X.Y.fwsc` and `warp-X.Y-app.bin`. The
 Firmware Hub shows such packages as built from source.
 
 1. Write the notes first, as a draft: `gh release create vX.Y --draft --title "LOOM-8 X.Y" --notes-file NOTES.md`
@@ -142,5 +142,5 @@ gh attestation verify "build/verify/loom-${tag#v}.fwsc" --repo "$repo" \
 The same checks the `-app.bin`. `SHA256SUMS` comes with the downloads; a checksum alone proves nothing about where a
 package was built.
 
-A local release build (`./build.sh --release X.Y`, package `app/build/loom-X.Y.fwsc`; its identity FM-1_10XXYYZZ is
+A local release build (`./build.sh --release X.Y`, package `app/build/warp-X.Y.fwsc`; its identity FM-1_10XXYYZZ is
 what the installer checks) is still how to try one on the FM-1 before tagging.
