@@ -244,6 +244,50 @@ SLOT_DB = {"Nylon": [3, 4, 0, 1], "Elastane": [-5, -6, -6, -7], "Wire": [1, 0, 0
 KITS = [(name, keys[:7] + [dict(k, db=d) for k, d in zip(SLOTS[name], SLOT_DB[name])]) for name, keys in KITS]
 assert all(len(keys) == 11 and len(name) <= 11 for name, keys in KITS)
 
+# WARP-8: kits of Hortator's factory presets (tools/gen_hort_presets.py: each a Hortator model, 30 on in the kit's
+# numbers, and its eight knobs), by name, on the keys as above; a model's own defaults where it has no preset (hm).
+# The models are levelled by role already (tools/gen_hort_models.py: kicks and snares -6 dBFS, hats and cymbals -12,
+# the rest -9), so every key is at 0 dB.
+sys.path.insert(0, __import__("os").path.dirname(__file__))
+import gen_hort_models as _hm  # noqa: E402
+import gen_hort_presets as _hp  # noqa: E402
+DM_HORT0 = 30
+_HP = {n: dict(model=DM_HORT0 + m, knobs=kn) for n, m, kn in _hp.presets()}
+
+
+def hp(name, **key):                                                   # a Hortator preset on a key
+    return dict(_HP[name], **key)
+
+
+def hm(model, **key):                                                  # a Hortator model's defaults
+    r = _hm.rows()
+    i = next(i for i, x in enumerate(r) if x["name"] == model)
+    return dict(model=DM_HORT0 + i, knobs=[_hm.kit_value(*k[1:]) for k in r[i]["knobs"]], **key)
+
+
+def hkit(*names):                                                      # eleven keys; 3 and 4 the hats, choke group 1
+    keys = [hp(n) if n in _HP else hm(n) for n in names]
+    for k in keys[2:4]:
+        k["mode"] = PM_CHOKE1
+    return keys
+
+
+KITS += [
+    ("TRX", hkit("SUBTHUMP", "HARDSNAP", "NOISEHAT", "AIROPEN", "ROOMCLAP", "BUZZLOW", "SWOOPTOM", "GRITCONG", "SHTRX",
+                 "WASHCYM", "PUREBELL")),                              # the Machinedrum's TRX voices, measured
+    ("EFM", hkit("FMSUB", "TONESNR", "FMHAT", "TRASHHAT", "BUZZCLAP", "LONGTOM", "DROPTOM", "FMRIM", "SPITHAT",
+                 "FMCRASH", "CLANK")),                                 # its EFM voices
+    ("808", hkit("ROUNDBD", "WARMSN", "CLOSEDHH", "OPENHAT", "HANDCLAP", "FLOORTOM", "HITOM", "CONGA", "CLAVE",
+                 "CRASH", "COWBELL")),
+    ("909", hkit("HOUSEBD", "CRISPSN", "TICK", "HALFHAT", "SNAPCLAP", "MIDTOM", "PEWTOM", "RIMSHOT", "STICK", "RIDE",
+                 "RINGBELL")),
+    ("Modern", hkit("PUNCHER", "CRACKSN", "SHINYHAT", "STEAM", "EDGEHIT", "HEADTOM", "TABLA", "FMPERC", "STATIC",
+                    "RINGHAT", "FMBELL")),                             # Plaits' kicks, snares and hats, SKIN, FM
+    ("Hard", hkit("HARDBD", "POPSNARE", "TINHAT", "SIZZLE", "BIGCLAP", "FUZZTOM", "GRITTOM", "RATTLE", "SPRAY",
+                  "DARKCRSH", "GONG")),
+]
+assert all(len(keys) == 11 and len(name) <= 11 for name, keys in KITS)
+
 
 def vol(db):                                                           # drumline.c volume_lin: 76 = 0 dB
     return max(1, min(127, round(76 + db * (75 / 30) if db < 0 else 76 + db * (51 / 20))))

@@ -261,6 +261,7 @@ static struct {
     uint32_t solo_tap_t;
     uint16_t preset_i, pick_preset;               /* (more than 255 presets and user slots) */
     uint8_t pick_engine, pick_slot, pick_fx, pick_weave, pick_save;   /* (pick_save: SAVE TO's slot) */
+    uint8_t pick_dsound;                             /* a kit key's DRUM SOUND: a Hortator preset (HPRESET) */
     uint8_t pick_kit, pick_kslot;                    /* a kit track's KIT (0..3 factory, 4.. user) and SAVE KIT */
     uint8_t pick_bt;                                 /* Bluetooth audio's FORGET: the remembered device */
     uint8_t pick_clear, pick_paste;
@@ -288,7 +289,7 @@ enum { A_CLEAR_NOTES, A_CLEAR_LOCKS, A_CLEAR_BOTH, A_COPY_PAT, A_PASTE_PAT, A_RO
        A_KIT, A_SAVE_KIT, A_MIDI_CC, A_USB_HOST, A_BT_MIDI, A_BT_AUDIO, A_BT_ADEV, A_BT_DEVICE, A_BT_DEV, A_BT_LOOK,
        A_BT_FORGET, A_BT_DISCONNECT, A_CLEAR, A_ROTATE, A_PASTE, A_COPY_EMPTY, A_CLEAR_BAR,
        A_COPY_SOUND, A_PASTE_SOUND, A_COPY_KEY, A_PASTE_KEY, A_COPY_SCENE, A_PASTE_SCENE, A_DUP_SLOT, A_KIT_FILTER,
-       A_SHIFT, A_LARGE_TYPE, A_CC_IN, A_FX_WIDTH, A_SCALE_LOCK, NACTIONS };
+       A_SHIFT, A_LARGE_TYPE, A_CC_IN, A_FX_WIDTH, A_SCALE_LOCK, A_DRUM_SOUND, NACTIONS };
 static const char *const ACTION_NAME[NACTIONS] = {
     "CLEAR NOTES", "CLEAR LOCKS", "CLEAR NOTES AND LOCKS", "COPY PATTERN", "PASTE PATTERN", "ROTATE FORWARD",
     "ROTATE BACK", "DUPLICATE BAR", "ENGINE", "PRESET", "SCRAMBLE", "SAVE AS PRESET", "RESET SOUND", "FOLLOWS CONDUCTOR",
@@ -299,7 +300,8 @@ static const char *const ACTION_NAME[NACTIONS] = {
     "PASTE LOCKS ONLY", "DOUBLE PATTERN", "CLEAR LOCKS", "CC OUT", "SCENES OUT", "KIT", "SAVE KIT", "KNOB CC",
     "USB PORT", "BT MIDI", "BT AUDIO", "AUDIO DEVICE", "MIDI DEVICE", "DEVICE", "LOOK AGAIN", "FORGET", "DISCONNECT",
     "CLEAR", "ROTATE", "PASTE", "COPY TO EMPTY", "CLEAR BAR", "COPY SOUND", "PASTE SOUND", "COPY DRUM", "PASTE DRUM",
-    "COPY SCENE", "PASTE SCENE", "DUPLICATE SLOT", "KIT FILTER", "SHIFT NOTES", "LARGE TYPE", "CC IN", "PING WIDTH", "SCALE LOCK"};
+    "COPY SCENE", "PASTE SCENE", "DUPLICATE SLOT", "KIT FILTER", "SHIFT NOTES", "LARGE TYPE", "CC IN", "PING WIDTH", "SCALE LOCK",
+    "DRUM SOUND"};
 static const char *const CLEAR_WHAT[3] = {"notes", "locks", "notes and locks"};
 /* a pick ALGORITHM sets at once (a setting: SEL only leaves the list), as against a choice SEL then carries out */
 static int pick_sets(int a)
@@ -2670,6 +2672,12 @@ static void proj_slot_text(int slot, char *t)     /* "Proj 2", "Proj 3 (open)", 
 /* the kits (a kit track's SELECT list): the factory kits (Loom, then tools/gen_kits.py's), then the
  * user's (project.c user_kit_name) */
 #include "kits.h"
+#include "dsp/hort_presets.inc"                     /* a key's DRUM SOUND: Hortator's factory presets (HPRESET) */
+/* "SUBTHUMP bdtrx": the preset's name and its model's */
+static void dsound_label(int i, char *t)
+{
+    s_cat(s_cat(s_cat(t, HPRESET[i % NHPRESET].name), " "), DM_NAME[DM_HORT0 + HPRESET[i % NHPRESET].model % NHM]);
+}
 #define NFKITS (1 + NGKITS)
 #define NKITS (NFKITS + NUSER_KITS)
 static const char *kit_name(int k) { return k == 0 ? "Loom" : GKIT_NAME[k - 1]; }
@@ -2863,7 +2871,7 @@ static void list_home(int keep)
 /* EDIT: the sound's actions (EDIT only: the other buttons' lists are their knobs) */
 static void list_sound(int trk)
 {
-    static char slot_t[24], fol_t[24], kit_t[24], nm[NTRK][16], from_t[24], key_t[24];
+    static char slot_t[24], fol_t[24], kit_t[24], nm[NTRK][16], from_t[24], key_t[24], snd_t[24];
     int sc = snd_clip ? snd_clip - 1 : -1, paste = sc >= 0 && sc != trk && sc < NTRK && is_drum(sc) == is_drum(trk);
     if (trk == AUX_BRAIN) {
         list_head("follow");
@@ -2886,6 +2894,8 @@ static void list_sound(int trk)
             s_cat(e, DL_SOUND_NAME[key_clip_k % DL_NSOUND]);
             list_add(ACTION_NAME[A_PASTE_KEY], key_t, LK_ACTION, A_PASTE_KEY);
         }
+        dsound_label(ui.pick_dsound, snd_t);              /* the key's sound: one of Hortator's presets */
+        list_add(ACTION_NAME[A_DRUM_SOUND], snd_t, LK_PICK, A_DRUM_SOUND);
         list_head("kit");
         kit_label(ui.pick_kit % NKITS, kit_t);
         list_add(ACTION_NAME[A_KIT], kit_t, LK_PICK, A_KIT);

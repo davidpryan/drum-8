@@ -2558,6 +2558,7 @@ static void list_change_do(int32_t e)
         case A_PRESET: ui.pick_preset = (uint16_t)((ui.pick_preset + d + NPRESETS) % (NPRESETS ? NPRESETS : 1)); break;
         case A_SAVE_PRESET: ui.pick_slot = (uint8_t)((ui.pick_slot + d + NUSER_PRESETS) % NUSER_PRESETS); break;
         case A_KIT: ui.pick_kit = (uint8_t)((ui.pick_kit + d + NKITS) % NKITS); break;
+        case A_DRUM_SOUND: ui.pick_dsound = (uint8_t)((ui.pick_dsound + d + NHPRESET) % NHPRESET); break;
         case A_SAVE_KIT: ui.pick_kslot = (uint8_t)((ui.pick_kslot + d + NUSER_KITS) % NUSER_KITS); break;
         case A_LOAD_PROJ: ui.pick_slot = (uint8_t)((ui.pick_slot + d + NPROJ) % NPROJ); break;
         case A_SAVE_TO: ui.pick_save = (uint8_t)((ui.pick_save + d + NPROJ) % NPROJ); break;
@@ -2996,6 +2997,27 @@ static void act_paste_key(void)
     engine_set_all(trk);
     mark_dirty();
     say("PASTED", DL_SOUND_NAME[sk]);
+}
+/* DRUM SOUND: one of Hortator's factory presets (HPRESET) on the key shown: its model and the model's eight knobs. The
+ * key's volume, pan, play mode, envelope, filter and sends stay */
+static void act_drum_sound(int i)
+{
+    int trk = sel_trk(), k = ui.dsound % DL_NSOUND;
+    uint8_t *par = proj.trk[trk].par;
+    char t[24];
+    if (!is_drum(trk))
+        return;
+    undo_sound(trk);
+    par[TP_DRUM(k, DP_MODEL)] = (uint8_t)(DM_HORT0 + HPRESET[i].model % NHM);
+    for (int j = 0; j < 4; j++) {
+        par[TP_DRUM(k, DP_K1 + j)] = HPRESET[i].k[j];
+        par[TP_DRUMX(k, j)] = HPRESET[i].k[4 + j];
+    }
+    engine_set_all(trk);
+    mark_dirty();
+    t[0] = 0;
+    dsound_label(i, t);
+    say("DRUM SOUND", t);
 }
 /* PASTE SCENE: the scene copied (its patterns, mutes, the conductor's key, the weave) onto the scene playing, heard at
  * the next bar while playing */
@@ -3677,6 +3699,7 @@ static void action_run(int a)
     case A_SCRAMBLE: act_scramble(); say("SCRAMBLED", 0); break;
     case A_SAVE_PRESET: act_save_preset(ui.pick_slot % NUSER_PRESETS); return;
     case A_KIT: act_kit(ui.pick_kit % NKITS); break;
+    case A_DRUM_SOUND: act_drum_sound(ui.pick_dsound % NHPRESET); break;
     case A_SAVE_KIT: act_save_kit(ui.pick_kslot % NUSER_KITS); return;
     case A_INIT:
         undo_sound(sel_trk());
