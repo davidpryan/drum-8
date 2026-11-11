@@ -1,5 +1,14 @@
 # harmony: a follower takes its pitches from the conductor's chord instead of the scale
 wait 200
+# (WARP-8: a new project is eight kits; this scenario's melodic tracks are sample tracks)
+knob 2 engine 6
+knob 3 engine 6
+knob 4 engine 6
+knob 5 engine 6
+knob 6 engine 6
+knob 7 engine 6
+knob 8 engine 6
+wait 40
 turn ALGO 1
 expect trk 2
 knob 2 brain harmony

@@ -238,8 +238,8 @@ void project_device_put(void)
 
 void project_defaults(void)
 {
-    static const uint8_t ORDER[NTRK] = {EG_DRUMLINE, EG_KNIT, EG_RAYON, EG_JACQUARD, EG_KNIT, EG_BELLOWS, EG_CANE,
-                                        EG_VOILE};
+    static const uint8_t ORDER[NTRK] = {EG_DRUMLINE, EG_DRUMLINE, EG_DRUMLINE, EG_DRUMLINE, EG_DRUMLINE, EG_DRUMLINE,
+                                        EG_DRUMLINE, EG_DRUMLINE};   /* (WARP-8: eight kits) */
     int t, k;
     uint8_t *z = (uint8_t *)&proj, keep = proj.magic == PROJ_MAGIC;   /* (a project before it: the FM-1's settings
                                                                      * carried over; at the first start, none) */
@@ -280,15 +280,13 @@ void project_defaults(void)
             tr->par[TP_S] = 0;
             tr->par[TP_R] = 64;
             set_name(tr, "kit");
-        } else if (t == 1) {
-            apply_preset(tr, preset_named(EG_KNIT, "sub"));     /* knit's round sub under everything */
         } else {
             apply_preset(tr, preset_first(ORDER[t]));
         }
         if (!tr->name[0])
             set_name(tr, EG_NAME[ORDER[t]]);
         tr->par[TP_ENGINE] = ORDER[t];                    /* (a preset carries its engine; the kit keeps its own) */
-        tr->par[TP_BRAIN] = t ? 1 : 0;                    /* the melodic tracks follow the brain from the start
+        tr->par[TP_BRAIN] = ORDER[t] != EG_DRUMLINE;                  /* the melodic tracks follow the brain from the start
                                                            * (the notebook: "several tracks are routed by default") */
         tr->par[TP_CHAN] = 1;                             /* MIDI OUT on: track N's notes on channel N
                                                            * (with Setup's NOTES) */
@@ -354,6 +352,8 @@ static int settings_valid(settings_t *s)
         s->trk[t].name[NAME_LEN - 1] = 0;
         if (t < NTRK && p[TP_ENGINE] >= NENGINE)
             return 0;
+        if (t < NTRK && eg_gone(p[TP_ENGINE]))            /* WARP-8: an engine that is gone plays as sample */
+            p[TP_ENGINE] = EG_SAMPLE;
         if (t >= AUX_FX1 && p[TP_ENGINE] >= NFXPICK)
             return 0;
         if (t < NTRK)

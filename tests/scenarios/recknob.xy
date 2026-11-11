@@ -1,6 +1,15 @@
 # REC held while playing, on a sound page: the knobs turn and are recorded (motion punched in, as keys punch in
 # notes); let go, they no longer record. On Steps, REC held keeps the record settings; stopped, everywhere
 wait 300
+# (WARP-8: a new project is eight kits; this scenario's melodic tracks are sample tracks)
+knob 2 engine 6
+knob 3 engine 6
+knob 4 engine 6
+knob 5 engine 6
+knob 6 engine 6
+knob 7 engine 6
+knob 8 engine 6
+wait 40
 spin ALGO 1
 expect trk 2
 tap EDIT

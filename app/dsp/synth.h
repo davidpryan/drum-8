@@ -16,7 +16,8 @@
 #define SY_SR 44100.0f
 #define NTRK 8                        /* instrument tracks (seq/pattern.h agrees) */
 #define SY_CHUNK 64                   /* control rate: envelopes, LFO, glides, locks */
-#define NVOICE 16                     /* synth voices, all tracks */
+#define NVOICE 12                     /* synth voices, all tracks (WARP-8: 16 before; four voices' RAM
+                                       * went to the kits, engine.c NDL) */
 #define NVOICE_TRK 6                  /* the most one track takes */
 
 /* the engines (2026-10-19: knit the subtractive voice, rayon FM, jacquard the wavetables, bellows the organ; weft,
@@ -50,7 +51,12 @@ enum { EG_KNIT, EG_RAYON, EG_JACQUARD, EG_BELLOWS, EG_CANE, EG_VOILE, EG_SAMPLE,
 #define NVOILE 4
 #define CN_SLOTS 4
 #define CN_LEN 1536
-static inline int eg_synth(int e) { return e >= 0 && e < NENGINE && e != EG_DRUMLINE && e != EG_MIDI; }   /* a voice
+/* WARP-8: the voice engines left are sample and slice; knit, rayon, jacquard, bellows, cane, voile and acid are out
+ * of the build (their numbers stay: the tables and the projects' format are by number). EG_LIVE(e): the engine a
+ * track's number plays (one that is gone: sample); written as constants, so the compiler drops the others' code */
+#define EG_LIVE(e) ((e) == EG_SLICE ? EG_SLICE : (e) == EG_DRUMLINE ? EG_DRUMLINE : (e) == EG_MIDI ? EG_MIDI : EG_SAMPLE)
+static inline int eg_gone(int e) { return e < EG_SAMPLE || e > EG_MIDI; }
+static inline int eg_synth(int e) { return e == EG_SAMPLE || e == EG_SLICE; }   /* a voice
                                                                                                          * engine */
 enum { SM_ONESHOT, SM_LOOP, SM_REVERSE, SM_PINGPONG, NSM };   /* the sample engine's modes (TP_E4) */
 #define SL_NCOUNT 4                                  /* the slice engine's counts: 4 << TP_E2 */
@@ -279,7 +285,7 @@ typedef struct {
 typedef struct synth synth_t;         /* opaque: dsp/synth.c */
 void synth_glfo_restart(synth_t *s);              /* the shared LFO from its start (the transport started) */
 float synth_glfo_now(const synth_t *s);            /* its value now, -1..1 (the page's picture) */
-#define SYNTH_BYTES 12288             /* room for the struct (checked at compile time in synth.c) */
+#define SYNTH_BYTES 9728              /* room for the struct (checked at compile time in synth.c) */
 
 void synth_init(synth_t *s, uint8_t (*par)[NTP]);   /* par: the tracks' parameter arrays, NTRK + 1 of them (the conductor's, SY_GLFO_TRK: the shared LFO) */
 void synth_tempo(synth_t *s, float bpm);

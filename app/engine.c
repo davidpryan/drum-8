@@ -51,7 +51,7 @@ volatile uint16_t eng_quiet;
 static uint8_t synth_mem[SYNTH_BYTES] POOL __attribute__((aligned(8)));
 /* drumline units: NDL of them for the pool's sake (three drum tracks at once; a fourth drum track stays silent
  * until one of the others changes engine). Three, not four, since step_t grew to twelve bytes. */
-#define NDL 3
+#define NDL 8                                              /* (WARP-8: every track a kit) */
 static uint8_t dl_mem[NDL][DRUMLINE_BYTES] POOL __attribute__((aligned(8)));
 static uint8_t dl_slot[NTRK];                              /* the unit a drum track owns, 0xFF none */
 static uint8_t dl_owner[NDL];                              /* the track owning each unit, 0xFF free */

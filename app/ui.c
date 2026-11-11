@@ -2465,7 +2465,7 @@ static void list_open(void)
     lst.bt = 0;
     lst.sel = lst.top = 0;
     list_sec = 0;
-    ui.pick_engine = proj.trk[sel_trk()].par[TP_ENGINE] % NENGINE;
+    ui.pick_engine = (uint8_t)clampi(proj.trk[sel_trk()].par[TP_ENGINE], EG_SAMPLE, EG_MIDI);
     if (is_fx(sel_trk()))
         ui.pick_fx = proj.trk[sel_trk()].par[TP_ENGINE] % NFXPICK;
     if (fx_page(ui.page))
@@ -2533,7 +2533,7 @@ static void list_change_do(int32_t e)
     }
     case LK_PICK:
         switch (lst.row[lst.sel].id) {
-        case A_ENGINE: ui.pick_engine = (uint8_t)clampi(ui.pick_engine + d, 0, NENGINE - 1); break;
+        case A_ENGINE: ui.pick_engine = (uint8_t)clampi(ui.pick_engine + d, EG_SAMPLE, EG_MIDI); break;   /* (WARP-8's four) */
         case A_CLEAR: ui.pick_clear = (uint8_t)clampi(ui.pick_clear % 3u + d, 0, 2); break;
         case A_ROTATE: case A_SHIFT: {           /* how far: never 0 (left / down past 1 goes to -1) */
             int8_t *v = lst.row[lst.sel].id == A_ROTATE ? &ui.pick_rot : &ui.pick_shift;
@@ -3956,7 +3956,7 @@ static void input(void)
         if (lst.open)
             list_change(e);
         else if (page_btn_held(B_EDIT) && !is_aux(sel_trk())) {   /* EDIT held: ALGORITHM picks the engine */
-            ui.pick_engine = (uint8_t)clampi(proj.trk[sel_trk()].par[TP_ENGINE] + (e > 0 ? 1 : -1), 0, NENGINE - 1);
+            ui.pick_engine = (uint8_t)clampi(proj.trk[sel_trk()].par[TP_ENGINE] + (e > 0 ? 1 : -1), EG_SAMPLE, EG_MIDI);
             if (ui.pick_engine != proj.trk[sel_trk()].par[TP_ENGINE])
                 action_run(A_ENGINE);
         } else

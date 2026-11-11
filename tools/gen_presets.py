@@ -24,6 +24,7 @@ def load():
     for n in names:
         runpy.run_path(str(HERE / "presets" / f"{n}.py"), run_name="presets." + n)
     ps = sorted(lib.PRESETS, key=lambda p: lib.ENGINES.index(p["engine"]))   # (stable: the files' order within)
+    ps = [p for p in ps if p["engine"] in ("sample", "slice", "kit", "midi")]   # WARP-8: the engines left
     seen = set()
     for p in ps:
         assert p["name"] not in seen, f"two presets named {p['name']}"

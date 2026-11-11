@@ -1,6 +1,15 @@
 # recording on the first note: COUNT (REC held, knob 2) "on note": REC + PLAY waits, nothing moves, until a key;
 # that note lands on step 1 and the transport runs from there
 wait 300
+# (WARP-8: a new project is eight kits; this scenario's melodic tracks are sample tracks)
+knob 2 engine 6
+knob 3 engine 6
+knob 4 engine 6
+knob 5 engine 6
+knob 6 engine 6
+knob 7 engine 6
+knob 8 engine 6
+wait 40
 turn ALGO 1
 expect trk 2
 tap SEQ

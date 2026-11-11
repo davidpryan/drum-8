@@ -1,5 +1,14 @@
 # a bass line on track 3 with components: a note from the keys, steps, a ramp, a chance, a lock, undo
 wait 200
+# (WARP-8: a new project is eight kits; this scenario's melodic tracks are sample tracks)
+knob 2 engine 6
+knob 3 engine 6
+knob 4 engine 6
+knob 5 engine 6
+knob 6 engine 6
+knob 7 engine 6
+knob 8 engine 6
+wait 40
 spin ALGO 2
 expect trk 3
 tap EDIT
