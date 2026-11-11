@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MPL-2.0
-"""Make the LOOM-8 site for GitHub Pages (https://charlesvestal.github.io/fm1-loom/):
+"""Make the WARP-8 site for GitHub Pages (https://davidpryan.github.io/drum-8/), with LOOM-8's site builder (its
+pages, renamed: every page says WARP-8 but the manual, which is LOOM-8's own, under a note):
 
   index.html                    what LOOM-8 is, and the ways in: try, install, download, manual, source
   manual/index.html             docs/MANUAL.md as a page (tools/make_manual.py), its screenshots in img/
@@ -38,7 +39,9 @@ import make_site as base_site  # noqa: E402  (fm1-base's: the installer, the bac
 from make_site import product_of, strip_module  # noqa: E402
 
 import os  # noqa: E402
-REPO = os.environ.get("LOOM_REPO") or "https://github.com/charlesvestal/fm1-loom"   # (LOOM_REPO: a fork's site links its own)
+REPO = os.environ.get("LOOM_REPO") or "https://github.com/davidpryan/drum-8"   # (LOOM_REPO: a fork's site links its own)
+NAME = "WARP-8"
+LOOM = "@@LOOM@@"                     # LOOM-8 where a page means LOOM-8 itself (main() renames the rest)
 # the app's look (app/pages.c THEMES[0], "tape deck"): its eight track inks, and the site's palette from it: dark is the
 # FM-1's screen, light the same browns on cream paper. Every page of the site wears it (dress()), whatever names its own
 # stylesheet gives the colours, with a header to go between them.
@@ -93,8 +96,8 @@ def dress(page, here):
                     for d, t in SECTIONS)
     links += f'<a href="{REPO}">Source</a>'
     top = (f'<header class="lm-top"><a class="lm-brand" href="{up or "./"}"' + (' aria-current="page"' if not here else "") +
-           f'><span class="lm-threads" aria-hidden="true">{threads}</span>LOOM-8</a>'
-           f'<nav aria-label="LOOM-8">{links}</nav></header>')
+           f'><span class="lm-threads" aria-hidden="true">{threads}</span>WARP-8</a>'
+           f'<nav aria-label="WARP-8">{links}</nav></header>')
     if page.count("</head>") != 1 or not re.search(r"<body[^>]*>", page):
         raise SystemExit(f"dress: {here or 'index'}: no head or body")
     page = page.replace("</head>", SITE_CSS + "</head>")
@@ -105,8 +108,8 @@ LANDING = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LOOM-8</title>
-<meta name="description" content="A pocket groovebox for the M-VAVE FM-1: eight tracks, each in its own colour, a 64-step sequencer with tricks and locks, weave, throws, a conductor and a song.">
+<title>WARP-8</title>
+<meta name="description" content="A pocket drum machine for the M-VAVE FM-1: LOOM-8's sequencer with every track a drum kit, and Hortator's drum models and sounds on the keys.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600&family=Barlow+Semi+Condensed:wght@600;700&display=swap">
@@ -144,46 +147,50 @@ code { font-size: .9em; }
 </head>
 <body>
 <main>
-<h1>LOOM-8</h1>
+<h1>WARP-8</h1>
 <div class="threads" aria-hidden="true">__THREADS__</div>
-<p class="lede">A pocket groovebox for the M-VAVE FM-1. Eight tracks, each in its own colour, on six synth
-engines, a sample player, a break slicer and a drum kit; a 64-step sequencer with tricks and parameter locks; and weave, which crosses two
-patterns into a third.</p>
-<div class="video"><iframe src="https://www.youtube-nocookie.com/embed/d84QXnfulRE" title="LOOM-8 video" loading="lazy"
-  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+<p class="lede">A pocket drum machine for the M-VAVE FM-1: <a href="https://github.com/charlesvestal/fm1-loom">@@LOOM@@</a>'s
+sequencer, mixer and effects with every track a drum kit, and <a href="https://deadactive.github.io/hortator/">Hortator</a>'s
+drum models and factory sounds on the keys.</p>
 <div class="shots">
-  <img src="img/screen-beat-playing.png" width="240" height="240" alt="The Steps page on T1, the kit, playing: kick and snare in pink, the playhead lit">
-  <img src="img/screen-arrange.png" width="240" height="240" alt="Arrange: every track's pattern in its own colour, the scene number large at the right">
-  <img src="img/screen-weave.png" width="240" height="240" alt="The Steps list with WEAVE WITH COPIED picked, its way set to rhythm">
+  <img src="img/warp-steps.png" width="240" height="240" alt="The Steps page on track 1, a kit: sixteen empty steps, pattern 1 of length 16">
+  <img src="img/warp-kit.png" width="240" height="240" alt="A kit's eleven keys on the TRX kit, each named by its Hortator model, with the selected key's four knobs below">
+  <img src="img/warp-drumsound.png" width="240" height="240" alt="A kit key's list with DRUM SOUND at the top, showing the preset FMSUB on the bdefm model">
 </div>
-<div class="status"><strong>Version __VERSION__.</strong> It installs and
-uninstalls the way every fm1-base firmware does, and the installer can put M-VAVE's own firmware back. Installing is at your own risk.</div>
-<nav class="ways" aria-label="Get LOOM-8">
+<div class="status"><strong>Version __VERSION__. Not yet tested on an FM-1.</strong> It builds and passes its tests in the
+simulator; nobody has run this build on the hardware. It installs and uninstalls the way every fm1-base firmware
+does, and the installer can put M-VAVE's own firmware back, but until someone has tried it, treat it as an experiment.
+Installing is at your own risk. It starts with fresh projects: back up @@LOOM@@ first if you have work in it.</div>
+<nav class="ways" aria-label="Get WARP-8">
   <a href="emu/"><strong>Try it in the browser</strong><span>The same code the FM-1 runs, with sound. No FM-1 needed.</span></a>
-  <a href="manual/"><strong>Read the manual</strong><span>A ten-minute quick start, every page and gesture, with screenshots.</span></a>
   <a href="install/"><strong>Install</strong><span>From Chrome or Edge, with the FM-1 connected by USB. Nothing to install on the computer.</span></a>
+  <a href="manual/"><strong>Read @@LOOM@@'s manual</strong><span>WARP-8 has no manual of its own yet. The sequencer, the kit, the mixer and the effects work as @@LOOM@@'s do; its synth engines are not here.</span></a>
   <a href="samples/"><strong>Samples</strong><span>Put your own samples on the FM-1: add, replace, rename, reorder and remove up to 32.</span></a>
   <a href="backup/"><strong>Backup</strong><span>Save your projects, presets and samples to a file, and load them back later.</span></a>
   <a href="mirror/"><strong>Mirror</strong><span>The FM-1's screen on your computer, live, and its buttons, keys and knobs to play from there.</span></a>
   <a href="firmware/__PKG__"><strong>Download __PKG__</strong><span>For the command-line installer: <code>python3 base/tools/fm1_install.py __PKG__</code></span></a>
-  <a href="__REPO__"><strong>Source</strong><span>GitHub, GPL-3.0 (most files MPL-2.0). Built on fm1-base and felucca-bsp, from Felucca by Leo Kuroshita (Hügelton Instruments).</span></a>
+  <a href="__REPO__"><strong>Source</strong><span>GitHub, GPL-3.0. A fork of @@LOOM@@ by Charles Vestal, with Hortator's drum models by DEADACTIVE, on Felucca by Leo Kuroshita (Hügelton Instruments).</span></a>
 </nav>
 
 <h2>What's in it</h2>
 <ul class="feat">
-  <li><b>Eight tracks</b>, each with eight patterns of up to 64 steps: knit (the everyday subtractive voice, with a supersaw unison), rayon (two-operator FM), jacquard (wavetables), bellows (an organ), cane and voile (physical models and voices from Mutable Instruments Braids) and acid (a TB-303 bass line, with accent and slide) synths; sample and slice, which play the sample bank and chop breaks; the kit, eleven drum voices on the black keys; or midi, which plays another synth over USB or Bluetooth, eight knobs sending its CCs. 93 factory presets, and 16 of your own.</li>
-  <li><b>Tricks</b> on any step: pulse, hold, multiply, ramps, bends, jumps, skips and more; <b>locks</b> for any knob on any step.</li>
-  <li><b>Weave</b> a pattern with a copied one: bars or steps in turn, or one's rhythm playing the other's notes.</li>
-  <li><b>Players</b>: arp, strum (one key plays a recorded chord) and hold.</li>
-  <li><b>The conductor</b> moves the tracks that follow it through a key, a scale and a progression.</li>
-  <li><b>Throws</b>: twelve momentary effects a hand, held from the keys, and recorded if you like.</li>
-  <li>Two <b>send effects</b> (the reverb with the PlayStation's own reverbs among its modes), a mixer with EQ and a compressor on the master, thirty-two <b>scenes</b> and a <b>song</b>.</li>
-  <li>A <b>screen reader</b>: the FM-1 says its screen through <a href="https://charlesvestal.github.io/fm1-reader/">FM-1 Screen Reader</a>.</li>
+  <li><b>Eight tracks, every one a kit</b> if you like: eleven keys a kit, each key a drum model with its own knobs, envelope, filter, pan and sends. Sample, slice and MIDI out tracks are there too.</li>
+  <li><b>73 drum models</b>: @@LOOM@@'s thirty and 43 of Hortator's: the 808 and 909 family, Plaits' kicks, snares and hats, a struck membrane, FM, and the TRX and EFM voices measured from the Machinedrum.</li>
+  <li><b>DRUM SOUND</b>: 143 of Hortator's factory sounds, onto any key from its list.</li>
+  <li><b>Sixteen factory kits</b>, six of them made of Hortator's sounds: TRX, EFM, 808, 909, Modern, Hard.</li>
+  <li>@@LOOM@@'s <b>sequencer</b>: eight patterns a track of up to 64 steps, tricks and parameter locks on any step, weave, throws, scenes and a song.</li>
+  <li>Two <b>send effects</b>, a mixer with EQ and a compressor on the master.</li>
+</ul>
+<h2>What's not</h2>
+<ul class="feat">
+  <li>@@LOOM@@'s synth engines (knit, rayon, jacquard, bellows, cane, voile, acid): taken out to make room.</li>
+  <li>Hortator's ACID and SAMPL models, and their eight presets.</li>
+  <li>A manual of its own.</li>
 </ul>
 <p class="small">To go back to the official firmware, use the installer's "Back to the stock firmware", or
-M-VAVE's updater, M-UPGRADE, from <a href="https://www.m-vave.com/download">m-vave.com/download</a>. LOOM-8's
-way of working owes a great deal to teenage engineering's OP-XY. M-VAVE, FM-1 and OP-XY are trademarks of their
-owners; LOOM-8 is not affiliated with any of them.</p>
+M-VAVE's updater, M-UPGRADE, from <a href="https://www.m-vave.com/download">m-vave.com/download</a>. @@LOOM@@'s
+way of working owes a great deal to teenage engineering's OP-XY. M-VAVE, FM-1, Machinedrum and OP-XY are trademarks of
+their owners; WARP-8 is not affiliated with any of them, nor with @@LOOM@@ or Hortator.</p>
 </main>
 </body>
 </html>
@@ -194,11 +201,11 @@ def main(pkg, version, out):
     pkg, out = Path(pkg), Path(out)
     raw = pkg.read_bytes()
     product = product_of(raw)
-    if not re.fullmatch(r"FM-1_10\d{6}", product):
+    if not re.fullmatch(r"FM-1_18\d{6}", product):
         raise SystemExit(f"{pkg}: identity {product!r}: make a release build (./build.sh --release X.Y)")
     if b"FELUCCA-LOADER-1" not in raw:
         raise SystemExit(f"{pkg}: no update loader in it")
-    name = f"loom-{re.sub(r'[^A-Za-z0-9.-]', '-', version)}.fwsc"
+    name = f"warp-{re.sub(r'[^A-Za-z0-9.-]', '-', version)}.fwsc"
     if out.exists():
         shutil.rmtree(out)
     for d in ("install", "firmware", "backup", "mirror"):
@@ -236,20 +243,21 @@ def main(pkg, version, out):
     conf = base_site.read_conf(SRC / "app" / "fm1.toml")
     credits = conf.get("credits", "").replace("Built on fm1-base and felucca-bsp, from Felucca by Leo Kuroshita (Hügelton "
                                               "Instruments). ", "")        # (the page says that part itself)
+    credits = credits.replace("LOOM-8", LOOM)                               # (LOOM-8 itself, whose fork this is)
     for key, val in (("RES", conf["resources_what"]), ("RES_JA", conf["resources_what_ja"]),   # (fm1.toml)
-                     ("NAME", "LOOM-8"), ("REPO", REPO), ("REPO_SHORT", REPO.replace("https://", "")),
+                     ("NAME", NAME), ("REPO", REPO), ("REPO_SHORT", REPO.replace("https://", "")),
                      ("LICENSE", conf.get("licence", "MPL-2.0")), ("CREDITS", " " + credits if credits else "")):
         page = page.replace("{{" + key + "}}", val)
     # since 0.7 the breaks are a pack for the user bank: say so where the firmware is installed
     warn = '<p data-t="warn">'
     if page.count(warn) != 1:
         raise SystemExit(f"base/web/installer.html must contain {warn} once")
-    page = page.replace(warn, '<p class="note"><b>LOOM-8\'s sounds now live in the sample bank.</b> From 0.8, its own '
-                        'sounds (the kits\' drums, the instruments, the sweep and the vinyl: 86 KB) are no longer built '
-                        'into the firmware, to make room for Bluetooth MIDI. The installer adds them to the sample bank '
-                        'after your samples, which keep their numbers; if your samples leave no room for them, it asks '
-                        'first. The four breaks (from 0.7) are on <a href="../samples/">the samples page</a>: "Add the '
-                        'breaks".</p>\n  ' + warn)
+    page = page.replace(warn, '<p class="note"><b>Not yet tested on an FM-1.</b> This build passes its tests in the '
+                        'simulator; nobody has run it on the hardware. The installer can put the stock firmware back.</p>\n  '
+                        '<p class="note"><b>The sample models\' sounds live in the sample bank.</b> The installer adds '
+                        'them (the sample kits\' drums, the instruments, the sweep and the vinyl: 86 KB) after your '
+                        'samples, which keep their numbers; if your samples leave no room for them, it asks first. The '
+                        'four breaks are on <a href="../samples/">the samples page</a>: "Add the breaks".</p>\n  ' + warn)
     page = page.replace("</style>", "  .note { border-left: 4px solid var(--accent); padding: 4px 0 4px 12px; }\n</style>", 1)
     # the installer's own steps for LOOM-8 (base/web/installer.html APP): the factory set into the sample bank
     app_js = ("(() => {\n" + strip_module((SRC / "app" / "web" / "samples" / "loom_samples.js").read_text(encoding="utf-8"))
@@ -269,7 +277,7 @@ def main(pkg, version, out):
                 "for the projects and presets (the same files: it leaves their samples alone), and "
                 "<code>python3 tools/loom_samples.py backup</code> / <code>restore</code> for the samples (its restore "
                 "takes this page's files too).")
-    tools = base_site.tool_pages(SRC / "app", conf, {"NAME": "LOOM-8", "EXTRAS_JS": extras, "EXTRA": note,
+    tools = base_site.tool_pages(SRC / "app", conf, {"NAME": NAME, "EXTRAS_JS": extras, "EXTRA": note,
                                                      "TERMINAL": terminal})
     (out / "backup" / "index.html").write_text(tools["backup/index.html"], encoding="utf-8")
     (out / "mirror" / "index.html").write_text(tools["mirror/index.html"], encoding="utf-8")
@@ -297,6 +305,14 @@ def main(pkg, version, out):
                     str(out / "manual" / "index.html")], check=True)
     for f in (out / "manual" / "index.html",):    # the manual's pictures are the site's img/
         f.write_text(f.read_text(encoding="utf-8").replace('src="img/', 'src="../img/'), encoding="utf-8")
+    # the manual is LOOM-8's own: say so at its top, and keep its name through the renaming below
+    mf = out / "manual" / "index.html"
+    banner = ('<p style="border-left:4px solid var(--accent);padding:4px 0 4px 12px"><b>This is LOOM-8\'s manual.</b> '
+              'WARP-8 has none of its own yet. The sequencer, the kit, the mixer, the effects and the pages work as written '
+              'here; the synth engines (knit, rayon, jacquard, bellows, cane, voile, acid) and their presets are not in '
+              'WARP-8, a new project is eight kits, and a kit key has Hortator\'s models and DRUM SOUND besides.</p>')
+    mt = mf.read_text(encoding="utf-8").replace("LOOM-8", LOOM)
+    mf.write_text(re.sub(r"(<h1[^>]*>)", lambda m: banner.replace("LOOM-8", LOOM) + m.group(1), mt, count=1), encoding="utf-8")
     emu = SRC / "app" / "build" / "emu"
     if not (emu / "app.wasm").exists():
         raise SystemExit("no app/build/emu/app.wasm: run ./build.sh --web (needs Emscripten)")
@@ -308,6 +324,10 @@ def main(pkg, version, out):
                        ("emu/index.html", "emu/")):
         f = out / path
         f.write_text(dress(f.read_text(encoding="utf-8"), here), encoding="utf-8")
+    # every page says WARP-8 where LOOM-8's pages said LOOM-8; LOOM (the sentinel) is LOOM-8 itself
+    for f in out.rglob("*.html"):
+        t = f.read_text(encoding="utf-8")
+        f.write_text(t.replace("LOOM-8", NAME).replace(LOOM, "LOOM-8"), encoding="utf-8")
     (out / ".nojekyll").write_text("")
     print(f"site: {out}: index.html, manual/, install/ ({product}), backup/, mirror/, samples/, emu/, words/, firmware/{name} ({len(raw)} B)")
 

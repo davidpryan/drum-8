@@ -19,7 +19,7 @@ if [ -n "${SITE_PASSWORD:-}" ]; then
     SALT="$(openssl rand -hex 16)"
     (cd build/pages && find . -name '*.html' | while read -r f; do
         STATICRYPT_PASSWORD="$SITE_PASSWORD" npx --yes staticrypt@3 "$f" -c false -s "$SALT" --short --remember 0 \
-            --template-title "LOOM-8" --template-instructions "LOOM-8 is not out yet: the password, please." \
+            --template-title "WARP-8" --template-instructions "WARP-8 is not out yet: the password, please." \
             --template-button "OPEN" --template-color-primary "#c8306f" --template-color-secondary "#f4f3f1" \
             -d "$(dirname "$f")" >/dev/null
     done)
@@ -31,7 +31,7 @@ cd build/pages
 rm -rf .git
 git init -q -b gh-pages
 git add -A
-git commit -q -m "Site for LOOM-8 $V (from $SHA)"
+git commit -q -m "Site for WARP-8 $V (from $SHA)"
 git push -q -f "$REMOTE" gh-pages
 rm -rf .git
 # ask GitHub Pages to build it now: a push alone has left the first deploy stuck on "building"

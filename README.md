@@ -24,8 +24,9 @@ What is different from LOOM-8:
   their own tag, so it starts fresh on an FM-1 that had LOOM-8 (LOOM-8's projects are not read; a LOOM-8 backup's
   kits and presets still restore).
 
-Not done: an install page and site of its own (`tools/make_pages.py`, `app/web/` and the manual are still LOOM-8's),
-the screen reader's words file, the tests in `tests/parked/`, and the dead engines' source and pages, which are still
+The site, with the web installer and the emulator: <https://davidpryan.github.io/drum-8/> (`tools/publish_pages.sh`).
+
+Not done: a manual of its own (the site carries LOOM-8's, under a note), the tests in `tests/parked/`, and the dead engines' source and pages, which are still
 in the tree. Bringing in a newer Hortator: `tools/import_hortator.sh PATH`, then `tools/gen_hort_models.py` and
 `tools/gen_hort_presets.py`.
 
