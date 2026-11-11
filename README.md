@@ -18,6 +18,11 @@ What is different from LOOM-8:
 - **DRUM SOUND** in a kit key's SELECT list: 143 of Hortator's factory presets, each a model and its knobs, onto the
   key shown.
 - **Six more factory kits** made of those presets: TRX, EFM, 808, 909, Modern, Hard.
+- **A kit's Steps page is a grid** of its eleven keys, each a lane of sixteen steps: a black key picks the lane, the
+  white keys write it.
+- **Generators**: a lane held on the grid has its hits, rotation, variation and clearing on the knobs; the Generate
+  page (SEQ's third on a kit) previews Euclid, mutate and Grids on the grid and SEL writes them. `docs/GRIDS-PERFORM.md`
+  is a plan for Grids played live.
 - **Voices**: eight Hortator hits at once over all kits, four of LOOM-8's 909 models, one string, eight sample or
   slice voices (LOOM-8: sixteen synth voices, eight 909, two strings, three kits).
 - **Its own identity**: the package is `warp.fwsc`, identity `FM-1_18`, USB name `WARP-8 FM-1`, and its projects carry
