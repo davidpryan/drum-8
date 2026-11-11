@@ -102,10 +102,10 @@ static uint16_t col_mix(uint16_t a, uint16_t b, uint32_t s)   /* a moved s/16 of
  * kit, after its bus filter), its sends and the two effects; ARP three with the arp (its page 2, then hold). EDIT on a synth
  * track: Engine, Play, Play 2 (the octave), then Sub where the engine has a second page of knobs (TP_X1..X4: knit's
  * oscillator 2, level, sub, noise; rayon's fall); a kit or an FX track Engine and Play; the conductor Engine, Play (routing), Sub (Follow) */
-enum { P_ARRANGE, P_SONG, P_STEPS, P_BAR, P_ENGINE, P_PLAY, P_PLAY2, P_SUB, P_ENV, P_FILTER, P_ENV2, P_KITF, P_CHARACTER, P_SENDS,
+enum { P_ARRANGE, P_SONG, P_STEPS, P_BAR, P_GEN, P_ENGINE, P_PLAY, P_PLAY2, P_SUB, P_ENV, P_FILTER, P_ENV2, P_KITF, P_CHARACTER, P_SENDS,
        P_FX1, P_FX2, P_THROWS, P_LFO, P_LFO2, P_PLAYERS, P_PLAYERS2, P_PLAYERS3, P_WEAVE, P_MIX, P_MASTER, P_MASTER2, P_MASTER3, P_GLFO, P_SETUP,
        P_STATUS, NPAGES };
-static const char *const PAGE_NAME[NPAGES] = {"Arrange", "Song", "Steps", "Bar", "Engine", "Play", "Play 2", "Sub", "Envelope",
+static const char *const PAGE_NAME[NPAGES] = {"Arrange", "Song", "Steps", "Bar", "Generate", "Engine", "Play", "Play 2", "Sub", "Envelope",
                                               "Filter", "Filter env", "Kit filter", "Character", "Sends", "FX I",
                                               "FX II", "Throws", "LFO", "LFO 2", "Players", "Players 2", "Hold", "Weave", "Mix",
                                               "Master EQ", "Master color", "Master out", "LFO", "Setup", "Debug"};
@@ -137,7 +137,7 @@ static uint32_t glfo_route(void)                 /* the tracks it moves: bit t *
 }
 static int mst_base(int p) { return p == P_MASTER ? MS_EQ_LO : p == P_MASTER2 ? MS_CTYPE : MS_PERC; }   /* its first knob */
 static const struct { uint8_t btn, first, n; } PAGE_BTN[] = {
-    {B_HOME, P_ARRANGE, 2}, {B_SEQ, P_STEPS, 2}, {B_EDIT, P_ENGINE, 4}, {B_ENV, P_ENV, 4}, {B_FX, P_CHARACTER, 5},
+    {B_HOME, P_ARRANGE, 2}, {B_SEQ, P_STEPS, 3}, {B_EDIT, P_ENGINE, 4}, {B_ENV, P_ENV, 4}, {B_FX, P_CHARACTER, 5},
     {B_LFO, P_LFO, 2}, {B_ARP, P_PLAYERS, 4}, {B_GLO, P_MIX, 7}};
 #define NPAGE_BTN (sizeof PAGE_BTN / sizeof PAGE_BTN[0])
 static int page_group(int p)
@@ -261,7 +261,7 @@ static struct {
     uint32_t solo_tap_t;
     uint16_t preset_i, pick_preset;               /* (more than 255 presets and user slots) */
     uint8_t pick_engine, pick_slot, pick_fx, pick_weave, pick_save;   /* (pick_save: SAVE TO's slot) */
-    uint8_t pick_euc, pick_eurot, pick_mut, pick_gx, pick_gy, pick_gfill;   /* the generators' picks (gen_*) */
+    uint8_t gen_set, gen_kind, gen_hits, gen_rot, gen_mode, gen_amt, gen_seed, gen_x, gen_y, gen_fill;   /* Generate */
     uint8_t pick_dsound;                             /* a kit key's DRUM SOUND: a Hortator preset (HPRESET) */
     uint8_t pick_kit, pick_kslot;                    /* a kit track's KIT (0..3 factory, 4.. user) and SAVE KIT */
     uint8_t pick_bt;                                 /* Bluetooth audio's FORGET: the remembered device */
@@ -290,8 +290,7 @@ enum { A_CLEAR_NOTES, A_CLEAR_LOCKS, A_CLEAR_BOTH, A_COPY_PAT, A_PASTE_PAT, A_RO
        A_KIT, A_SAVE_KIT, A_MIDI_CC, A_USB_HOST, A_BT_MIDI, A_BT_AUDIO, A_BT_ADEV, A_BT_DEVICE, A_BT_DEV, A_BT_LOOK,
        A_BT_FORGET, A_BT_DISCONNECT, A_CLEAR, A_ROTATE, A_PASTE, A_COPY_EMPTY, A_CLEAR_BAR,
        A_COPY_SOUND, A_PASTE_SOUND, A_COPY_KEY, A_PASTE_KEY, A_COPY_SCENE, A_PASTE_SCENE, A_DUP_SLOT, A_KIT_FILTER,
-       A_SHIFT, A_LARGE_TYPE, A_CC_IN, A_FX_WIDTH, A_SCALE_LOCK, A_DRUM_SOUND,
-       A_EUCLID, A_EUCLID_ROT, A_MUTATE, A_GRIDS_X, A_GRIDS_Y, A_GRIDS_FILL, NACTIONS };
+       A_SHIFT, A_LARGE_TYPE, A_CC_IN, A_FX_WIDTH, A_SCALE_LOCK, A_DRUM_SOUND, NACTIONS };
 static const char *const ACTION_NAME[NACTIONS] = {
     "CLEAR NOTES", "CLEAR LOCKS", "CLEAR NOTES AND LOCKS", "COPY PATTERN", "PASTE PATTERN", "ROTATE FORWARD",
     "ROTATE BACK", "DUPLICATE BAR", "ENGINE", "PRESET", "SCRAMBLE", "SAVE AS PRESET", "RESET SOUND", "FOLLOWS CONDUCTOR",
@@ -303,7 +302,7 @@ static const char *const ACTION_NAME[NACTIONS] = {
     "USB PORT", "BT MIDI", "BT AUDIO", "AUDIO DEVICE", "MIDI DEVICE", "DEVICE", "LOOK AGAIN", "FORGET", "DISCONNECT",
     "CLEAR", "ROTATE", "PASTE", "COPY TO EMPTY", "CLEAR BAR", "COPY SOUND", "PASTE SOUND", "COPY DRUM", "PASTE DRUM",
     "COPY SCENE", "PASTE SCENE", "DUPLICATE SLOT", "KIT FILTER", "SHIFT NOTES", "LARGE TYPE", "CC IN", "PING WIDTH", "SCALE LOCK",
-    "DRUM SOUND", "EUCLID HITS", "EUCLID ROTATE", "MUTATE", "GRIDS X", "GRIDS Y", "GRIDS FILL"};
+    "DRUM SOUND"};
 static const char *const CLEAR_WHAT[3] = {"notes", "locks", "notes and locks"};
 /* a pick ALGORITHM sets at once (a setting: SEL only leaves the list), as against a choice SEL then carries out */
 static int pick_sets(int a)
@@ -605,7 +604,8 @@ enum { AL_INFO, AL_DONE, AL_UNDO, AL_REDO, AL_ASK, AL_NO };
 static int sel_trk(void) { return proj.trk_sel < NALLTRK ? proj.trk_sel : 0; }
 static int is_aux(int t) { return t >= NTRK; }
 static int is_seqt(int t) { return t < NSEQT; }
-static int steps_page(int p) { return p == P_STEPS || p == P_BAR; }   /* SEQ's pages: both write steps */
+static int steps_page(int p) { return p == P_STEPS || p == P_BAR || p == P_GEN; }   /* SEQ's pages: all write steps
+                                                                                    * (Generate: WARP-8's, a kit's third) */
 static int is_drum(int t) { return t < NTRK && proj.trk[t].par[TP_ENGINE] == EG_DRUMLINE; }
 static int is_midi(int t) { return t < NTRK && proj.trk[t].par[TP_ENGINE] == EG_MIDI; }   /* (no sound: notes and CCs
                                                                                          * out, synth.h EG_MIDI) */
@@ -702,8 +702,9 @@ static int x_page(int t)                             /* the engine has a second 
 static int group_n(int g)
 {
     int trk = sel_trk(), b = PAGE_BTN[g].btn;
-    if (b == B_SEQ && trk == AUX_WEAVE)
-        return 1;                                    /* (WEAVE's steps: no Bar page) */
+    if (b == B_SEQ)                                  /* (WEAVE's steps: no Bar page; a kit: Generate third, with its
+                                                      * grid, so not in large type) */
+        return trk == AUX_WEAVE ? 1 : is_drum(trk) && !LARGE ? 3 : 2;
     if (b == B_EDIT)                                 /* (grp_page: the conductor's Sub third; a kit, an FX track: two) */
         return trk == AUX_PUNCH || trk == AUX_WEAVE ? 1 : trk == AUX_BRAIN ? 3 : is_aux(trk) ? 2
              : x_page(trk) ? 4 : 3;      /* (a kit: Engine, Key, Sends: the key's own; Engine 2 after Engine when the
@@ -1575,6 +1576,94 @@ static void aux_engine_knobs(knob_t *k, int trk)
             kn(&k[i], short_name(fx_knob_name(pick, i)), par[TP_E1 + i] * 100 / 128, 99);
     }
 }
+/* ---- WARP-8's generators (the Generate page, and a lane held on the grid: ui.c gen_knob, gen_write, lane_knob).
+ * A lane is a key's bit on the pattern's steps (seq/pattern.h kit_*): here a byte a step, 1 = a hit ---- */
+#include "gen_grids.h"
+enum { GEN_EUCLID, GEN_MUTATE, GEN_GRIDS, NGEN };
+enum { GM_REPLACE, GM_ADD, GM_MASK, NGM };
+static const char *const GEN_NAME[NGEN] = {"euclid", "mutate", "grids"};
+static const char *const GM_NAME[NGM] = {"replace", "add", "mask"};
+static void gen_init(void)                           /* (its knobs' first values: four hits, 30 %, the map's middle) */
+{
+    if (ui.gen_set)
+        return;
+    ui.gen_set = 1;
+    ui.gen_hits = 4;
+    ui.gen_amt = 30;
+    ui.gen_x = ui.gen_y = ui.gen_fill = 64;
+}
+static int pat_n(const tpat_t *tp) { return tp->len < 1 ? 1 : tp->len > NSTEP ? NSTEP : tp->len; }
+static void lane_get(const tpat_t *tp, int key, uint8_t *on)
+{
+    for (int i = 0; i < NSTEP; i++)
+        on[i] = (uint8_t)(i < pat_n(tp) && kit_has(&tp->st[i], key + 1));
+}
+/* EUCLID: hits spread as evenly as they go over n steps, turned rot steps later (step i has one where
+ * (i x hits) mod n < hits: the Bresenham spread) */
+static void lane_euclid(uint8_t *on, int n, int hits, int rot)
+{
+    if (hits > n)
+        hits = n;
+    for (int i = 0; i < n; i++)
+        on[i] = (uint8_t)(hits > 0 && ((i - rot % n + n) % n * hits) % n < hits);
+}
+/* MUTATE: a lane varied by amt %: a hit off the beat may move a step either way or drop out (the amount's half), an
+ * empty step may take one (its eighth); the hits on the beats (every fourth step) stay. The same seed, the same
+ * result */
+static void lane_mutate(uint8_t *on, int n, int amt, uint32_t seed)
+{
+    uint8_t was[NSTEP];
+    uint32_t r = (seed + 1u) * 2654435761u | 1u;
+    for (int i = 0; i < n; i++)
+        was[i] = on[i];
+    for (int i = 0; i < n; i++) {
+        r ^= r << 13, r ^= r >> 17, r ^= r << 5;
+        if (was[i] && i % 4 && (int)(r % 200u) < amt) {
+            int to = (i + ((r >> 8 & 1u) ? 1 : n - 1)) % n;
+            on[i] = 0;
+            if ((r >> 9 & 1u) && !was[to])
+                on[to] = 1;
+        } else if (!was[i] && (int)(r % 800u) < amt)
+            on[i] = 1;
+    }
+}
+/* what the Generate page would write now: out[j] the lane of key[j], for the lanes returned (1: EUCLID and MUTATE,
+ * the lane shown; 3: GRIDS, the kit's first three keys: kick, snare, hat) */
+static int gen_result(const tpat_t *tp, uint8_t out[3][NSTEP], int key[3])
+{
+    int n = pat_n(tp);
+    gen_init();
+    if (ui.gen_kind % NGEN == GEN_GRIDS) {
+        for (int ch = 0; ch < 3; ch++) {
+            key[ch] = ch;
+            for (int i = 0; i < NSTEP; i++)
+                out[ch][i] = (uint8_t)(i < n && grids_hit(i, ch, ui.gen_x, ui.gen_y, ui.gen_fill));
+        }
+        return 3;
+    }
+    key[0] = ui.dsound % DL_NSOUND;
+    lane_get(tp, key[0], out[0]);
+    if (ui.gen_kind % NGEN == GEN_MUTATE)
+        lane_mutate(out[0], n, ui.gen_amt, ui.gen_seed);
+    else {
+        uint8_t e[NSTEP];
+        lane_euclid(e, n, ui.gen_hits, ui.gen_rot);
+        for (int i = 0; i < n; i++)
+            out[0][i] = (uint8_t)(ui.gen_mode % NGM == GM_ADD ? (out[0][i] | e[i]) : ui.gen_mode % NGM == GM_MASK ? (out[0][i] & e[i]) : e[i]);
+    }
+    return 1;
+}
+/* a lane held: a black key down on a kit's step pages, no step or button held (its knobs shape the lane); + 1 */
+static int lane_held(void)
+{
+    if (!steps_page(ui.page) || !is_drum(sel_trk()) || ui.held || ui.btn || lst.open || LARGE)
+        return 0;
+    for (int b = 0; b < DL_NSOUND; b++)
+        if (ui.keys >> BLACK_K[b] & 1u)
+            return b + 1;
+    return 0;
+}
+
 static void page_knobs(knob_t *k)
 {
     int trk = sel_trk(), p = ui.page;
@@ -1595,6 +1684,36 @@ static void page_knobs(knob_t *k)
     }
     if (ui.lockpg) {
         lock_knobs(k);
+        return;
+    }
+    if (lane_held()) {                               /* a kit's lane held: the knobs shape it (ui.c lane_knob) */
+        uint8_t on[NSTEP];
+        int c = 0;
+        lane_get(tp, lane_held() - 1, on);
+        for (int i = 0; i < NSTEP; i++)
+            c += on[i];
+        kn(&k[0], "HITS", c, pat_n(tp));
+        kv(&k[1], "ROTATE", "turn", 0, 0);
+        kv(&k[2], "MUTATE", "turn", 0, 0);
+        kv(&k[3], "CLEAR", "left", 0, 0);
+        return;
+    }
+    if (p == P_GEN && is_drum(trk)) {                /* Generate: the generator's three knobs, and which one */
+        gen_init();
+        if (ui.gen_kind % NGEN == GEN_EUCLID) {
+            kn(&k[0], "HITS", ui.gen_hits, 16);
+            kn(&k[1], "ROTATE", ui.gen_rot, 15);
+            kname(&k[2], "MODE", GM_NAME, ui.gen_mode % NGM, NGM);
+        } else if (ui.gen_kind % NGEN == GEN_MUTATE) {
+            s_cat(num_s(ui.gen_amt, t), "%");
+            kv(&k[0], "AMOUNT", t, ui.gen_amt, 100);
+            kn(&k[1], "SEED", ui.gen_seed + 1, 16);
+        } else {
+            kn(&k[0], "X", ui.gen_x, 127);
+            kn(&k[1], "Y", ui.gen_y, 127);
+            kn(&k[2], "FILL", ui.gen_fill, 127);
+        }
+        kname(&k[3], "TYPE", GEN_NAME, ui.gen_kind % NGEN, NGEN);
         return;
     }
     if (steps_page(p) && ui.trickpg && is_seqt(trk)) {
@@ -1979,7 +2098,7 @@ static void page_tag(char *t)
     case P_SONG:
         num_s((uint32_t)pats.song.len, s_cat(t, "song>slots "));
         break;
-    case P_STEPS: case P_BAR:
+    case P_STEPS: case P_BAR: case P_GEN:
         track_crumb(t);
         if (ui.lockpg) {
             int lp = ui.lockpg - 1;
@@ -2156,6 +2275,14 @@ static void page_footer(char *t)
                : "ALGO change|SEL back");                /* setting or a knob's row) */
         return;
     }
+    if (lane_held()) {
+        s_cat(t, "KNOBS shape the lane|let go: keep|HOME+REC undo");
+        return;
+    }
+    if (!ui.btn && ui.page == P_GEN && !ui.held && is_drum(sel_trk())) {
+        s_cat(t, ui.gen_kind % NGEN == GEN_GRIDS ? "SEL write kick, snare, hat|KNOB 4 type" : "SEL write the lane|BLACK lane|KNOB 4 type");
+        return;
+    }
     if (!ui.any_btn && ui.page == P_STEPS && !ui.held && !ui.chordmode) {
         s_cat(t, is_drum(sel_trk()) && !LARGE ? "BLACK lane|WHITE its steps|PLAY play" : "WHITE steps|PLAY play|hold a button: help");
         return;
@@ -2177,7 +2304,7 @@ static void page_footer(char *t)
     case P_SONG:
         s_cat(t, "WHITE add scene|PLAY song|OCT 1-16, 17-32");
         break;
-    case P_STEPS: case P_BAR:
+    case P_STEPS: case P_BAR: case P_GEN:
         if (trk == AUX_WEAVE && ui.page == P_STEPS)
             s_cat(t, ui.wv_step < NSTEP ? "BLACK 1-10 its tracks|WHITE its end" : "WHITE steps: a tap adds, again clears");
         else if (!is_seqt(trk))
@@ -2804,12 +2931,6 @@ static void list_page_section(int p)              /* a page's knobs under its na
         lst.n = (uint8_t)n;
 }
 static int pick_amount(int v) { return v ? v : 1; }   /* SHIFT NOTES', ROTATE's amount (never 0) */
-/* WARP-8's generators (a kit's Steps list, ui.c act_euclid, act_mutate, act_grids): what their picks mean. Each pick
- * starts at 0 and means its usual value there: four hits, no turn, 30 %, the map's middle, half full */
-static int gen_hits(void) { return (ui.pick_euc + 3) % 16 + 1; }          /* EUCLID HITS 1..16 */
-static int gen_rot(void) { return ui.pick_eurot % 16; }                   /* EUCLID ROTATE 0..15 steps later */
-static int gen_mut(void) { return ((ui.pick_mut + 2) % 10 + 1) * 10; }    /* MUTATE 10..100 % */
-static int gen_g(uint8_t v) { return (v + 8) % 17 * 127 / 16; }           /* GRIDS X, Y, FILL 0..127, 17 places */
 /* Steps and Bar: the pattern's actions, then the bar's */
 static void list_steps(int trk)
 {
@@ -2836,24 +2957,6 @@ static void list_steps(int trk)
         list_add(ACTION_NAME[A_SHIFT], sh_t, LK_PICK, A_SHIFT);
     }
     list_add(ACTION_NAME[A_DOUBLE], 0, LK_ACTION, A_DOUBLE);
-    if (is_drum(trk)) {                              /* WARP-8: the generators. Each writes the pattern (one undo):
-                                                      * EUCLID and MUTATE the lane shown, GRIDS the kit's first three
-                                                      * keys (kick, snare, hat) */
-        static char eh_t[8], er_t[8], mu_t[8], gx_t[8], gy_t[8], gf_t[8];
-        list_head("generate");
-        num_s((uint32_t)gen_hits(), eh_t);
-        list_add(ACTION_NAME[A_EUCLID], eh_t, LK_PICK, A_EUCLID);
-        num_s((uint32_t)gen_rot(), er_t);
-        list_add(ACTION_NAME[A_EUCLID_ROT], er_t, LK_PICK, A_EUCLID_ROT);
-        s_cat(num_s((uint32_t)gen_mut(), mu_t), "%");
-        list_add(ACTION_NAME[A_MUTATE], mu_t, LK_PICK, A_MUTATE);
-        num_s((uint32_t)gen_g(ui.pick_gx), gx_t);
-        list_add(ACTION_NAME[A_GRIDS_X], gx_t, LK_PICK, A_GRIDS_X);
-        num_s((uint32_t)gen_g(ui.pick_gy), gy_t);
-        list_add(ACTION_NAME[A_GRIDS_Y], gy_t, LK_PICK, A_GRIDS_Y);
-        num_s((uint32_t)gen_g(ui.pick_gfill), gf_t);
-        list_add(ACTION_NAME[A_GRIDS_FILL], gf_t, LK_PICK, A_GRIDS_FILL);
-    }
     num_s((uint32_t)ui.bar + 1u, s_cat(bar_t, "bar "));
     list_head(bar_t);
     list_add(ACTION_NAME[A_COPY_BAR], 0, LK_ACTION, A_COPY_BAR);
@@ -3640,7 +3743,10 @@ static void kit_grid(int trk, int pt, int ph, const tpat_t *tp)
 {
     const uint8_t *par = proj.trk[trk].par;
     uint32_t km = kit_slot(trk) >= 0 ? seq.kmute[kit_slot(trk)] : 0;
-    int nb = (tp->len + 15) / 16, pb = ph / 16;
+    int nb = (tp->len + 15) / 16, pb = ph / 16, gk[3] = {-1, -1, -1}, gn = 0;
+    uint8_t gen[3][NSTEP];
+    if (ui.page == P_GEN)                            /* Generate: what it would write, over the lanes it would write */
+        gn = gen_result(tp, gen, gk);
     for (int b = 0; b < DL_NSOUND; b++) {
         int32_t y = 1 + b * KG_ROW;
         int sel = b == ui.dsound % DL_NSOUND, muted = km >> b & 1u;
@@ -3663,6 +3769,13 @@ static void kit_grid(int trk, int pt, int ph, const tpat_t *tp)
             if (playing() && s == ph)
                 c = on ? K_NOW : K_NOW_T;
             cv_round(x, y, 10, 8, 2, c);
+            for (int g = 0; g < gn; g++)             /* a hit it would add: outlined; one it would take: hollowed */
+                if (gk[g] == b && gen[g][s] != (uint8_t)on) {
+                    if (on)
+                        cv_rect(x + 2, y + 2, 6, 4, K_BG);
+                    else
+                        cv_frame(x, y, 10, 8, 2, K_TEXT, c);
+                }
             if (!sel)
                 continue;
             if (on) {
@@ -3729,7 +3842,11 @@ static void draw_steps_as(void)
     }
     for (int i = 0; i < 16; i++)
         h = hash_u(h, step_has_lock(pats.lane, trk, pt, ui.bar * 16 + i));
-    if (drum) {                                      /* (the grid names its lanes by their models, dims the muted) */
+    if (drum) {                                      /* (the grid names its lanes by their models, dims the muted;
+                                                      * Generate draws what it would write) */
+        h = hash_u(h, (uint32_t)ui.page | (uint32_t)ui.gen_kind << 8 | (uint32_t)ui.gen_hits << 12 | (uint32_t)ui.gen_rot << 18 |
+                          (uint32_t)ui.gen_mode << 24 | (uint32_t)ui.gen_seed << 26);
+        h = hash_u(h, (uint32_t)ui.gen_amt | (uint32_t)ui.gen_x << 8 | (uint32_t)ui.gen_y << 16 | (uint32_t)ui.gen_fill << 24);
         for (int b = 0; b < DL_NSOUND; b++)
             h = hash_u(h, proj.trk[trk].par[TP_DRUM(b, DP_MODEL)]);
         h = hash_u(h, kit_slot(trk) >= 0 ? seq.kmute[kit_slot(trk)] : 0);
@@ -6103,6 +6220,7 @@ static void draw_page(void)
             draw_steps();
         break;
     case P_BAR: draw_bar(); break;
+    case P_GEN: draw_steps(); break;
     case P_CHARACTER: draw_character(); break;
     case P_SENDS: draw_sends(); break;
     case P_FX1: draw_fxtrack(AUX_FX1); break;

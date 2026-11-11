@@ -1,28 +1,49 @@
-# WARP-8's generators (a kit's Steps list, "generate"; ui.c act_euclid, act_mutate, act_grids): each writes the
-# pattern as one undo. EUCLID and MUTATE the lane shown, GRIDS the kit's first three keys
+# WARP-8's generators. A lane held on a kit's grid: the knobs shape it (ui.c lane_knob). The Generate page, SEQ's
+# third on a kit: the grid shows what the generator would write, the knobs are its settings, SEL writes it, as one
+# undo (pages.c gen_result, ui.c gen_knob, gen_write)
 wait 300
 listen
 expect trk 1
 tap SEQ
 expect page Steps
+# a lane held (key 6, empty): knob 1 its hits, spread evenly; knob 2 turns it a step; knob 4 left clears it
+key b5 down
+wait 100
+turn K1 4
+wait 40
+expect note 1 1 1 6
+expect note 1 1 5 6
+expect note 1 1 9 6
+expect note 1 1 13 6
+expect note 1 1 2 0
+turn K2 1
+wait 40
+expect note 1 1 1 0
+expect note 1 1 2 6
+expect note 1 1 14 6
+turn K4 -1
+wait 40
+expect note 1 1 2 0
+expect note 1 1 14 0
+key b5 up
+wait 40
+# Generate: EUCLID, four hits, on the lane shown (the kick's)
 tapkey b0
-# EUCLID: four hits over sixteen steps, on the beats
-tap SEL
-row EUCLID HITS
+turn SELECT 2
+wait 40
+expect page Generate
 tap SEL
 wait 40
-said EUCLID
+said WRITTEN
 expect note 1 1 1 1
 expect note 1 1 5 1
 expect note 1 1 9 1
 expect note 1 1 13 1
 expect note 1 1 2 0
 # five hits, turned two steps later: 3, 7, 10, 13, 16
-tap SEL
-row EUCLID HITS
-turn ALGO 1
-row EUCLID ROTATE
-turn ALGO 2
+turn K1 1
+turn K2 2
+wait 40
 tap SEL
 wait 40
 expect note 1 1 1 0
@@ -38,22 +59,39 @@ release HOME
 wait 40
 expect note 1 1 1 1
 expect note 1 1 3 0
-# MUTATE at 100 %: the hits on the beats stay
-tap SEL
-row MUTATE
-turn ALGO 7
+# MODE add: the five join the four
+turn K3 1
+wait 40
 tap SEL
 wait 40
-said MUTATED
+expect note 1 1 1 1
+expect note 1 1 3 1
+expect note 1 1 5 1
+expect note 1 1 7 1
+# MUTATE at 100 %: the hits on the beats stay
+turn K4 1
+wait 40
+said GENERATOR
+turn K1 14
+wait 40
+tap SEL
+wait 40
 expect note 1 1 1 1
 expect note 1 1 5 1
 expect note 1 1 9 1
 expect note 1 1 13 1
-# GRIDS at the map's middle, half full: a kick on the one; the snare's lane written (key 2 on step 5 or 13)
-tap SEL
-row GRIDS X
+# GRIDS at the map's middle, half full: a kick on the one
+turn K4 1
+wait 40
+shot generate_grids.png
 tap SEL
 wait 40
-said GRIDS
+said WRITTEN
 expect note 1 1 1 1
-shot generators.png
+# a melodic track has no Generate page: SEQ's pages are Steps and Bar
+knob 2 engine 6
+wait 40
+turn ALGO 1
+wait 40
+expect trk 2
+expect page Steps
