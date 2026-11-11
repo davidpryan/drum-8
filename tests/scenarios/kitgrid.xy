@@ -1,0 +1,26 @@
+# WARP-8: a kit's Steps page is a grid of its eleven keys (pages.c kit_grid): a black key picks the lane, the white
+# keys write its steps, and the other lanes' steps stay as they are; the layout audit passes with every lane named
+wait 300
+listen
+expect trk 1
+tap SEQ
+expect page Steps
+tapkey b0
+tapkey w0
+tapkey w8
+expect note 1 1 1 1
+expect note 1 1 9 1
+tapkey b1
+tapkey w4
+tapkey w8
+expect note 1 1 5 2
+# (a kit step's note: its first sound; step 9 has the kick and the snare, then the snare alone)
+expect note 1 1 9 1
+tapkey b0
+tapkey w8
+expect note 1 1 9 2
+shot kitgrid.png
+tap PLAY
+wait 600
+shot kitgrid_playing.png
+tap PLAY

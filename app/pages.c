@@ -2155,7 +2155,7 @@ static void page_footer(char *t)
         return;
     }
     if (!ui.any_btn && ui.page == P_STEPS && !ui.held && !ui.chordmode) {
-        s_cat(t, "WHITE steps|PLAY play|hold a button: help");
+        s_cat(t, is_drum(sel_trk()) && !LARGE ? "BLACK lane|WHITE its steps|PLAY play" : "WHITE steps|PLAY play|hold a button: help");
         return;
     }
     if (home_held()) {
@@ -3587,6 +3587,83 @@ static void steps_head(int trk, char *nm, char *t)
         e = note_name(ui.rem[i], e);
     }
 }
+/* a model's short name: on the kit's pads (pic_drumline) and the kit grid's lanes */
+        static const char *const PAD[] = {"kick", "snare", "hat", "clap", "shakr", "tamb", "strng", "cong", "tom", "fm",
+                                             "smpl", "xkick", "xsnr", "xhat", "xclap", "xtom", "xrim", "xfm",
+                                             "xnois", "clang", "sophi", "9kick", "9snr", "9tom", "9rim", "9clap",
+                                             "9hat", "9open", "9ride", "9crsh",
+#define HP(id, name, pad, pad4, trig, rend, n) pad,
+                                             HORT_MODELS(HP)};
+        static const char *const PAD4[] = {"kick", "snr", "hat", "clap", "shk", "tmb", "strg", "cga", "tom", "fm",
+                                              "smp", "xkck", "xsnr", "xhat", "xclp", "xtom", "xrim", "xfm",
+                                              "xnoi", "clng", "soph", "9kck", "9snr", "9tom", "9rim", "9clp",
+                                              "9hat", "9opn", "9rid", "9crs",
+#define HP4(id, name, pad, pad4, trig, rend, n) pad4,
+                                              HORT_MODELS(HP4)};   /* (large type: four letters at most) */
+        _Static_assert(sizeof PAD / sizeof PAD[0] == NDM && sizeof PAD4 / sizeof PAD4[0] == NDM, "a pad name for each model");
+
+/* WARP-8: a kit track's Steps page is a grid, every key a lane of the bar's sixteen steps (as Hortator's and X0X's
+ * main pages show every drum): the lane the white keys write (ui.dsound, picked by a black key) in the track's ink,
+ * the others dim; the playhead's column; a held step framed; a muted key faint. On the picked lane a step with a
+ * chance has a notch, one with a trick a split, one with a lock a dot. Under the lanes, the pattern's bars. Each lane
+ * is named by its key's model. (Large type keeps LOOM-8's cells.) */
+#define KG_X 40                                      /* the first step's left; the lanes' names before it */
+#define KG_ROW 10
+static int32_t kg_x(int i) { return KG_X + i * 12 + (i / 4) * 2; }
+static void kit_grid(int trk, int pt, int ph, const tpat_t *tp)
+{
+    const uint8_t *par = proj.trk[trk].par;
+    uint32_t km = kit_slot(trk) >= 0 ? seq.kmute[kit_slot(trk)] : 0;
+    int nb = (tp->len + 15) / 16, pb = ph / 16;
+    for (int b = 0; b < DL_NSOUND; b++) {
+        int32_t y = 1 + b * KG_ROW;
+        int sel = b == ui.dsound % DL_NSOUND, muted = km >> b & 1u;
+        char nm[6];                                  /* the model's four letters, in capitals: no descender to meet
+                                                      * the lane under it */
+        s_cat(nm, PAD4[par[TP_DRUM(b, DP_MODEL)] % NDM]);
+        for (char *q = nm; *q; q++)
+            if (*q >= 'a' && *q <= 'z')
+                *q = (char)(*q - 32);
+        text_r(KG_X - 5, y - 3, &FONT_XS, nm, muted ? K_FAINT : sel ? K_TEXT : K_DIM);
+        for (int i = 0; i < 16; i++) {
+            int s = ui.bar * 16 + i, on;
+            const step_t *st = &tp->st[s];
+            int32_t x = kg_x(i);
+            uint16_t c;
+            if (s >= tp->len)
+                continue;                            /* (past the pattern's end: nothing) */
+            on = kit_has(st, b + 1);
+            c = on ? (muted ? K_FAINT : sel ? trk_ink(trk) : K_DIM) : sel ? K_PANEL2 : K_PANEL;
+            if (playing() && s == ph)
+                c = on ? K_NOW : K_NOW_T;
+            cv_round(x, y, 10, 8, 2, c);
+            if (!sel)
+                continue;
+            if (on) {
+                hit_t hm;
+                hit_marks(trk, pt, s, st, &hm);
+                if (hm.cond)                         /* a chance or a condition: a notch at its foot */
+                    cv_rect(x + 3, y + 5, 4, 3, K_BG);
+                if (hm.comp || hm.comp2)             /* a trick: split */
+                    cv_rect(x + 4, y, 2, 8, K_BG);
+                if (step_has_lock(pats.lane, trk, pt, s))
+                    cv_rect(x + 7, y + 1, 2, 2, K_REC);
+            }
+            if (ui.held >> i & 1u)
+                cv_frame(x - 1, y - 1, 12, 10, 3, K_SEL, c);
+            else if ((ui.rec_armed && s == ui.cursor) || (seq.rec_wait && s == 0 && (ui.frame / 8 & 1u)))
+                cv_frame(x - 1, y - 1, 12, 10, 3, K_REC, c);
+        }
+    }
+    for (int b = 0; b < NBAR; b++) {                 /* the bars: the one shown framed, the one playing lit */
+        int32_t x = KG_X + b * 14;
+        uint16_t c = b == pb && playing() ? K_NOW : b < nb ? K_DIM : K_LINE;
+        cv_round(x, 113, 12, 5, 2, c);
+        if (b == ui.bar)
+            cv_frame(x - 1, 112, 14, 7, 3, K_SEL, c);
+    }
+}
+
 static void draw_steps_as(void);
 static void draw_steps(void)                         /* large type: the cells in today's faces (eight across) */
 {
@@ -3626,8 +3703,18 @@ static void draw_steps_as(void)
     }
     for (int i = 0; i < 16; i++)
         h = hash_u(h, step_has_lock(pats.lane, trk, pt, ui.bar * 16 + i));
+    if (drum) {                                      /* (the grid names its lanes by their models, dims the muted) */
+        for (int b = 0; b < DL_NSOUND; b++)
+            h = hash_u(h, proj.trk[trk].par[TP_DRUM(b, DP_MODEL)]);
+        h = hash_u(h, kit_slot(trk) >= 0 ? seq.kmute[kit_slot(trk)] : 0);
+    }
     if (!begin_main(h))
         return;
+    if (drum && !LARGE) {                            /* WARP-8: a kit's steps as a grid of its keys */
+        kit_grid(trk, pt, ph, tp);
+        cv_blit(0, MAIN_Y);
+        return;
+    }
     if (band == &BANDS[0]) {                         /* the sound and what a step takes (large type: on the tag) */
         char nm[NAME_LEN + 2];
         int32_t x = ST_X + 2;
@@ -4273,19 +4360,6 @@ static void pic_drumline(int32_t x0, int32_t y0, int32_t w, int32_t h, const uin
     (void)f;
     for (int k = 0; k < DL_NSOUND; k++) {
         int32_t x = x0 + (k % 6) * pw + 2, y = y0 + (k / 6) * ph + 2, hit = eng_drum_hit[k];
-        static const char *const PAD[] = {"kick", "snare", "hat", "clap", "shakr", "tamb", "strng", "cong", "tom", "fm",
-                                             "smpl", "xkick", "xsnr", "xhat", "xclap", "xtom", "xrim", "xfm",
-                                             "xnois", "clang", "sophi", "9kick", "9snr", "9tom", "9rim", "9clap",
-                                             "9hat", "9open", "9ride", "9crsh",
-#define HP(id, name, pad, pad4, trig, rend, n) pad,
-                                             HORT_MODELS(HP)};
-        static const char *const PAD4[] = {"kick", "snr", "hat", "clap", "shk", "tmb", "strg", "cga", "tom", "fm",
-                                              "smp", "xkck", "xsnr", "xhat", "xclp", "xtom", "xrim", "xfm",
-                                              "xnoi", "clng", "soph", "9kck", "9snr", "9tom", "9rim", "9clp",
-                                              "9hat", "9opn", "9rid", "9crs",
-#define HP4(id, name, pad, pad4, trig, rend, n) pad4,
-                                              HORT_MODELS(HP4)};   /* (large type: four letters at most) */
-        _Static_assert(sizeof PAD / sizeof PAD[0] == NDM && sizeof PAD4 / sizeof PAD4[0] == NDM, "a pad name for each model");
         const char *nm = (LARGE ? PAD4 : PAD)[p[TP_DRUM(k, DP_MODEL)] % NDM];
         char t[4];
         cv_round(x, y, pw - 4, ph - 4, 4, hit > 40 ? K_NOW : k == ui.dsound ? K_PANEL2 : K_PANEL);
