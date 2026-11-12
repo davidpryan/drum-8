@@ -160,6 +160,7 @@ static void undo_keep(void);
 static void gen_write(void);                      /* WARP-8's generators, below */
 static void act_drum_sound(int i);
 static void act_kit(int k);
+static void kit_knob(int d);
 static void gen_knob(int k, int32_t e);
 static void lane_knob(int k, int32_t e);
 static void undo_sound(int trk);
@@ -1503,6 +1504,8 @@ static void key_down(int k)
                 }
             }
             scene_key(k, ui.scene_pg * 16 + w, proj.rsv[2] & SCENES_AT_END ? SCENE_END : SCENE_BAR);
+        } else if (b >= 0 && b < NDRUM && p == P_ARRANGE && kit_ui()) {   /* WARP-8, HOME on a kit: the drum's mute */
+            kit_sound_mute(trk, b);
         } else if (b >= 0 && b < NSEQT) {
             ui.kmode[k] = KM_MUTE;
             ui.knote[k] = (uint8_t)b;
@@ -2018,9 +2021,68 @@ static void holds(void)
 /* -------------------------------------------------------------- knobs --- */
 static int cued_pat(int trk);
 static void pattern_pick(int trk, int p);
+/* WARP-8: the next kit (the factory's, then the user's slots that hold one) on the kit shown, at once; stopped, the
+ * drum shown plays it */
+static void kit_knob(int d)
+{
+    int trk = sel_trk(), k = ui.pick_kit % NKITS;
+    if (!is_drum(trk))
+        return;
+    do
+        k = (k + d + NKITS) % NKITS;
+    while (k >= NFKITS && !user_kit_name[k - NFKITS][0]);
+    ui.pick_kit = (uint8_t)k;
+    act_kit(k);
+    if (!playing()) {
+        engine_key(trk, ui.dsound % DL_NSOUND + 1, 1, 127);
+        engine_key(trk, ui.dsound % DL_NSOUND + 1, 0, 0);
+    }
+}
+/* and the next of Hortator's sounds of the drum shown's type (its model's; a model of LOOM-8's: the type picked
+ * last), on the drum and played */
+static void sound_knob(int d)
+{
+    int trk = sel_trk(), key = ui.dsound % DL_NSOUND, m = proj.trk[trk].par[TP_DRUM(key, DP_MODEL)] % NDM, ty, lo, n, at;
+    if (!is_drum(trk))
+        return;
+    ty = DM_ISHORT(m) ? HPT_OF[m - DM_HORT0] : ui.pick_dtype % NHPT;
+    lo = HPT_START[ty];
+    n = HPT_START[ty + 1] - lo;
+    at = ui.pick_dsound >= lo && ui.pick_dsound < lo + n ? ui.pick_dsound - lo : -1;
+    if (at < 0)                                  /* (another type's sound was picked last: this type's first, or last) */
+        at = d > 0 ? 0 : n - 1;
+    else
+        at = ((at + d) % n + n) % n;
+    ui.pick_dtype = (uint8_t)ty;
+    ui.pick_dsound = (uint8_t)(lo + at);
+    act_drum_sound(ui.pick_dsound);
+    engine_key(trk, key + 1, 1, 127);
+    engine_key(trk, key + 1, 0, 0);
+}
 static void arrange_knob(int k, int32_t e)
 {
     int trk = sel_trk();
+    if (kit_ui()) {                              /* WARP-8, HOME on a kit: the tempo, every drum's length (their own
+                                                  * lengths go), the swing, the kit */
+        if (k == 3)
+            kit_knob(e > 0 ? 1 : -1);
+        else if (k == 1) {
+            int kl = lane_find(pats.lane, trk, cur_pat(trk), LANE_KLEN);
+            undo_keep();
+            if (kl >= 0)
+                lane_clear(pats.lane, kl);
+            tpat(trk)->len = (uint8_t)clampi(tpat(trk)->len + e, 1, NSTEP);
+            if (ui.bar * 16 >= tpat(trk)->len)
+                ui.bar = (uint8_t)((tpat(trk)->len - 1) / 16);
+            mark_dirty();
+        } else if (k == 2) {
+            undo_keep();
+            tpat(trk)->groove = (int8_t)clampi(tpat(trk)->groove + e, -99, 99);
+            mark_dirty();
+        } else if (k == 0)
+            set_tempo_x10((int)proj.tempo_x10 + (home_held() ? (int)e : (int)e * 10));
+        return;
+    }
     if (k == 0)
         set_tempo_x10((int)proj.tempo_x10 + (home_held() ? (int)e : (int)e * 10));
     else if (k == 1)
@@ -2371,7 +2433,10 @@ static void presets(int32_t e)
     }
     switch (ui.page) {
     case P_ARRANGE:
-        scene_go(((scene_aim() + d) % NSCENE + NSCENE) % NSCENE, SCENE_BAR);
+        if (kit_ui())
+            kit_knob(d);
+        else
+            scene_go(((scene_aim() + d) % NSCENE + NSCENE) % NSCENE, SCENE_BAR);
         break;
     case P_SONG:
         song_knob(0, d);
@@ -2387,6 +2452,8 @@ static void presets(int32_t e)
             ui.dsound = (uint8_t)n;
             ui.held_used = 1;
             say("SOUND", KEYNM(ui.dsound));
+        } else if (is_drum(trk) && !LARGE) {     /* WARP-8: a kit's steps: the pattern (ALGORITHM is the drum) */
+            pattern_pick(trk, cur_pat(trk) + d);
         } else if (is_drum(trk)) {
             ui.dsound = (uint8_t)((ui.dsound + d + DL_NSOUND) % DL_NSOUND);
             say("SOUND", KEYNM(ui.dsound));
@@ -2427,21 +2494,11 @@ static void presets(int32_t e)
     default:
         if (is_fx(trk))
             fx_pick(trk, d);
-        else if (is_drum(trk) && ui.page == P_ENGINE) {   /* WARP-8: a kit's pads: the next kit (the factory's, then
-                                                           * the user's that hold one), on the track at once; stopped,
-                                                           * the key shown plays it */
-            int k = ui.pick_kit % NKITS;
-            do
-                k = (k + d + NKITS) % NKITS;
-            while (k >= NFKITS && !user_kit_name[k - NFKITS][0]);
-            ui.pick_kit = (uint8_t)k;
-            act_kit(k);
-            if (!playing()) {
-                engine_key(trk, ui.dsound % DL_NSOUND + 1, 1, 127);
-                engine_key(trk, ui.dsound % DL_NSOUND + 1, 0, 0);
-            }
-        } else if (is_drum(trk) && (ui.page == P_PLAY || ui.page == P_PLAY2 || ui.page == P_ENV ||
-                                  ui.page == P_SENDS)) {
+        else if (is_drum(trk) && !LARGE && (ui.page == P_ENGINE || ui.page == P_SUB)) {   /* WARP-8: a drum's sound
+                                                                                           * pages: its next sound */
+            sound_knob(d);
+        } else if (is_drum(trk) && (ui.page == P_ENGINE || ui.page == P_PLAY || ui.page == P_PLAY2 || ui.page == P_ENV ||
+                                    ui.page == P_SENDS)) {
             ui.dsound = (uint8_t)((ui.dsound + d + DL_NSOUND) % DL_NSOUND);
             say("KEY", KEYNM(ui.dsound));
         } else if (!is_aux(trk) && ui.page >= P_ENGINE && ui.page <= P_PLAYERS3)
@@ -2810,7 +2867,7 @@ static int paste_steps(int trk, int pt, int at, int from, int n, int locks_only)
     int ok = 1;
     for (int k = 0; k < NLANE; k++) {
         lane_t *l = &pats.lane[k];
-        if (l->used && l->trk == trk && l->pat == pt && !lane_is_pool(l->param) &&
+        if (l->used && l->trk == trk && l->pat == pt && !lane_is_data(l->param) &&
             !(locks_only && lane_is_note(l->param)))
             for (int i = 0; i < n && at + i < NSTEP; i++)
                 if (!(clip_trk == trk && clip_pat == pt && at + i >= from && at + i < from + n))
@@ -2819,7 +2876,7 @@ static int paste_steps(int trk, int pt, int at, int from, int n, int locks_only)
     for (int k = 0; k < NLANE; k++) {
         const lane_t *l = &pats.lane[k];
         int d;
-        if (!l->used || l->trk != clip_trk || l->pat != clip_pat || lane_is_pool(l->param) ||
+        if (!l->used || l->trk != clip_trk || l->pat != clip_pat || lane_is_data(l->param) ||
             (locks_only && lane_is_note(l->param)))
             continue;
         d = lane_alloc(pats.lane, trk, pt, l->param);
@@ -2884,7 +2941,7 @@ static void act_rotate(int d)
         tp->st[n - 1] = keep;
     }
     for (int l = 0; l < NLANE; l++)
-        if (pats.lane[l].used && pats.lane[l].trk == trk && pats.lane[l].pat == pt && !lane_is_pool(pats.lane[l].param)) {
+        if (pats.lane[l].used && pats.lane[l].trk == trk && pats.lane[l].pat == pt && !lane_is_data(pats.lane[l].param)) {
             uint8_t *v = pats.lane[l].val, k;
             if (d > 0) {
                 k = v[n - 1];
@@ -3009,7 +3066,7 @@ static void act_clear_bar(void)
         tp->st[i].vel = 100;
     }
     for (int k = 0; k < NLANE; k++)
-        if (pats.lane[k].used && pats.lane[k].trk == trk && pats.lane[k].pat == pt && !lane_is_pool(pats.lane[k].param))
+        if (pats.lane[k].used && pats.lane[k].trk == trk && pats.lane[k].pat == pt && !lane_is_data(pats.lane[k].param))
             for (int i = b * 16; i < b * 16 + 16; i++)
                 pats.lane[k].val[i] = LOCK_NONE;
     mark_dirty();
@@ -3106,8 +3163,8 @@ static void gen_knob(int k, int32_t e)
     }
 }
 /* a lane held on the grid (pages.c lane_held): knob 1 its hits, spread evenly from its first one; knob 2 turns it a
- * step either way; knob 3 varies it, a new variation a click; knob 4 to the left clears it. The turns of one hold
- * are one undo */
+ * step either way; knob 3 varies it, a new variation a click; knob 4 is its own length (pattern.h LANE_KLEN). The
+ * turns of one hold are one undo */
 static void lane_knob(int k, int32_t e)
 {
     static uint8_t seed;
@@ -3133,9 +3190,23 @@ static void lane_knob(int k, int32_t e)
             on[(i + d + n) % n] = was[i];
     } else if (k == 2)
         lane_mutate(on, n, 25, seed++);
-    else if (d < 0)
-        for (int i = 0; i < n; i++)
-            on[i] = 0;
+    else {                                       /* its own length (the pattern's: none of its own; HOME's knob 2
+                                                  * is every drum's) */
+        int v = klen_of(trk, cur_pat(trk), key), kl;
+        v = clampi((v ? v : tp->len) + d, 1, NSTEP);
+        kl = lane_find(pats.lane, trk, cur_pat(trk), LANE_KLEN);
+        if (kl < 0 && v != tp->len && (kl = lane_alloc(pats.lane, trk, cur_pat(trk), LANE_KLEN)) >= 0)
+            for (int i = 0; i < NSTEP; i++)
+                pats.lane[kl].val[i] = 0;
+        if (kl < 0 && v != tp->len) {
+            say_no("NO ROOM", "too many locks");
+            return;
+        }
+        if (kl >= 0)
+            pats.lane[kl].val[key] = (uint8_t)(v == tp->len ? 0 : v);
+        mark_dirty();
+        return;
+    }
     lane_put(tp, key, on);
     mark_dirty();
 }
@@ -3206,7 +3277,7 @@ static void act_double(void)                     /* the pattern twice as long, p
     for (int i = 0; i < n; i++)
         tp->st[n + i] = tp->st[i];
     for (int k = 0; k < NLANE; k++)
-        if (pats.lane[k].used && pats.lane[k].trk == trk && pats.lane[k].pat == pt && !lane_is_pool(pats.lane[k].param))
+        if (pats.lane[k].used && pats.lane[k].trk == trk && pats.lane[k].pat == pt && !lane_is_data(pats.lane[k].param))
             for (int i = 0; i < n; i++)
                 pats.lane[k].val[n + i] = pats.lane[k].val[i];
     tp->len = (uint8_t)(n * 2);
@@ -4123,6 +4194,13 @@ static void input(void)
             ui.pick_engine = (uint8_t)clampi(proj.trk[sel_trk()].par[TP_ENGINE] + (e > 0 ? 1 : -1), EG_SAMPLE, EG_MIDI);
             if (ui.pick_engine != proj.trk[sel_trk()].par[TP_ENGINE])
                 action_run(A_ENGINE);
+        } else if (home_held()) {                 /* WARP-8: HOME held: the track, from any page */
+            ui.btn_used |= 1u << B_HOME;
+            track_step((int)e);
+        } else if (kit_ui() && (ui.page == P_ARRANGE || steps_page(ui.page) ||
+                                (ui.page >= P_ENGINE && ui.page <= P_SENDS))) {   /* a kit's pages: the drum */
+            ui.dsound = (uint8_t)((ui.dsound + (e > 0 ? 1 : -1) + DL_NSOUND) % DL_NSOUND);
+            say("DRUM", KEYNM(ui.dsound));
         } else
             track_step((int)e);
     }

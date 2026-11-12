@@ -14,7 +14,9 @@ expect user 2
 expect rate1 16000
 upload build/gen/user_bank.syx
 expect user 2
+press HOME
 spin ALGO 2
+release HOME
 expect trk 3
 tap EDIT
 param 3 0 6

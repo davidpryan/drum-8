@@ -1,13 +1,17 @@
 # a brain progression: track 3 follows, the brain's steps hold the chords its keys played, at scale 4
 wait 200
+press HOME
 spin ALGO 2
+release HOME
 tap EDIT
 tap SEL
 turn SELECT 5
 wait 40
 shot brain_list.png
 tap HOME
+press HOME
 spin ALGO 6
+release HOME
 expect trk 9
 tap EDIT
 wait 40

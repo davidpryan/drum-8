@@ -58,6 +58,8 @@ def main(path):
     L.append(f"#define NHPT {len(TYPES)}")
     L.append("static const char *const HPT_NAME[NHPT] = {" + ", ".join(f'"{n}"' for n in TYPES) + "};")
     L.append("static const uint8_t HPT_START[NHPT + 1] = {" + ", ".join(map(str, starts)) + "};   /* a type's first; its end */")
+    L.append("static const uint8_t HPT_OF[] = {" + ", ".join(str(MODEL_TYPE[r["key"]]) for r in gm.rows()) +
+             "};   /* a model's type (hort.h HM_*) */")
     Path(path).write_text("\n".join(L) + "\n")
 
 

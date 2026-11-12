@@ -150,3 +150,4 @@ static const struct { uint8_t model, k[8]; char name[9]; } HPRESET[NHPRESET] = {
 #define NHPT 7
 static const char *const HPT_NAME[NHPT] = {"kick", "snare", "hat", "clap", "tom", "perc", "cymbal"};
 static const uint8_t HPT_START[NHPT + 1] = {0, 25, 44, 72, 86, 102, 131, 143};   /* a type's first; its end */
+static const uint8_t HPT_OF[] = {0, 0, 1, 1, 3, 3, 2, 2, 6, 5, 4, 5, 5, 5, 0, 0, 1, 1, 2, 2, 4, 5, 0, 1, 4, 5, 3, 5, 5, 2, 2, 6, 5, 5, 0, 0, 1, 4, 3, 5, 5, 2, 6};   /* a model's type (hort.h HM_*) */

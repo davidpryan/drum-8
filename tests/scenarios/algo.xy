@@ -2,23 +2,39 @@
 # an FX track gives way to the instrument picked last
 wait 300
 expect trk 1
+press HOME
 turn ALGO -1
+release HOME
 expect trk 13
+press HOME
 turn ALGO -1
+release HOME
 expect trk 10
+press HOME
 turn ALGO 2
+release HOME
 expect trk 1
 tap GLO
+press HOME
 turn ALGO -1
+release HOME
 expect trk 12
+press HOME
 turn ALGO -1
+release HOME
 expect trk 11
+press HOME
 turn ALGO -1
+release HOME
 expect trk 8
+press HOME
 turn ALGO 1
+release HOME
 expect trk 11
 tap SEQ
 expect trk 8
 tap GLO
+press HOME
 turn ALGO 3
+release HOME
 expect trk 1

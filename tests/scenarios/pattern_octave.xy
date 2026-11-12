@@ -11,7 +11,9 @@ knob 8 engine 6
 wait 40
 notes 2 1 1 1 100 C3 E3 G3
 notes 2 1 9 1 90 G2
+press HOME
 turn ALGO 1
+release HOME
 expect trk 2
 tap SEQ
 expect page Steps
@@ -31,7 +33,9 @@ tap REC
 release HOME
 expect note 2 1 1 48
 # a kit: nothing moves
+press HOME
 turn ALGO -1
+release HOME
 expect trk 1
 listen
 press SEQ

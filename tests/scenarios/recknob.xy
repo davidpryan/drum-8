@@ -10,7 +10,9 @@ knob 6 engine 6
 knob 7 engine 6
 knob 8 engine 6
 wait 40
+press HOME
 spin ALGO 1
+release HOME
 expect trk 2
 tap EDIT
 expect page Engine

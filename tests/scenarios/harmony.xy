@@ -9,7 +9,9 @@ knob 6 engine 6
 knob 7 engine 6
 knob 8 engine 6
 wait 40
+press HOME
 turn ALGO 1
+release HOME
 expect trk 2
 knob 2 brain harmony
 expect par2.brain 3
@@ -23,7 +25,9 @@ wait 40
 shot harmony_list.png
 tap HOME
 # the conductor's held keys are its chord (C E G); the Engine page shows it beside the degree
+press HOME
 spin ALGO 7
+release HOME
 expect trk 9
 tap EDIT
 play 9 60 on

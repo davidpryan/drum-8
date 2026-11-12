@@ -38,7 +38,9 @@ turn SELECT 1
 expect page Filter
 wait 40
 shot drum_filter.png
+press HOME
 spin ALGO 2
+release HOME
 expect trk 3
 tap EDIT
 wait 40
@@ -169,21 +171,29 @@ tap HOME
 expect page Steps
 # the aux tracks' pages
 tap EDIT
+press HOME
 spin ALGO 6
+release HOME
 expect trk 9
 wait 40
 shot brain.png
 turn SELECT 1
 wait 40
 shot brain_routing.png
+press HOME
 spin ALGO 1
+release HOME
 wait 40
 shot punch.png
+press HOME
 spin ALGO 1
+release HOME
 expect trk 13
 wait 40
 shot weave_track.png
+press HOME
 spin ALGO 1
+release HOME
 expect trk 1
 # the effects: FX's FX I and FX II pages (not tracks on ALGORITHM)
 tap FX

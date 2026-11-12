@@ -30,13 +30,19 @@ shot master_out_list_metro.png
 turn ALGO -9
 expect mst.pumpby 0
 turn SELECT 1
+press HOME
 spin ALGO 20
+release HOME
 expect mst.release 80
 turn SELECT 1
+press HOME
 spin ALGO -1
+release HOME
 expect mst.accent 0
 turn SELECT 1
+press HOME
 spin ALGO -10
+release HOME
 expect mst.level 90
 wait 40
 shot master_out_list_level.png

@@ -6,7 +6,7 @@ listen
 expect trk 1
 tap SEQ
 expect page Steps
-# a lane held (key 6, empty): knob 1 its hits, spread evenly; knob 2 turns it a step; knob 4 left clears it
+# a lane held (key 6, empty): knob 1 its hits, spread evenly (none: cleared); knob 2 turns it a step
 key b5 down
 wait 100
 turn K1 4
@@ -21,7 +21,7 @@ wait 40
 expect note 1 1 1 0
 expect note 1 1 2 6
 expect note 1 1 14 6
-turn K4 -1
+turn K1 -4
 wait 40
 expect note 1 1 2 0
 expect note 1 1 14 0
@@ -91,7 +91,9 @@ expect note 1 1 1 1
 # a melodic track has no Generate page: SEQ's pages are Steps and Bar
 knob 2 engine 6
 wait 40
+press HOME
 turn ALGO 1
+release HOME
 wait 40
 expect trk 2
 expect page Steps

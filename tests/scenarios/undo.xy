@@ -10,7 +10,9 @@ knob 6 engine 6
 knob 7 engine 6
 knob 8 engine 6
 wait 40
+press HOME
 turn ALGO 1
+release HOME
 expect trk 2
 tap EDIT
 param 2 e1 40
@@ -32,7 +34,9 @@ tap REC
 release HOME
 expect par2.e1 40
 # a step on the pattern, undone: gone; redone: back
+press HOME
 turn ALGO -1
+release HOME
 expect trk 1
 tap SEQ
 tapkey w0

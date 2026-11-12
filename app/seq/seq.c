@@ -1840,6 +1840,22 @@ static void kit_step(seq_t *s, int t, const step_t *st, int p, uint32_t L, uint3
     uint8_t act[NSC];
     uint32_t mask = kit_mask(st), cov = 0, mine = 0, b;
     int i, trig_ok, lock_ok, ok2, lk2, jumped = 0, bent = 0, quiet;
+    {   /* WARP-8: a sound with a length of its own (pattern.h LANE_KLEN) takes its hit from its own round of steps,
+         * counted from the start (the passes so far and the step): on or off only, the step's velocity and tricks */
+        int kl = lane_find(s->P->lane, t, s->ppat[t] % NPATT, LANE_KLEN);
+        if (kl >= 0) {
+            const tpat_t *tp = tpat(s, t);
+            const uint8_t *v = s->P->lane[kl].val;
+            uint32_t at = (uint32_t)tr->pass * (uint32_t)(tp->len ? tp->len : 1) + (uint32_t)p;
+            for (i = 0; i < NDRUM; i++)
+                if (v[i] >= 1 && v[i] <= NSTEP) {
+                    if (kit_has(&tp->st[at % v[i]], i + 1))
+                        mask |= 1u << i;
+                    else
+                        mask &= ~(1u << i);
+                }
+        }
+    }
     for (i = 0; i < NDRUM; i++)
         if (R[i].stall) {
             R[i].stall--;

@@ -42,7 +42,9 @@ expect comp 1 5 0
 expect note 1 1 5 2
 wait 40
 shot bar_kit.png
+press HOME
 spin ALGO 2
+release HOME
 expect trk 3
 tapkey 0
 tap SEQ

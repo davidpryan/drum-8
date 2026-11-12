@@ -1,7 +1,9 @@
 # The look-ahead (engine.c): live recording while playing, keys at offsets across the step boundaries and a knob
 # recorded; tests/host/lookahead_test.sh plays it with the look-ahead off and on and compares the projects saved
 wait 300
+press HOME
 spin ALGO 1
+release HOME
 expect trk 2
 tap SEQ
 tap PLAY

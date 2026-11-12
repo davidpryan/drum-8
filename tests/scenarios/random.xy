@@ -9,7 +9,9 @@ knob 6 engine 6
 knob 7 engine 6
 knob 8 engine 6
 wait 40
+press HOME
 turn ALGO 1
+release HOME
 expect trk 2
 knob 2 player rand
 expect par2.player 4

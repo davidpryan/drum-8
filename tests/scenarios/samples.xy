@@ -102,7 +102,9 @@ wait 40
 shot kit_sample_key_list.png
 tap HOME
 # the sample engine on track 3: its presets (PRESETS turns them), notes, the picture
+press HOME
 spin ALGO 2
+release HOME
 expect trk 3
 tap EDIT
 param 3 0 6

@@ -1,0 +1,76 @@
+# WARP-8's flow on a kit. HOME: a row a drum; ALGORITHM picks the drum, a black key mutes one, knob 4 and PRESETS the
+# kit, knob 2 every drum's length, knob 1 the tempo. SEQ: PRESETS the pattern; a lane held, knob 4 its own length.
+# HOME held, ALGORITHM is the track
+wait 300
+listen
+expect trk 1
+tap HOME
+wait 40
+expect page Arrange
+turn ALGO 2
+wait 40
+said DRUM
+tapkey b3
+wait 40
+expect kmute 8
+tapkey b3
+wait 40
+expect kmute 0
+# the kit: knob 4, then PRESETS (Loom, Nylon, Elastane); the first drum's model follows
+turn K4 1
+wait 60
+said KIT
+expect par1.d1.model 11
+turn PRESET 1
+wait 60
+expect par1.d1.model 20
+turn PRESET -1
+turn PRESET -1
+wait 60
+expect par1.d1.model 0
+turn K1 1
+wait 40
+expect tempo 121
+shot kithome.png
+# (four kits tried so far: four hits heard.) A kick on step 1 of 16: one hit a bar; its own length four: four a bar; HOME's length for every drum: one again
+tap SEQ
+wait 40
+tapkey b0
+tapkey w0
+expect drumhits 5
+tap PLAY
+wait 1700
+tap PLAY
+expect drumhits 6
+key b0 down
+wait 100
+turn K4 -12
+wait 60
+key b0 up
+wait 40
+shot kitflow_ownlen.png
+expect drumhits 7
+tap PLAY
+wait 1700
+tap PLAY
+expect drumhits 11
+tap HOME
+wait 40
+turn K2 -1
+turn K2 1
+wait 40
+tap PLAY
+wait 1700
+tap PLAY
+expect drumhits 12
+# SEQ: PRESETS is the pattern
+tap SEQ
+wait 40
+turn PRESET 1
+wait 40
+# HOME held: the track
+press HOME
+turn ALGO 1
+release HOME
+wait 40
+expect trk 2

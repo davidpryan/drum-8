@@ -1,7 +1,9 @@
 # another LFO type keeps the knobs that mean the same there: wave -> drift keeps speed, amount, dest and param;
 # -> wobble, whose third knob is a volume amount, starts that one from its default (96)
 wait 300
+press HOME
 spin ALGO 2
+release HOME
 expect trk 3
 knob 3 ltype wave
 knob 3 ldest synth

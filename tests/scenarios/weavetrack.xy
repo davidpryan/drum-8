@@ -6,12 +6,16 @@ notes 2 1 1 1 100 C4
 notes 2 1 3 1 100 E4
 notes 2 1 5 1 100 G4
 notes 2 1 7 1 100 B4
+press HOME
 turn ALGO 1
+release HOME
 tap ARP
 turn SELECT 2
 tapkey b0
 turn K3 2
+press HOME
 turn ALGO 9
+release HOME
 expect trk 13
 tap EDIT
 wait 50

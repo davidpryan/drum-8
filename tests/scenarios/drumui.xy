@@ -14,7 +14,9 @@ release HOME
 wait 40
 expect mute 0
 # the sixth kit's first sound: muted, and back
+press HOME
 turn ALGO 5
+release HOME
 wait 40
 expect trk 6
 press HOME
@@ -27,7 +29,9 @@ tapkey w0
 release HOME
 wait 40
 expect kmute6 0
+press HOME
 turn ALGO -5
+release HOME
 wait 40
 expect trk 1
 # a kick on step 1, and one on step 9 that plays only in a fill

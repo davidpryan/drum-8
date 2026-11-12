@@ -140,9 +140,13 @@ static inline int lane_is_step_note(unsigned param)   /* a lane of a step's note
 }
 static inline int lane_is_hit(unsigned param) { return param >= LANE_HIT0 && param < LANE_HIT0 + NDRUM; }
 static inline int lane_is_pool(unsigned param) { return param == LANE_POOL; }
+/* WARP-8: a kit pattern's sounds' own lengths: val[k] sound k + 1's, in steps (0, or past NSTEP: the pattern's). A
+ * sound with its own length plays its steps 1..length round and round, whatever the pattern's length */
+#define LANE_KLEN 0xFFFCu
+static inline int lane_is_data(unsigned param) { return param == LANE_POOL || param == LANE_KLEN; }   /* not a value a step */
 static inline int lane_is_note(unsigned param)   /* a lane of notes, not locks (project keeps these) */
 {
-    return lane_is_step_note(param) || lane_is_pool(param);
+    return lane_is_step_note(param) || lane_is_data(param);
 }
 #define TUNE_0 64
 #define TUNE_MAX 24

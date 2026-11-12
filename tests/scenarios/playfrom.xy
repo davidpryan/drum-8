@@ -5,7 +5,9 @@ pat 2 1 64
 pat 3 1 16
 pat 4 1 64 2
 notes 2 1 33 1 100 60
+press HOME
 turn ALGO 1
+release HOME
 expect trk 2
 tap SEQ
 tap OCT+

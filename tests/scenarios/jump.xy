@@ -1,7 +1,9 @@
 # a jump trick's value on the knob: the beats the pattern has (to 1 .. to 13 in 16 steps), then the moves; a four-bar
 # pattern has sixteen beats to jump to
 wait 300
+press HOME
 turn ALGO 2
+release HOME
 expect trk 3
 pat 3 1 16
 step 3 1 1 60

@@ -606,9 +606,13 @@ enum { AL_INFO, AL_DONE, AL_UNDO, AL_REDO, AL_ASK, AL_NO };
 static int sel_trk(void) { return proj.trk_sel < NALLTRK ? proj.trk_sel : 0; }
 static int is_aux(int t) { return t >= NTRK; }
 static int is_seqt(int t) { return t < NSEQT; }
+static int is_drum(int t);
+/* WARP-8's kit pages: the track shown is a kit, in normal type (large type keeps LOOM-8's pages) */
+static int kit_ui(void);
 static int steps_page(int p) { return p == P_STEPS || p == P_BAR || p == P_GEN; }   /* SEQ's pages: all write steps
                                                                                     * (Generate: WARP-8's, a kit's third) */
 static int is_drum(int t) { return t < NTRK && proj.trk[t].par[TP_ENGINE] == EG_DRUMLINE; }
+static int kit_ui(void) { return is_drum(sel_trk()) && !LARGE; }
 static int is_midi(int t) { return t < NTRK && proj.trk[t].par[TP_ENGINE] == EG_MIDI; }   /* (no sound: notes and CCs
                                                                                          * out, synth.h EG_MIDI) */
 static int is_acid(int t) { return t < NTRK && proj.trk[t].par[TP_ENGINE] == EG_ACID; }   /* (its 303's own envelope:
@@ -1727,6 +1731,7 @@ static int lane_held(void)
     return 0;
 }
 
+static int klen_of(int trk, int pt, int key);
 static void page_knobs(knob_t *k)
 {
     int trk = sel_trk(), p = ui.page;
@@ -1758,7 +1763,10 @@ static void page_knobs(knob_t *k)
         kn(&k[0], "HITS", c, pat_n(tp));
         kv(&k[1], "ROTATE", "turn", 0, 0);
         kv(&k[2], "MUTATE", "turn", 0, 0);
-        kv(&k[3], "CLEAR", "left", 0, 0);
+        {
+            int v = klen_of(trk, cur_pat(trk), lane_held() - 1);
+            kn(&k[3], "LENGTH", v ? v : tp->len, NSTEP);
+        }
         return;
     }
     if (p == P_GEN && is_drum(trk)) {                /* Generate: the generator's three knobs, and which one */
@@ -1793,6 +1801,15 @@ static void page_knobs(knob_t *k)
     }
     switch (p) {
     case P_ARRANGE:
+        if (kit_ui()) {                              /* WARP-8, HOME on a kit: the tempo, every drum's length, the swing,
+                                                      * the kit */
+            tempo_text(t);
+            kv(&k[0], "TEMPO", t, (int)proj.tempo_x10 / 10 - 40, 180);
+            kn(&k[1], "LENGTH", tp->len, NSTEP);
+            kn(&k[2], "SWING", tp->groove, 0);
+            kv(&k[3], "KIT", proj.trk[trk].name[0] ? proj.trk[trk].name : "kit", 0, 0);
+            break;
+        }
         tempo_text(t);
         kv(&k[0], "TEMPO", t, (int)proj.tempo_x10 / 10 - 40, 180);
         kname(&k[1], "GROOVE", GR_NAME, proj.groove, NGROOVE);
@@ -2356,6 +2373,10 @@ static void page_footer(char *t)
     }
     switch (ui.page) {
     case P_ARRANGE:
+        if (kit_ui()) {
+            s_cat(t, "ALGO drum|PRESET kit|BLACK mute|WHITE scene");
+            break;
+        }
         for (int i = 0; i < NKEYS; i++)             /* a kit's black key held: its sounds' mutes on the white keys */
             if (ui.kmode[i] == KM_MUTE && (ui.keys >> i & 1u) && is_drum(ui.knote[i] & 0x7F)) {
                 s_cat(t, ui.knote[i] & 0x80 ? "WHITE mute a sound|let go: done" : "WHITE mute a sound|let go: mutes the kit");
@@ -2453,7 +2474,7 @@ static void page_footer(char *t)
         else if (is_drum(trk) && ui.page <= P_LFO2)
             s_cat(t, !kit_edit_steps() ? "BLACK pick a key|KEYS play"
                      : ui.held ? "KNOBS lock the step|SEL held + KNOB clear"
-                     : ui.page == P_ENGINE ? "PRESET kit|BLACK key|WHITE its steps" : "BLACK pick a key|WHITE its steps");
+                     : ui.page == P_ENGINE ? "PRESET sound|ALGO drum|WHITE its steps" : "BLACK pick a key|WHITE its steps");
         else if (ui.page == P_ENGINE)
             s_cat(t, "PRESET next sound|SEL engine");
         else if (ui.page == P_FILTER && !is_acid(trk))
@@ -3790,17 +3811,24 @@ static void steps_head(int trk, char *nm, char *t)
 #define KG_X 40                                      /* the first step's left; the lanes' names before it */
 #define KG_ROW 10
 static int32_t kg_x(int i) { return KG_X + i * 12 + (i / 4) * 2; }
-static void kit_grid(int trk, int pt, int ph, const tpat_t *tp)
+/* a sound's own length in the pattern (pattern.h LANE_KLEN), 0: the pattern's */
+static int klen_of(int trk, int pt, int key)
+{
+    int k = lane_find(pats.lane, trk, pt, LANE_KLEN), v = k >= 0 ? pats.lane[k].val[key % DL_NSOUND] : 0;
+    return v >= 1 && v <= NSTEP ? v : 0;
+}
+/* home: the same lanes narrower, each with its key's level at the right (HOME's page on a kit: draw_kit_home) */
+static void kit_grid(int trk, int pt, int ph, const tpat_t *tp, int home)
 {
     const uint8_t *par = proj.trk[trk].par;
     uint32_t km = kit_slot(trk) >= 0 ? seq.kmute[kit_slot(trk)] : 0;
-    int nb = (tp->len + 15) / 16, pb = ph / 16, gk[3] = {-1, -1, -1}, gn = 0;
+    int nb = (tp->len + 15) / 16, pb = ph / 16, gk[3] = {-1, -1, -1}, gn = 0, pitch = home ? 9 : 12, cw = home ? 7 : 10;
     uint8_t gen[3][NSTEP];
     if (ui.page == P_GEN)                            /* Generate: what it would write, over the lanes it would write */
         gn = gen_result(tp, gen, gk);
     for (int b = 0; b < DL_NSOUND; b++) {
         int32_t y = 1 + b * KG_ROW;
-        int sel = b == ui.dsound % DL_NSOUND, muted = km >> b & 1u;
+        int sel = b == ui.dsound % DL_NSOUND, muted = km >> b & 1u, own = klen_of(trk, pt, b);
         char nm[6];                                  /* the model's four letters, in capitals: no descender to meet
                                                       * the lane under it */
         s_cat(nm, key_nm_par(par, b, 1));
@@ -3809,17 +3837,19 @@ static void kit_grid(int trk, int pt, int ph, const tpat_t *tp)
                 *q = (char)(*q - 32);
         text_r(KG_X - 5, y - 3, &FONT_XS, nm, muted ? K_FAINT : sel ? K_TEXT : K_DIM);
         for (int i = 0; i < 16; i++) {
-            int s = ui.bar * 16 + i, on;
-            const step_t *st = &tp->st[s];
-            int32_t x = kg_x(i);
+            int s = ui.bar * 16 + i, on, rep = own && s >= own;   /* (rep: past its own end, its steps again) */
+            const step_t *st = &tp->st[own ? s % own : s];
+            int32_t x = KG_X + i * pitch + (i / 4) * 2;
             uint16_t c;
             if (s >= tp->len)
                 continue;                            /* (past the pattern's end: nothing) */
             on = kit_has(st, b + 1);
-            c = on ? (muted ? K_FAINT : sel ? trk_ink(trk) : K_DIM) : sel ? K_PANEL2 : K_PANEL;
+            c = on ? (muted || rep ? K_FAINT : sel ? trk_ink(trk) : K_DIM) : sel ? K_PANEL2 : K_PANEL;
             if (playing() && s == ph)
                 c = on ? K_NOW : K_NOW_T;
-            cv_round(x, y, 10, 8, 2, c);
+            cv_round(x, y, cw, 8, 2, c);
+            if (own && s == own - 1)                 /* its own end: a mark after its last step */
+                cv_rect(x + cw, y, 1, 8, K_TEXT);
             for (int g = 0; g < gn; g++)             /* a hit it would add: outlined; one it would take: hollowed */
                 if (gk[g] == b && gen[g][s] != (uint8_t)on) {
                     if (on)
@@ -3827,9 +3857,9 @@ static void kit_grid(int trk, int pt, int ph, const tpat_t *tp)
                     else
                         cv_frame(x, y, 10, 8, 2, K_TEXT, c);
                 }
-            if (!sel)
+            if (!sel || home)
                 continue;
-            if (on) {
+            if (on && !rep) {
                 hit_t hm;
                 hit_marks(trk, pt, s, st, &hm);
                 if (hm.cond)                         /* a chance or a condition: a notch at its foot */
@@ -3844,6 +3874,12 @@ static void kit_grid(int trk, int pt, int ph, const tpat_t *tp)
             else if ((ui.rec_armed && s == ui.cursor) || (seq.rec_wait && s == 0 && (ui.frame / 8 & 1u)))
                 cv_frame(x - 1, y - 1, 12, 10, 3, K_REC, c);
         }
+        if (home) {                                  /* the key's level (volume 76: 0 dB), none while it is muted */
+            int32_t w = par[TP_DRUM(b, DP_VOLUME)] * 40 / 127;
+            cv_rect(196, y + 2, 40, 4, K_PANEL);
+            if (!muted)
+                cv_rect(196, y + 2, w, 4, sel ? trk_ink(trk) : K_DIM);
+        }
     }
     for (int b = 0; b < NBAR; b++) {                 /* the bars: the one shown framed, the one playing lit */
         int32_t x = KG_X + b * 14;
@@ -3852,6 +3888,30 @@ static void kit_grid(int trk, int pt, int ph, const tpat_t *tp)
         if (b == ui.bar)
             cv_frame(x - 1, 112, 14, 7, 3, K_SEL, c);
     }
+}
+static uint32_t hash_pat(uint32_t h, const tpat_t *p);
+static int begin_main(uint32_t h);
+static uint32_t kit_grid_hash(uint32_t h, int trk, int pt)
+{
+    int k = lane_find(pats.lane, trk, pt, LANE_KLEN);
+    for (int b = 0; b < DL_NSOUND; b++)
+        h = hash_u(h, proj.trk[trk].par[TP_DRUM(b, DP_MODEL)] | (uint32_t)proj.trk[trk].par[TP_DRUM(b, DP_VOLUME)] << 8 |
+                          (uint32_t)(k >= 0 ? pats.lane[k].val[b] : 0) << 16);
+    return hash_u(h, kit_slot(trk) >= 0 ? seq.kmute[kit_slot(trk)] : 0);
+}
+/* WARP-8: HOME on a kit: the whole pattern, a row a drum (the grid's lanes, narrower), each with its level; the
+ * black keys mute a drum, ALGORITHM picks one, PRESETS and knob 1 the kit, knob 2 every drum's length */
+static void draw_kit_home(void)
+{
+    int trk = sel_trk(), pt = cur_pat(trk), ph = eng_step[trk];
+    const tpat_t *tp = tpat(trk);
+    uint32_t h = hash_u(hash_u(2166136261u, 0x4Bu), (uint32_t)trk | (uint32_t)pt << 4 | (uint32_t)ui.bar << 8 |
+                                          (uint32_t)ui.dsound << 12 | (uint32_t)playing() << 16 | (uint32_t)ph << 20);
+    h = kit_grid_hash(hash_pat(h, tp), trk, pt);
+    if (!begin_main(h))
+        return;
+    kit_grid(trk, pt, ph, tp, 1);
+    cv_blit(0, MAIN_Y);
 }
 
 static void draw_steps_as(void);
@@ -3898,14 +3958,12 @@ static void draw_steps_as(void)
         h = hash_u(h, (uint32_t)ui.page | (uint32_t)ui.gen_kind << 8 | (uint32_t)ui.gen_hits << 12 | (uint32_t)ui.gen_rot << 18 |
                           (uint32_t)ui.gen_mode << 24 | (uint32_t)ui.gen_seed << 26);
         h = hash_u(h, (uint32_t)ui.gen_amt | (uint32_t)ui.gen_x << 8 | (uint32_t)ui.gen_y << 16 | (uint32_t)ui.gen_fill << 24);
-        for (int b = 0; b < DL_NSOUND; b++)
-            h = hash_u(h, proj.trk[trk].par[TP_DRUM(b, DP_MODEL)]);
-        h = hash_u(h, kit_slot(trk) >= 0 ? seq.kmute[kit_slot(trk)] : 0);
+        h = kit_grid_hash(h, trk, pt);
     }
     if (!begin_main(h))
         return;
     if (drum && !LARGE) {                            /* WARP-8: a kit's steps as a grid of its keys */
-        kit_grid(trk, pt, ph, tp);
+        kit_grid(trk, pt, ph, tp, 0);
         cv_blit(0, MAIN_Y);
         return;
     }
@@ -6259,7 +6317,12 @@ static void draw_page(void)
         return;
     }
     switch (ui.page) {
-    case P_ARRANGE: draw_arrange(); break;
+    case P_ARRANGE:
+        if (kit_ui())
+            draw_kit_home();
+        else
+            draw_arrange();
+        break;
     case P_SONG: draw_song(); break;
     case P_STEPS:
         if (ui.chordmode && is_seqt(trk) && !is_drum(trk))

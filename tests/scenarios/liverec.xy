@@ -2,7 +2,9 @@
 # chords on the conductor land on its beat steps, a new chord replacing the step's old one; REC held while
 # playing records while held; REC held shows the record settings on the knobs, and a hold toggles nothing
 wait 300
+press HOME
 turn ALGO 8
+release HOME
 expect trk 9
 tap SEQ
 press REC
