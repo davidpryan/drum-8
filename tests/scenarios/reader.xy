@@ -15,7 +15,9 @@ said Arrange
 turn K1 1
 wait 400
 said TEMPO
+press HOME
 tapkey w1
+release HOME
 wait 300
 said NEW S2
 tap SEQ

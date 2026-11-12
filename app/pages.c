@@ -615,6 +615,9 @@ static int steps_page(int p) { return p == P_STEPS || p == P_BAR || p == P_GEN; 
                                                                                     * (Generate: WARP-8's, a kit's third) */
 static int is_drum(int t) { return t < NTRK && proj.trk[t].par[TP_ENGINE] == EG_DRUMLINE; }
 static int kit_ui(void) { return is_drum(sel_trk()) && !LARGE; }
+/* the pages whose white keys are the steps and whose held step's knobs are its trig: SEQ's, and WARP-8's HOME on
+ * the kit (its scenes are HOME held: ui.c key_down) */
+static int trig_page(int p) { return steps_page(p) || (p == P_ARRANGE && kit_ui()); }
 static int is_midi(int t) { return t < NTRK && proj.trk[t].par[TP_ENGINE] == EG_MIDI; }   /* (no sound: notes and CCs
                                                                                          * out, synth.h EG_MIDI) */
 static int is_acid(int t) { return t < NTRK && proj.trk[t].par[TP_ENGINE] == EG_ACID; }   /* (its 303's own envelope:
@@ -1726,7 +1729,7 @@ static int gen_result(const tpat_t *tp, uint8_t out[3][NSTEP], int key[3])
 /* a lane held: a black key down on a kit's step pages, no step or button held (its knobs shape the lane); + 1 */
 static int lane_held(void)
 {
-    if (!steps_page(ui.page) || !is_drum(sel_trk()) || ui.held || ui.btn || lst.open || LARGE)
+    if (!trig_page(ui.page) || !is_drum(sel_trk()) || ui.held || ui.btn || lst.open || LARGE)
         return 0;
     for (int b = 0; b < DL_NSOUND; b++)
         if (ui.keys >> BLACK_K[b] & 1u)
@@ -1790,11 +1793,11 @@ static void page_knobs(knob_t *k)
         kname(&k[3], "TYPE", GEN_NAME, ui.gen_kind % NGEN, NGEN);
         return;
     }
-    if (steps_page(p) && ui.trickpg && is_seqt(trk)) {
+    if (trig_page(p) && ui.trickpg && is_seqt(trk)) {
         comp_knobs(k);
         return;
     }
-    if (steps_page(p) && ui.held && is_seqt(trk)) {
+    if (trig_page(p) && ui.held && is_seqt(trk)) {
         step_knobs(k);
         return;
     }
@@ -2375,13 +2378,13 @@ static void page_footer(char *t)
         return;
     }
     if (home_held()) {
-        s_cat(t, "REC undo|PLAY redo|ALGO track");
+        s_cat(t, kit_ui() ? "WHITE scene|REC undo|PLAY redo|ALGO track" : "REC undo|PLAY redo|ALGO track");
         return;
     }
     switch (ui.page) {
     case P_ARRANGE:
         if (kit_ui()) {
-            s_cat(t, "ALGO drum|PRESET kit|BLACK drum|WHITE scene");
+            s_cat(t, "ALGO drum|PRESET kit|WHITE step|HOME held: scenes");
             break;
         }
         for (int i = 0; i < NKEYS; i++)             /* a kit's black key held: its sounds' mutes on the white keys */
@@ -3231,7 +3234,7 @@ static void list_build(void)
             lst.sel = 1;                             /* (the note is never picked) */
         return;
     }
-    if (steps_page(keep) && ui.held && is_seqt(trk)) {   /* a step held + SEL: its notes, to remove */
+    if (trig_page(keep) && ui.held && is_seqt(trk)) {   /* a step held + SEL: its notes, to remove */
         const step_t *st = &tpat(trk)->st[step_shown(ui.held_first)];
         if (is_drum(trk)) {                           /* each sound on the step, by key */
             for (int i = 1, r = 0; i <= NDRUM; i++)

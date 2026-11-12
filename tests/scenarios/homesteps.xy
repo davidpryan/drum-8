@@ -1,0 +1,56 @@
+# WARP-8: HOME on the kit writes steps. A black key picks the drum, a white key is its step (a tap toggles; held,
+# the knobs are the step's); a black key held, the knobs shape its lane; OCT is the bar. HOME held, the white keys
+# are the scenes, and the page stays
+wait 300
+listen
+expect trk 1
+tap HOME
+wait 40
+expect page Arrange
+tapkey b0
+tapkey w0
+tapkey w4
+wait 40
+said step 5 on
+# (the pick's audition, then steps 1 and 5)
+tap PLAY
+wait 1900
+tap PLAY
+expect drumhits 3
+# a step held: knob 1 its velocity
+key w4 down
+wait 100
+turn K1 -40
+wait 40
+key w4 up
+wait 40
+expect stepvel 1 1 5 60
+# the second drum on its own steps
+tapkey b1
+tapkey w2
+wait 40
+said step 3 on
+# a drum held (key 6, empty): knob 1 its hits, spread
+key b5 down
+wait 100
+turn K1 4
+wait 40
+said HITS
+# (steps 1 and 5 have the kick first; 9 and 13 only the lane's drum)
+expect note 1 1 9 6
+expect note 1 1 13 6
+key b5 up
+wait 40
+# HOME held: a white key is a scene (a new one: a copy), and HOME's page stays
+press HOME
+tapkey w1
+release HOME
+wait 40
+expect scene 2
+expect page Arrange
+press HOME
+tapkey w0
+release HOME
+wait 40
+expect scene 1
+shot homesteps.png

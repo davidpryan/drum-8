@@ -1509,7 +1509,13 @@ static void key_down(int k)
         say(proj.trk[AUX_BRAIN].par[q] & bit ? "MOVES" : "LEAVES", TRACK_NAME[b]);
         return;
     }
-    if (p == P_ARRANGE || p == P_SONG) {
+    if (home_held() && kit_ui() && w >= 0 && !ui.held && p != P_SONG) {   /* WARP-8: HOME held, the white keys the
+                                                  * scenes (OCT: 17-32), from any of the kit's pages; held long, the
+                                                  * scene is asked to be cleared (holds) */
+        scene_key(k, ui.scene_pg * 16 + w, proj.rsv[2] & SCENES_AT_END ? SCENE_END : SCENE_BAR);
+        return;
+    }
+    if ((p == P_ARRANGE && !kit_ui()) || p == P_SONG) {
         if (w >= 0) {
             if (p == P_SONG) {
                 song_t *sg = &pats.song;
@@ -1544,13 +1550,6 @@ static void key_down(int k)
                 }
             }
             scene_key(k, ui.scene_pg * 16 + w, proj.rsv[2] & SCENES_AT_END ? SCENE_END : SCENE_BAR);
-        } else if (b >= 0 && b < NDRUM && p == P_ARRANGE && kit_ui()) {   /* WARP-8, HOME on a kit: the drum picked
-                                                  * (heard when stopped), as on Steps; its mute is GLO held */
-            ui.kmode[k] = playing() ? KM_IDLE : KM_SOUND;
-            ui.dsound = (uint8_t)b;
-            ui.knote[k] = (uint8_t)(b + 1);
-            if (!playing())
-                engine_key(trk, b + 1, 1, 127);
         } else if (b >= 0 && b < NSEQT) {
             ui.kmode[k] = KM_MUTE;
             ui.knote[k] = (uint8_t)b;
@@ -1609,7 +1608,7 @@ static void key_down(int k)
         }
         return;
     }
-    if (steps_page(p)) {                         /* Steps and Bar */
+    if (trig_page(p)) {                          /* Steps and Bar (and the kit's HOME) */
         if (!is_seqt(trk))
             return;
         if (p == P_STEPS && ui.chordmode && !is_drum(trk)) {   /* chord mode: a key writes the chord */
@@ -1982,7 +1981,7 @@ static void button_up(int b)
             say("OCTAVE", t);
             break;
         }
-        if (ui.held && steps_page(ui.page) && is_seqt(sel_trk())) {   /* a step held: its nudge */
+        if (ui.held && trig_page(ui.page) && is_seqt(sel_trk())) {   /* a step held: its nudge */
             step_nudge(d);
             break;
         }
@@ -1996,12 +1995,14 @@ static void button_up(int b)
             pattern_octave(sel_trk(), d);           /* SEQ held: the pattern's notes an octave down or up */
             break;
         }
-        if ((ui.page == P_ARRANGE || ui.page == P_SONG) && !home_held()) {   /* the white keys' scenes: 1-16, 17-32 */
+        if (kit_ui() && ui.page != P_SONG ? home_held()
+                                             : (ui.page == P_ARRANGE || ui.page == P_SONG) && !home_held()) {
+                                                 /* the white keys' scenes: 1-16, 17-32 (the kit: HOME held) */
             ui.scene_pg = (uint8_t)(d > 0);
             say("SCENES", ui.scene_pg ? "17 to 32" : "1 to 16");
             break;
         }
-        if ((steps_page(ui.page) && !(ui.btn >> B_SEQ & 1u)) || (ui.page == P_WEAVE && wv_from(sel_trk()))) {
+        if ((trig_page(ui.page) && !(ui.btn >> B_SEQ & 1u)) || (ui.page == P_WEAVE && wv_from(sel_trk()))) {
             ui.bar = (uint8_t)clampi(ui.bar + d, 0, NBAR - 1);   /* (SEQ held: the keyboard's octave, below; Weave:
                                                                   * the bar its rows show) */
             num_s((uint32_t)ui.bar + 1u, t);
@@ -2406,7 +2407,7 @@ static void knob_do(int k, int32_t e)
         trick_knob(k, e);
         return;
     }
-    if (steps_page(ui.page) && ui.held) {
+    if (trig_page(ui.page) && ui.held) {
         step_knob(k, e);
         return;
     }
@@ -2599,7 +2600,7 @@ static const char *list_sec;                    /* the reader: the section it na
                                                  * another) */
 static int list_key(void)                         /* -1: not kept (a held step's list, a Bluetooth list) */
 {
-    if (lst.bt || (steps_page(ui.page) && ui.held && is_seqt(sel_trk())))
+    if (lst.bt || (trig_page(ui.page) && ui.held && is_seqt(sel_trk())))
         return -1;
     return list_is_setup(ui.page) ? (int)NPAGE_BTN : page_group(ui.page);
 }
@@ -4138,7 +4139,7 @@ static void input(void)
                 continue;
             }
 
-            if (ui.held && steps_page(ui.page) && i == B_ARP && is_seqt(sel_trk())) {   /* the held steps' tricks */
+            if (ui.held && trig_page(ui.page) && i == B_ARP && is_seqt(sel_trk())) {   /* the held steps' tricks */
                 ui.trickpg = 1;
                 ui.lockpg = 0;
                 ui.held_used = 1;
@@ -4146,7 +4147,7 @@ static void input(void)
                 ui.btn_used |= m;
                 continue;
             }
-            if (ui.held && steps_page(ui.page) && (i == B_EDIT || i == B_ENV || i == B_FX || i == B_LFO) &&
+            if (ui.held && trig_page(ui.page) && (i == B_EDIT || i == B_ENV || i == B_FX || i == B_LFO) &&
                 !is_aux(sel_trk())) {
                 ui.trickpg = 0;
                 ui.lockpg = (uint8_t)(1 + (i == B_EDIT ? P_ENGINE : i == B_ENV ? P_ENV
@@ -4316,7 +4317,17 @@ static void leds(void)
                 k |= 1u << WHITE_K[15];
             else
                 mid |= 1u << WHITE_K[15];
-        } else if ((steps_page(ui.page) || kit_edit_steps()) && is_seqt(trk)) {   /* (a kit's EDIT pages: its steps too) */
+        } else if (home_held() && kit_ui() && ui.page != P_SONG) {   /* WARP-8, HOME held: the scenes on the white keys */
+            int f = ui.scene_pg * 16;
+            for (i = 0; i < 16; i++)
+                if (pats.scene[f + i].used)
+                    dim |= 1u << WHITE_K[i];
+            if (cur_scene() / 16 == ui.scene_pg)
+                k |= 1u << WHITE_K[cur_scene() % 16];
+            if (playing() && seq.cue < NSCENE && seq.cue / 16 == ui.scene_pg && seq.cue != cur_scene() &&
+                (seq.step_tick & 3u) < 2u)
+                k |= 1u << WHITE_K[seq.cue % 16];
+        } else if ((trig_page(ui.page) || kit_edit_steps()) && is_seqt(trk)) {   /* (a kit's EDIT pages: its steps too) */
             const tpat_t *tp = tpat(trk);
             int ph = eng_step[trk];
             for (i = 0; i < 16; i++) {
