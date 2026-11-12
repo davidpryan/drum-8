@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WARP-8</title>
+<meta name="description" content="A pocket drum machine for the M-VAVE FM-1: WARP-8's sequencer with every track a drum kit, and Hortator's drum models and sounds on the keys.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600&family=Barlow+Semi+Condensed:wght@600;700&display=swap">
+<style>
+:root { --ground: #f4f3f1; --ink: #1c1c20; --muted: #66666e; --rule: #dcdbd8; --card: #ffffff; --accent: #c8306f; color-scheme: light; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --ground: #000; --ink: #ebebee; --muted: #9a9aa2; --rule: #2e2e34; --card: #141418; --accent: #ff5caa; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --ground: #000; --ink: #ebebee; --muted: #9a9aa2; --rule: #2e2e34; --card: #141418; --accent: #ff5caa; color-scheme: dark; }
+body { background: var(--ground); color: var(--ink); margin: 0; padding-inline: 16px; padding-block: 48px 64px;
+       font: 400 17px/1.6 "Barlow", "Helvetica Neue", Arial, sans-serif; }
+main { max-width: 42rem; margin: 0 auto; }
+h1 { font: 700 3rem/1 "Barlow Semi Condensed", "Barlow", sans-serif; margin: 0 0 .7rem; }
+h2 { font: 700 1.4rem "Barlow Semi Condensed", "Barlow", sans-serif; margin: 2.2rem 0 .6rem; }
+.threads { display: flex; gap: 6px; margin: 0 0 1.4rem; }
+.threads span { flex: 1; height: 6px; border-radius: 3px; }
+.lede { font-size: 1.15rem; margin: 0 0 1.6rem; max-width: 36rem; }
+.video { aspect-ratio: 16 / 9; margin: 0 0 1.4rem; border-radius: 14px; overflow: hidden; border: 1px solid var(--rule); background: #000; }
+.video iframe { width: 100%; height: 100%; border: 0; display: block; }
+.shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 0 0 1.8rem; }
+.shots img { width: 100%; height: auto; border-radius: 14px; image-rendering: pixelated; border: 1px solid var(--rule); }
+.status { border: 1px solid var(--rule); background: var(--card); border-radius: 14px; padding: 12px 16px; margin: 0 0 1.6rem; }
+.ways { display: grid; gap: 12px; margin: 0 0 1rem; }
+.ways a { display: block; text-decoration: none; color: var(--ink); background: var(--card); border: 1px solid var(--rule);
+          border-radius: 14px; padding: 14px 18px; }
+.ways a:hover, .ways a:focus-visible { border-color: var(--accent); outline: none; }
+.ways strong { font: 600 1.25rem "Barlow Semi Condensed", "Barlow", sans-serif; color: var(--accent); display: block; }
+.ways span { color: var(--muted); font-size: .95rem; }
+ul.feat { padding-left: 1.2rem; }
+ul.feat li { margin: 0 0 .5rem; }
+p.small { color: var(--muted); font-size: .9rem; }
+a { color: var(--accent); }
+code { font-size: .9em; }
+</style>
+<style>
+:root { --panel-lit: #e6b432; --panel-lit-ink: #18120e; --panel-lit-white: #f0d58a; --panel-lit-black: #46aaa0;
+        --panel-dim: #6b5a2e; --panel-dim-white: #e4d8b4; --panel-dim-black: #8fbdb7; }   /* (the FM-1's lights: fm1panel.js; as app/web/emu) */
+:root { --ground: #f4ecdc; --bg: #f4ecdc; --card: #fffaf0; --panel: #fffaf0; --now: #e9dcc4; --rule: #d8c6a8; --line: #d8c6a8; --muted: #6a5440; --dim: #6a5440; --ink: #24180f; --fg: #24180f; --accent: #8a5a00; --on-accent: #ffffff; --keytext: #ffffff; --teal: #2a7a72; --bad: #b3261e; --red: #b3261e; --focus: #2f5f9a; --wave: #a08a6e; --key: #24180f; color-scheme: light; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground: #18120e; --bg: #18120e; --card: #2c221a; --panel: #2c221a; --now: #46382a; --rule: #4a3c2e; --line: #4a3c2e; --muted: #beaa8c; --dim: #beaa8c; --ink: #f4e6c8; --fg: #f4e6c8; --accent: #e6b432; --on-accent: #18120e; --keytext: #18120e; --teal: #46aaa0; --bad: #ff7a5c; --red: #ff7a5c; --focus: #8fb4e0; --wave: #786450; --key: #f4e6c8; color-scheme: dark; } }
+:root[data-theme="dark"] { --ground: #18120e; --bg: #18120e; --card: #2c221a; --panel: #2c221a; --now: #46382a; --rule: #4a3c2e; --line: #4a3c2e; --muted: #beaa8c; --dim: #beaa8c; --ink: #f4e6c8; --fg: #f4e6c8; --accent: #e6b432; --on-accent: #18120e; --keytext: #18120e; --teal: #46aaa0; --bad: #ff7a5c; --red: #ff7a5c; --focus: #8fb4e0; --wave: #786450; --key: #f4e6c8; color-scheme: dark; }
+.lm-top { max-width: 64rem; margin: 0 auto 28px; display: flex; flex-wrap: wrap; align-items: center; gap: .3rem 1.4rem;
+          padding: 14px 0 12px; border-bottom: 1px solid var(--rule); font: 600 1rem/1.4 "Barlow", "Helvetica Neue", Arial, sans-serif; }
+.lm-top .lm-brand { display: inline-flex; align-items: center; gap: .55rem; color: var(--ink); text-decoration: none;
+                    font: 700 1.35rem/1 "Barlow Semi Condensed", "Barlow", sans-serif; letter-spacing: .02em; }
+.lm-top .lm-threads { display: inline-flex; gap: 3px; }
+.lm-top .lm-threads i { width: 4px; height: 18px; border-radius: 2px; }
+.lm-top nav { display: flex; flex-wrap: wrap; gap: .2rem 1.1rem; margin-left: auto; }
+.lm-top nav a { color: var(--muted); text-decoration: none; padding: 2px 0; border-bottom: 2px solid transparent; }
+.lm-top nav a:hover, .lm-top nav a:focus-visible { color: var(--ink); }
+.lm-top nav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); }
+@media (max-width: 520px) { .lm-top nav { margin-left: 0; width: 100%; } }
+</style></head>
+<body><header class="lm-top"><a class="lm-brand" href="./" aria-current="page"><span class="lm-threads" aria-hidden="true"><i style="background:#e6b432"></i><i style="background:#d66030"></i><i style="background:#a0aa46"></i><i style="background:#46aaa0"></i><i style="background:#6e96c8"></i><i style="background:#b46e96"></i><i style="background:#d2aa78"></i><i style="background:#96be96"></i></span>WARP-8</a><nav aria-label="WARP-8"><a href="emu/">Try it</a><a href="kit/">Manual</a><a href="manual/">LOOM-8 manual</a><a href="install/">Install</a><a href="samples/">Samples</a><a href="backup/">Backup</a><a href="mirror/">Mirror</a><a href="https://github.com/davidpryan/drum-8">Source</a></nav></header>
+<main>
+<h1>WARP-8</h1>
+<div class="threads" aria-hidden="true"><span style="background:#e6b432"></span><span style="background:#d66030"></span><span style="background:#a0aa46"></span><span style="background:#46aaa0"></span><span style="background:#6e96c8"></span><span style="background:#b46e96"></span><span style="background:#d2aa78"></span><span style="background:#96be96"></span></div>
+<p class="lede">A pocket drum machine for the M-VAVE FM-1: <a href="https://github.com/charlesvestal/fm1-loom">LOOM-8</a>'s
+sequencer, mixer and effects around a single kit of eleven drums, and <a href="https://deadactive.github.io/hortator/">Hortator</a>'s
+drum models and factory sounds on the keys.</p>
+<div class="shots">
+  <img src="img/warp-steps.png" width="240" height="240" alt="Steps: the picked drum's sixteen steps as bars of velocity, its chance, ratchets and locks marked under them, the other drums thin beneath">
+  <img src="img/warp-kit.png" width="240" height="240" alt="HOME on a kit: eleven rows, a drum each, with its steps and its level; the knobs are the tempo, every drum's length, the swing and the kit">
+  <img src="img/warp-generate.png" width="240" height="240" alt="The Generate page with Grids: the hits it would write outlined over the kick, snare and hat lanes, its X, Y and fill on the knobs">
+</div>
+<div class="status"><strong>Version 0.12. Not yet tested on an FM-1.</strong> It builds and passes its tests in the
+simulator; nobody has run this build on the hardware. It installs and uninstalls the way every fm1-base firmware
+does, and the installer can put M-VAVE's own firmware back, but until someone has tried it, treat it as an experiment.
+Installing is at your own risk. It starts with fresh projects: back up LOOM-8 first if you have work in it.</div>
+<nav class="ways" aria-label="Get WARP-8">
+  <a href="emu/"><strong>Try it in the browser</strong><span>The same code the FM-1 runs, with sound. No FM-1 needed.</span></a>
+  <a href="install/"><strong>Install</strong><span>From Chrome or Edge, with the FM-1 connected by USB. Nothing to install on the computer.</span></a>
+  <a href="kit/"><strong>Read the manual</strong><span>The kit, its keys and its held buttons: what WARP-8 does its own way.</span></a>
+  <a href="manual/"><strong>Read LOOM-8's manual</strong><span>For the rest: the sample and slice tracks, the mixer, the effects and saving work as LOOM-8's do; its synth engines are not here.</span></a>
+  <a href="samples/"><strong>Samples</strong><span>Put your own samples on the FM-1: add, replace, rename, reorder and remove up to 32.</span></a>
+  <a href="backup/"><strong>Backup</strong><span>Save your projects, presets and samples to a file, and load them back later.</span></a>
+  <a href="mirror/"><strong>Mirror</strong><span>The FM-1's screen on your computer, live, and its buttons, keys and knobs to play from there.</span></a>
+  <a href="firmware/warp-0.12.fwsc"><strong>Download warp-0.12.fwsc</strong><span>For the command-line installer: <code>python3 base/tools/fm1_install.py warp-0.12.fwsc</code></span></a>
+  <a href="https://github.com/davidpryan/drum-8"><strong>Source</strong><span>GitHub, GPL-3.0. A fork of LOOM-8 by Charles Vestal, with Hortator's drum models by DEADACTIVE, on Felucca by Leo Kuroshita (Hügelton Instruments).</span></a>
+</nav>
+
+<h2>What's in it</h2>
+<ul class="feat">
+  <li><b>One kit of eleven drums</b>, each a drum model with its own knobs, envelope, filter, pan and sends, beside a sample track, a slice track and the throws.</li>
+  <li><b>73 drum models</b>: LOOM-8's thirty and 43 of Hortator's: the 808 and 909 family, Plaits' kicks, snares and hats, a struck membrane, FM, and the TRX and EFM voices measured from the Machinedrum.</li>
+  <li><b>DRUM SOUND</b>: 143 of Hortator's factory sounds by type (kick, snare, hat, clap, tom, perc, cymbal), each on the key and heard as you turn to it. On a kit's pads the PRESETS knob steps through whole kits the same way.</li>
+  <li><b>Sixteen factory kits</b>, six of them made of Hortator's sounds: TRX, EFM, 808, 909, Modern, Hard.</li>
+  <li><b>One rule for the keys</b>: a black key is a drum, a white key is a step of the picked drum, on every page of the kit. Hold a step, a drum or a button and the knobs and keys are its.</li>
+  <li><b>HOME is the whole pattern</b>, a row a drum, and you write it there: the tempo, every drum's length, the swing and the kit on its knobs. ALGORITHM picks the drum on every page; PRESETS is the kit on HOME, the pattern on SEQ, the drum's next sound on EDIT.</li>
+  <li><b>Steps is the picked drum alone</b>: a bar each step's velocity, its chance, ratchets and locks marked, the other drums thin beneath, and the drum's own four knobs under your hand. A drum can have a length of its own and run against the others.</li>
+  <li><b>A held step</b>: velocity, chance, ratchets and nudge on the knobs; on a sound page, the page's knobs locked to that step. The nudge is each drum's own: a snare can drag while the kick on the same step stays put.</li>
+  <li><b>A colour for each drum</b>, the same on every page: its row, its steps, its pad, its key.</li>
+  <li><b>A sound browser</b>: PRESETS on a drum lists Hortator's 143 sounds by engine, each heard as you turn to it; ALGORITHM jumps to the next engine.</li>
+  <li><b>Generators</b>: hold a drum and the knobs set its hits, turn it, vary it; the Generate page previews Euclid, mutate and Mutable Instruments' Grids before it writes them. <b>Grids is also a throw</b>: held, the kick, snare and hat play from the drum map, and SEL keeps what you hear.</li>
+  <li><b>Held buttons, from any page</b>, each drawing its keys: GLO for the mutes, solo and a fill (at once or at the bar line), FX for the throws. EDIT held, a knob turns every drum's.</li>
+  <li><b>A Scenes page</b> beside HOME: every track's pattern in the scene on a knob of its own, the tracks' mutes on the black keys, the kit's drums and their mutes, the scenes on the white keys.</li>
+  <li><b>ALL</b> on an effect's Mix strip: every track into FX I or FX II.</li>
+  <li><b>Weave</b> on the kit's ARP page: two of its patterns crossed live, by bars, steps, rhythm or pitch, always or held as a throw; KEEP AS PATTERN writes the result.</li>
+  <li><b>An FX sequence</b>, a fifth sequence beside the kit, the sample track, the slice track and the throws: its steps hold amounts for the two effects, in eleven lanes, and can ramp from one to the next. It looks and plays as the throws' sequence does.</li>
+  <li><b>Twenty-four throws</b>: LOOM-8's twelve, and twelve more in the second octave: thin, roll, buzz, soft, hard, rise, drop, down, a low-pass, delay and reverb throws, a crusher.</li>
+  <li>LOOM-8's <b>sequencer</b>: eight patterns of up to 64 steps, tricks and parameter locks on any step, weave, throws, scenes and a song.</li>
+  <li>Two <b>send effects</b>, a mixer with EQ and a compressor on the master.</li>
+</ul>
+<h2>What's not</h2>
+<ul class="feat">
+  <li>LOOM-8's synth engines (knit, rayon, jacquard, bellows, cane, voile, acid), its other tracks, its conductor and its weave track.</li>
+  <li>Hortator's ACID and SAMPL models, and their eight presets.</li>
+</ul>
+<p class="small">To go back to the official firmware, use the installer's "Back to the stock firmware", or
+M-VAVE's updater, M-UPGRADE, from <a href="https://www.m-vave.com/download">m-vave.com/download</a>. LOOM-8's
+way of working owes a great deal to teenage engineering's OP-XY. M-VAVE, FM-1, Machinedrum and OP-XY are trademarks of
+their owners; WARP-8 is not affiliated with any of them, nor with LOOM-8 or Hortator.</p>
+</main>
+</body>
+</html>
