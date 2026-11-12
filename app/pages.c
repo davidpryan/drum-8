@@ -816,8 +816,8 @@ static int group_n(int g)
         return 3;                                    /* (grp_page: FX I, FX II, Throws: no Character, no Sends) */
     if (b == B_GLO)
         return DEBUG_BUILD ? 7 : 6;                  /* Debug last, in a debug build only */
-    if (b == B_HOME)                                 /* (WARP-8, the kit: the pattern, the scenes, the song) */
-        return kit_ui() ? 3 : 2;
+    if (b == B_HOME)                                 /* (WARP-8: the pattern, the scenes, the song) */
+        return LARGE ? 2 : 3;
     return PAGE_BTN[g].n;
 }
 /* a button's i-th page now (ARP's depend on the player: the arp has Hold before Weave; the conductor and the
@@ -830,7 +830,7 @@ static int wv_cued(int t) { return proj.trk[t].rsv[3] & 1u; }   /* PLAYS: 0 alwa
 static int wv_kind(int t) { return t == AUX_PUNCH ? WK_FX : is_drum(t) ? WK_KIT : WK_MEL; }
 static int grp_page(int g, int i)
 {
-    if (PAGE_BTN[g].btn == B_HOME && kit_ui())       /* WARP-8: the scenes between the pattern and the song */
+    if (PAGE_BTN[g].btn == B_HOME && !LARGE)         /* WARP-8: the scenes between the pattern and the song */
         return i == 1 ? P_SCENES : i == 2 ? P_SONG : P_ARRANGE;
     if ((PAGE_BTN[g].btn == B_ENV || PAGE_BTN[g].btn == B_LFO) && is_midi(sel_trk()))
         return P_ENGINE;                             /* (a MIDI track has no sound to shape: its knobs instead) */
@@ -890,7 +890,7 @@ static int tp_page_param(int p, int k, int trk)
         return is_aux(trk) ? -1 : M[p - P_ENGINE][k];
     if (is_aux(trk)) {
         if (p == P_MIX)                              /* (the conductor and the throws: no sound, no fader) */
-            return k == 3 && is_fx(trk) ? TP_LEVEL : -1;
+            return !is_fx(trk) ? -1 : k == 3 ? TP_LEVEL : k == 0 ? TP_SEND1 : -1;
         if (trk == AUX_BRAIN && (p == P_ENGINE || p == P_SUB))   /* key, scale, link; the Follow page: its track */
             return p == P_SUB ? (k ? -1 : TP_E1) : k < 3 ? TP_E2 + k : -1;
         if (p == P_ENGINE)
@@ -1894,7 +1894,7 @@ static void page_knobs(knob_t *k)
     switch (p) {
     case P_SCENES:
     case P_ARRANGE:
-        if (kit_ui()) {                              /* WARP-8, HOME on a kit: the tempo, every drum's length, the swing,
+        if (kit_ui() && p == P_ARRANGE) {            /* (Scenes: LOOM-8's own four, below) */                              /* WARP-8, HOME on a kit: the tempo, every drum's length, the swing,
                                                       * the kit */
             tempo_text(t);
             kv(&k[0], "TEMPO", t, (int)proj.tempo_x10 / 10 - 40, 180);
@@ -2049,9 +2049,11 @@ static void page_knobs(knob_t *k)
         break;
     }
     case P_MIX:
-        if (is_fx(trk))
+        if (is_fx(trk)) {                            /* (WARP-8: ALL: every track into this effect, engine.c) */
+            ktp(&k[0], trk, TP_SEND1);
+            k[0].name = "ALL";
             ktp(&k[3], trk, TP_LEVEL);
-        else if (!is_aux(trk)) {                     /* (the conductor and the throws: no sound, no knobs; a kit's
+        } else if (!is_aux(trk)) {                     /* (the conductor and the throws: no sound, no knobs; a kit's
                                                       * sends are its keys': FX, Sends) */
             if (!is_drum(trk)) {
                 ktp(&k[0], trk, TP_SEND1);
@@ -2541,7 +2543,7 @@ static void page_footer(char *t)
         s_cat(t, "BLACK mute|hold: solo|WHITE play");
         break;
     case P_SCENES:
-        s_cat(t, "WHITE scene: at the bar|held: clear|OCT 17-32");
+        s_cat(t, "WHITE scene|held: clear|OCT 17-32|KNOB 4 pattern");
         break;
     case P_THROWS:
         s_cat(t, seq.grids_on ? "KNOBS the drum map|SEL keep it" : "KEYS throws, two octaves|WHITE 15 grids");
@@ -2630,7 +2632,7 @@ static void enc_line(char *t)
     if (n > 1)                        /* SELECT names what it turns to where that is the point of the page */
         e = s_cat(t, p == P_CHARACTER ? "SELECT sends" : p == P_SENDS ? "SELECT effects" : p == P_ENV ? "SELECT filter"
                      : p == P_LFO ? "SELECT more" : "SELECT page");
-    if (p != P_ARRANGE && p != P_SONG && p != P_THROWS && p < P_MASTER && p != P_SCENES)
+    if ((p != P_ARRANGE && p != P_SONG && p != P_THROWS && p < P_MASTER) || p == P_SCENES)
         e = s_cat(e, *t ? "|ALGO track" : "ALGO track");
     {
         const char *a = p == P_ARRANGE || p == P_SCENES ? "scene" : p == P_SONG ? "slot"
@@ -3731,46 +3733,43 @@ static void draw_arrange(void)
         cv_blit(0, MAIN_Y);
         return;
     }
-    for (int tr = 0; tr < NSEQT; tr++) {
-        int32_t y = 2 + tr * 10 + (tr >= NTRK ? 4 : 0);
+    for (int r = 0; r < 4; r++) {                    /* WARP-8: the kit, the sample track, the slice track, the throws:
+                                                      * each its pattern in the scene and where it plays; under the
+                                                      * kit, its eleven drums in their inks, the scene's muted hollow */
+        static const uint8_t ROW[4] = {0, 1, 2, AUX_PUNCH};
+        static const uint8_t RY[4] = {4, 34, 56, 82};
+        int tr = ROW[r];
+        int32_t y = RY[r];
         int muted = seq.mute >> tr & 1u, pt = seq.ppat[tr] % NPATT, len = tpat(tr)->len, pos = eng_step[tr];
         uint16_t ink = muted ? K_FAINT : K_DIM;
-        char nm[8];
-        if (tr < NTRK)
-            num_s((uint32_t)tr + 1u, nm);
-        else
-            s_cat(nm, tr == AUX_BRAIN ? "CO" : tr == AUX_PUNCH ? "TH" : "TP");
-        text_r(22, y - 3, &FONT_XS, nm, tr == sel_trk() ? K_TEXT : ink);
-        if (tr < NTRK && mh[tr] > 0)                 /* (its meter, at the left of its number) */
+        text_r(34, y - 3, &FONT_XS, tr == AUX_PUNCH ? "THR" : TRACK_NAME[tr], tr == sel_trk() ? K_TEXT : ink);
+        if (tr < NTRK && mh[tr] > 0)                 /* (its meter, at the left of its name) */
             cv_rect(4, y + 5 - mh[tr], 3, mh[tr], muted ? K_FAINT : trk_ink(tr));
         else if (tr >= NTRK && amh[tr - NTRK] > 0)
             cv_rect(4, y + 5 - AR_MH, 3, AR_MH, muted ? K_FAINT : trk_ink(tr));
         num_s((uint32_t)pt + 1u, s_cat(t, "P"));
-        text_c(37, y - 3, &FONT_XS, t, muted ? K_FAINT : trk_ink(tr));
-        cv_rect(52, y + 3, 88, 2, K_PANEL2);         /* (88 px: "mute" fits before the rule at 168) */
-        int lf, le, bw = 88 * len / NSTEP;
+        text_c(48, y - 3, &FONT_XS, t, muted ? K_FAINT : trk_ink(tr));
+        cv_rect(62, y + 3, 78, 2, K_PANEL2);
+        int lf, le, bw = 78 * len / NSTEP;
         pat_loop(tpat(tr), &lf, &le);
         if (len > 0 && len <= NSTEP) {
             if (lf == 0 && le == len)
-                cv_rect(52, y + 3, bw, 2, muted ? K_LINE : trk_tint(tr));
+                cv_rect(62, y + 3, bw, 2, muted ? K_LINE : trk_tint(tr));
             else {                                   /* a cropped loop: bright inside, the rest of the pattern dim */
-                cv_rect(52, y + 3, bw, 2, K_LINE);
-                cv_rect(52 + bw * lf / len, y + 2, bw * le / len - bw * lf / len, 4, muted ? K_FAINT : trk_tint(tr));
+                cv_rect(62, y + 3, bw, 2, K_LINE);
+                cv_rect(62 + bw * lf / len, y + 2, bw * le / len - bw * lf / len, 4, muted ? K_FAINT : trk_tint(tr));
             }
         }
-        if (playing() && !muted && len > 0) {
-            if (lf == 0 && le == len)
-                cv_round(52 + 86 * (pos % len) / (len > 1 ? len - 1 : 1), y + 1, 3, 6, 1, trk_ink(tr));
-            else                                     /* (inside the loop, repeating) */
-                cv_round(52 + (bw - 3) * (pos % len) / (len > 1 ? len - 1 : 1), y + 1, 3, 6, 1, trk_ink(tr));
-        }
+        if (playing() && !muted && len > 0)
+            cv_round(62 + ((lf == 0 && le == len ? 76 : bw - 3) * (pos % len)) / (len > 1 ? len - 1 : 1), y + 1, 3, 6, 1,
+                     trk_ink(tr));
         if (muted)
             cv_text(144, y - 3, &FONT_XS, "mute", K_DIM);
-        else if (tr < NTRK && kit_slot(tr) >= 0 && seq.kmute[kit_slot(tr)]) {   /* its sounds the scene mutes: how many */
-            char ko[12];
-            s_cat(num_s((uint32_t)__builtin_popcount(seq.kmute[kit_slot(tr)]), ko), " off");
-            cv_text(144, y - 3, &FONT_XS, ko, K_DIM);
-        }
+        if (tr == 0)                                 /* the kit's drums */
+            for (int k = 0; k < NDRUM; k++) {
+                int off = muted || (seq.kmute[0] >> k & 1u);
+                cv_frame(62 + k * 7, y + 13, 6, 6, 1, off ? K_LINE : drum_ink(k), off ? K_BG : drum_ink(k));
+            }
     }
     cv_rect(168, 4, 1, 112, K_LINE);
     text_c(204, 8, &FONT_XS, cue == 0xFF || cue == sc ? "scene" : seq.cue_end ? "at the end" : "next bar", K_DIM);
@@ -6667,7 +6666,7 @@ static void draw_page(void)
         return;
     }
     switch (ui.page) {
-    case P_SCENES: draw_layer(0); break;             /* WARP-8: the scenes on the white keys */
+    case P_SCENES: draw_arrange(); break;            /* WARP-8: the scenes on the white keys, LOOM-8's Arrange */
     case P_ARRANGE:
         if (kit_ui())
             draw_kit_home();

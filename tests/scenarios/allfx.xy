@@ -1,0 +1,22 @@
+# WARP-8: Mix, an effect's strip: knob 1 is ALL, every track into that effect (on top of what each sends)
+wait 300
+listen
+expect trk 1
+tap GLO
+wait 40
+expect page Mix
+turn ALGO 3
+wait 40
+expect trk 11
+turn K1 40
+wait 500
+said ALL
+expect par11.send1 40
+shot allfx.png
+turn ALGO 1
+wait 40
+expect trk 12
+turn K1 20
+wait 40
+expect par12.send1 20
+expect par11.send1 40

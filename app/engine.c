@@ -1417,6 +1417,19 @@ static void render_sub(uint32_t n, uint32_t at)
             if (v > trk_peak[t])
                 trk_peak[t] = v;
         }
+    {   /* WARP-8: an effect's ALL (its Mix strip's first knob, the FX track's TP_SEND1): every track into it, the
+         * whole dry mix, on top of what each sends */
+        int a1 = epar[AUX_FX1][TP_SEND1], a2 = epar[AUX_FX2][TP_SEND1];
+        if (a1 | a2) {
+            float g1 = (float)a1 * (0.5f / 127.0f), g2 = (float)a2 * (0.5f / 127.0f);
+            uint32_t j;
+            for (j = 0; j < n; j++) {
+                float d = perc_l[j] + perc_r[j] + mel_l[j] + mel_r[j];
+                s1[j] += d * g1;
+                s2[j] += d * g2;
+            }
+        }
+    }
     PROF_ADD(PR_MIX, pt);
     {
         for (k = 0; k < 2; k++) {                         /* (timed apart: FX I, FX II) */

@@ -156,20 +156,41 @@ A mute waiting for the bar blinks on its key. Stopping applies it.
 
 ## Scenes: HOME's second page
 
-<img src="img/warp-home-held.png" width="240" alt="The Scenes page: SCENES 1-16, the playing scene's key lit, the used ones grey" title="Scenes">
+<img src="img/warp-home-held.png" width="240" alt="The Scenes page: the kit, sample, slice and throw tracks each with its pattern and playhead, the kit's eleven drums as coloured squares with a muted one hollow, scene 2 playing and scene 1 coming in 3 beats, the 32 scenes as dots" title="Scenes">
 
-Turn SELECT on HOME: the pattern, then **Scenes**, then the Song. On Scenes the white keys are the scenes. A scene is a
-pattern for each track and the mutes.
+Turn SELECT on HOME: the pattern, then **Scenes**, then the Song. It is LOOM-8's Arrange page, drawn for WARP-8.
 
-- Tap a key: that scene at the next bar. Tap it again while it waits: now.
-- An empty key makes a copy of the scene playing.
-- Hold a key to be asked to clear its scene.
-- OCT− and OCT+: scenes 1 to 16, or 17 to 32. PRESETS: the next scene.
-- The knobs are HOME's: tempo, length, swing, kit.
+- **A row for each track**: KIT, SMP, SLC and THR (the throws). Each shows which pattern it plays in this scene and a
+  line with its playhead. A muted track is dim.
+- **Under the kit, its eleven drums** as squares in their colours. A drum the scene mutes is hollow.
+- **The scene playing**, large, at the right. When another is cued, its number and the beats until it starts.
+- **The 32 scenes** as dots: the used ones lit, the mark at the left shows which sixteen the white keys hold.
 
-This is the one page of the kit where the white keys are not steps.
+| Control | Does |
+|---|---|
+| White keys | A scene, at the next bar. Again while it waits: now. An empty key: a copy of the scene playing. Held: asks to clear it |
+| OCT−, OCT+ | Scenes 1 to 16, or 17 to 32 |
+| PRESETS | The next scene |
+| ALGORITHM | The track (the row lit) |
+| Knob 1 | Tempo |
+| Knob 2 | Groove type: swing, lilt, drunk and the rest |
+| Knob 3 | The selected track's groove amount |
+| Knob 4 | The selected track's pattern in this scene |
+
+So a scene is built here: pick a track with ALGORITHM, set its pattern with knob 4, mute drums with GLO held. This is
+the one page of the kit where the white keys are not steps.
 
 HOME held is LOOM-8's shift, as before: REC undoes, PLAY redoes, ALGORITHM picks the track, knob 1 is fine tempo.
+
+## Mix: an effect on every track
+
+<img src="img/warp-allfx.png" width="240" alt="Mix with the FX I strip selected: knob 1 reads ALL 31%, knob 4 its level" title="ALL on an effect's strip">
+
+On Mix (GLO), turn ALGORITHM to the FX I or FX II strip. Knob 1 is **ALL**: how much of every track goes into that
+effect, on top of what each drum or track already sends. Knob 4 is the effect's level.
+
+With ALL up, whatever FX I or FX II is set to (chorus, delay, lofi, phaser, or a reverb on FX II) is heard on the
+whole mix. It is a send: the effect is added to the dry sound, which stays.
 
 ## FX held: throws
 

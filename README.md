@@ -24,7 +24,9 @@ What is different from LOOM-8:
 - **GLO held, the keys mute**, from any page: a black key a drum (held on: that drum alone), the first three white
   keys the kit, the sample track and the slice track; white 15 clears every mute; the last white key is a fill while
   held. Knob 1 with GLO held: mutes at once, or at the next bar line.
-- **Scenes are HOME's second page** on the kit (SELECT: the pattern, the scenes, the song). **FX held, the keys are
+- **Scenes are HOME's second page** (SELECT: the pattern, the scenes, the song): LOOM-8's Arrange drawn for the kit, the
+  sample, slice and throw tracks, the kit's drums and their mutes under it, a track's pattern in the scene on knob 4.
+  **ALL** on an effect's Mix strip sends every track into FX I or FX II. **FX held, the keys are
   the throws**, twenty-four of them. A held button draws its keys on the screen.
 - **Six more factory kits** made of those presets: TRX, EFM, 808, 909, Modern, Hard.
 - **One kit, eleven drums, no menus.** HOME on the kit is the whole pattern, a row a drum, and its white keys write

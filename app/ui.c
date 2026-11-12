@@ -2274,7 +2274,7 @@ static void sound_knob(int d)
 static void arrange_knob(int k, int32_t e)
 {
     int trk = sel_trk();
-    if (kit_ui()) {                              /* WARP-8, HOME on a kit: the tempo, every drum's length (their own
+    if (kit_ui() && ui.page == P_ARRANGE) {      /* WARP-8, HOME on a kit: the tempo, every drum's length (their own
                                                   * lengths go), the swing, the kit */
         if (k == 3)
             kit_knob(e > 0 ? 1 : -1);
