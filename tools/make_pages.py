@@ -150,7 +150,7 @@ code { font-size: .9em; }
 <h1>WARP-8</h1>
 <div class="threads" aria-hidden="true">__THREADS__</div>
 <p class="lede">A pocket drum machine for the M-VAVE FM-1: <a href="https://github.com/charlesvestal/fm1-loom">@@LOOM@@</a>'s
-sequencer, mixer and effects with every track a drum kit, and <a href="https://deadactive.github.io/hortator/">Hortator</a>'s
+sequencer, mixer and effects around a single kit of eleven drums, and <a href="https://deadactive.github.io/hortator/">Hortator</a>'s
 drum models and factory sounds on the keys.</p>
 <div class="shots">
   <img src="img/warp-steps.png" width="240" height="240" alt="A kit's Steps page: a grid of its eleven keys, each a lane of sixteen steps, the playhead's column lit">
@@ -174,20 +174,20 @@ Installing is at your own risk. It starts with fresh projects: back up @@LOOM@@ 
 
 <h2>What's in it</h2>
 <ul class="feat">
-  <li><b>Eight tracks, every one a kit</b> if you like: eleven keys a kit, each key a drum model with its own knobs, envelope, filter, pan and sends. Sample, slice and MIDI out tracks are there too.</li>
+  <li><b>One kit of eleven drums</b>, each a drum model with its own knobs, envelope, filter, pan and sends, beside a sample track, a slice track and the throws.</li>
   <li><b>73 drum models</b>: @@LOOM@@'s thirty and 43 of Hortator's: the 808 and 909 family, Plaits' kicks, snares and hats, a struck membrane, FM, and the TRX and EFM voices measured from the Machinedrum.</li>
   <li><b>DRUM SOUND</b>: 143 of Hortator's factory sounds by type (kick, snare, hat, clap, tom, perc, cymbal), each on the key and heard as you turn to it. On a kit's pads the PRESETS knob steps through whole kits the same way.</li>
   <li><b>Sixteen factory kits</b>, six of them made of Hortator's sounds: TRX, EFM, 808, 909, Modern, Hard.</li>
   <li><b>One kit, eleven drums, no menus</b>: HOME is the whole pattern, a row a drum, with the tempo, every drum's length, the swing and the kit on its knobs. ALGORITHM picks the drum on every page; PRESETS is the kit on HOME, the pattern on SEQ, the drum's next sound on EDIT.</li>
   <li><b>A grid of the whole kit</b> on its Steps page: every key a lane of sixteen steps, a black key picks the lane, the white keys write it. A drum can have a length of its own and run against the others.</li>
   <li><b>Generators</b>: hold a lane and the knobs set its hits, turn it, vary it; the Generate page previews Euclid, mutate and Mutable Instruments' Grids on the grid before it writes them.</li>
-  <li>@@LOOM@@'s <b>sequencer</b>: eight patterns a track of up to 64 steps, tricks and parameter locks on any step, weave, throws, scenes and a song.</li>
+  <li>@@LOOM@@'s <b>sequencer</b>: eight patterns of up to 64 steps, tricks and parameter locks on any step, weave, throws, scenes and a song.</li>
   <li><b>Mutes and fills from any page</b>: hold HOME and a black key mutes its track, a white key a drum of the kit; a step's chance can be "fill", played while HOME and the last white key are held.</li>
   <li>Two <b>send effects</b>, a mixer with EQ and a compressor on the master.</li>
 </ul>
 <h2>What's not</h2>
 <ul class="feat">
-  <li>@@LOOM@@'s synth engines (knit, rayon, jacquard, bellows, cane, voile, acid): taken out to make room.</li>
+  <li>@@LOOM@@'s synth engines (knit, rayon, jacquard, bellows, cane, voile, acid), its other tracks, its conductor and its weave track.</li>
   <li>Hortator's ACID and SAMPL models, and their eight presets.</li>
   <li>A manual of its own.</li>
 </ul>

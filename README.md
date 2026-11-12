@@ -9,9 +9,9 @@ Felucca. GPL-3.0-only as a whole (`LICENSING.md`).
 
 What is different from LOOM-8:
 
-- **Every track can be a kit.** A new project is eight kits of eleven keys. The engines left are kit, sample, slice
-  and MIDI out; knit, rayon, jacquard, bellows, cane, voile and acid do not play (a track saved with one loads as a
-  sample track).
+- **A single set of drums.** One kit of eleven drums (KIT), a sample track (SMP), a slice track (SLC) and the throws.
+  LOOM-8's synth engines, its other tracks, its conductor and its weave track are not reached (they are still in the
+  engine and the project's format, silent).
 - **73 drum models on a key**: LOOM-8's 30 and 43 of Hortator's 45 (all but SAMPL and ACID), with Hortator's own
   knobs on the key's two pages: the 808 and 909 family, Plaits' kicks, snares and hats, SKIN, FM, and the TRX and EFM
   voices measured from the Machinedrum.
@@ -30,8 +30,7 @@ What is different from LOOM-8:
 - **Generators**: a lane held on the grid has its hits, rotation, variation and clearing on the knobs; the Generate
   page (SEQ's third on a kit) previews Euclid, mutate and Grids on the grid and SEL writes them. `docs/GRIDS-PERFORM.md`
   is a plan for Grids played live.
-- **Voices**: eight Hortator hits at once over all kits, four of LOOM-8's 909 models, one string, eight sample or
-  slice voices (LOOM-8: sixteen synth voices, eight 909, two strings, three kits).
+- **Voices**: eight Hortator hits at once, eight of LOOM-8's 909 models, two strings, twelve sample or slice voices.
 - **Its own identity**: the package is `warp.fwsc`, identity `FM-1_18`, USB name `WARP-8 FM-1`, and its projects carry
   their own tag, so it starts fresh on an FM-1 that had LOOM-8 (LOOM-8's projects are not read; a LOOM-8 backup's
   kits and presets still restore).
