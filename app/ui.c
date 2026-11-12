@@ -1461,6 +1461,7 @@ static void act_clear_scene(void);
 static void act_save_slot(int slot);
 static void weave_set(int t, int from, int pat, int rule);   /* (below: the weave) */
 static void pattern_octave(int t, int d);          /* (below) */
+static void fx_layer_in(void);
 static void key_down(int k)
 {
     int trk = sel_trk(), w = ordinal(WHITE_K, 16, k), b = ordinal(BLACK_K, 11, k), p = ui.page;
@@ -1480,6 +1481,8 @@ static void key_down(int k)
         keyboard_down(k);
         return;
     }
+    fx_layer_in();                               /* (WARP-8: FX held: this key is a throw's) */
+    p = ui.page;
     if (glo_held()) {                            /* WARP-8: GLO held, the keys mute: a black key a drum of the kit, the
                                                   * first three white keys the kit, the sample track, the slice track;
                                                   * white 15 clears them all; the last white key is a fill while held
@@ -2031,11 +2034,37 @@ static void button_up(int b)
 }
 #define CARD_MS 900u
 #define KEY_LONG_MS 900u
+/* WARP-8: FX held on the kit is the Throws page for as long as it is: its keys fire, its knob latches, its screen
+ * shows what is held. In at the first key or after LAYER_MS; out at FX's release, the keys held let go first */
+static uint8_t fx_back;                          /* the page to go back to, + 1 */
+static void fx_layer_in(void)
+{
+    if (fx_back || !(ui.btn >> B_FX & 1u) || !kit_ui() || ui.page == P_THROWS || ui.held || lst.open || ui.ask)
+        return;
+    fx_back = (uint8_t)(ui.page + 1);
+    ui.page = P_THROWS;
+    ui.touched = -1;
+    ui.btn_used |= 1u << B_FX;
+}
+static void punch_key(int k, int on);
+static void fx_layer_out(void)
+{
+    for (int k = 0; k < NKEYS; k++)
+        if (ui.kmode[k] == KM_PUNCH) {
+            punch_key(k, 0);
+            ui.kmode[k] = KM_IDLE;
+        }
+    ui.page = (uint8_t)(fx_back - 1);
+    fx_back = 0;
+    ui.touched = -1;
+}
 static void holds(void)
 {
     uint32_t now = plat_ms();
+    if ((ui.btn >> B_FX & 1u) && now - ui.btn_t[B_FX] >= LAYER_MS)
+        fx_layer_in();
     for (int b = 0; b < NB; b++)
-        if (ui.btn == 1u << b && !ui.keys && b != B_HOME && !(ui.btn_used >> b & 1u) &&
+        if (ui.btn == 1u << b && !ui.keys && b != B_HOME && b != B_GLO && !(ui.btn_used >> b & 1u) &&
             now - ui.btn_t[b] >= CARD_MS) {
             ui.card = (uint8_t)(b + 1);
             ui.btn_used |= 1u << b;
@@ -4218,6 +4247,10 @@ static void input(void)
                 ui.card = 0;
             if (i == B_REC && ui.rec_held) {
                 rec_up();
+                continue;
+            }
+            if (i == B_FX && fx_back) {
+                fx_layer_out();
                 continue;
             }
             if (hold && !(ui.btn_used & m))

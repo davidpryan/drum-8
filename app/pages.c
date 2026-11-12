@@ -1805,6 +1805,10 @@ static void page_knobs(knob_t *k)
         kname(&k[3], "TYPE", GEN_NAME, ui.gen_kind % NGEN, NGEN);
         return;
     }
+    if (glo_held() && !LARGE && !lst.open) {         /* WARP-8, GLO held: knob 1, the mutes at once or at the bar */
+        kv(&k[0], "MUTES", proj.rsv[3] & MUTES_AT_BAR ? "the bar" : "at once", 0, 0);
+        return;
+    }
     if (trig_page(p) && ui.trickpg && is_seqt(trk)) {
         comp_knobs(k);
         return;
@@ -5024,6 +5028,64 @@ static void draw_punch(void)
     cv_text(120, 104, &FONT_XS, proj.trk[AUX_PUNCH].par[TP_E1] ? "latch on" : "while held", K_DIM);
     cv_blit(0, MAIN_Y);
 }
+/* WARP-8: the map of a held button's keys, drawn while it is held (after LAYER_MS, or at its first key): GLO's
+ * mutes (1) or HOME's scenes (2), 0 none. FX held is the Throws page itself (ui.c fx_layer_in) */
+#define LAYER_MS 200u
+static int layer_map(void)
+{
+    if (LARGE || lst.open || ui.ask)
+        return 0;
+    if (glo_held() && (ui.keys || plat_ms() - ui.btn_t[B_GLO] >= LAYER_MS))
+        return 1;
+    if (home_held() && kit_ui() && ui.page != P_SONG && !ui.held && (ui.keys || plat_ms() - ui.btn_t[B_HOME] >= LAYER_MS))
+        return 2;
+    return 0;
+}
+static void draw_layer(int glo)
+{
+    int f = ui.scene_pg * 16, blink = (seq.step_tick & 3u) < 2u;
+    uint32_t used = 0, h;
+    for (int i = 0; i < 16; i++)
+        used |= (uint32_t)(pats.scene[f + i].used != 0) << i;
+    h = hash_u(hash_u(2166136261u, 0xA7u), (uint32_t)glo | (uint32_t)blink << 1 | (uint32_t)seq.fill << 2 |
+               (uint32_t)(proj.rsv[3] & MUTES_AT_BAR) << 3 | (uint32_t)cur_scene() << 8 | (uint32_t)seq.cue << 16);
+    h = hash_u(hash_u(h, glo ? seq.kmute[0] | (uint32_t)seq.kmute_cue << 16 : used),
+               glo ? seq.mute | (uint32_t)seq.mute_cue << 16 : (uint32_t)f);
+    if (!begin_main(h))
+        return;
+    cv_text(10, 4, &FONT_B, glo ? "MUTES" : f ? "SCENES 17-32" : "SCENES 1-16", K_TEXT);
+    cv_text(10, 24, &FONT_XS, glo ? "black: a drum (held on: alone)" : "a white key: at the bar", K_DIM);
+    for (int k = 0; k < 16; k++) {
+        int32_t x = 8 + k * 14;
+        uint16_t c = K_PANEL;
+        const char *l = 0;
+        if (glo) {
+            static const char *const L[5] = {"K", "S", "L", "C", "F"};
+            if (k < 3) {
+                int wait = seq.mute_cue >> k & 1u, off = seq.mute >> k & 1u;
+                c = wait ? (blink ? K_NOW : K_PANEL2) : off ? K_PANEL2 : K_NOW;
+                l = L[k];
+            } else if (k >= 14) {
+                c = k == 15 && seq.fill ? K_NOW : K_PANEL2;
+                l = L[k - 11];
+            }
+        } else
+            c = f + k == cur_scene() ? K_NOW : seq.cue == f + k && blink ? K_TEXT : used >> k & 1u ? K_PANEL2 : K_PANEL;
+        cv_round(x, 40, 13, 60, 2, c);
+        if (l)
+            text_c(x + 6, 102, &FONT_XS, l, K_DIM);
+    }
+    for (int k = 0; k < 11; k++) {
+        int32_t wi = 0;
+        int wait = glo && (seq.kmute_cue >> k & 1u), off = glo && (seq.kmute[0] >> k & 1u);
+        while (WHITE_K[wi] < BLACK_K[k])
+            wi++;
+        cv_frame(8 + wi * 14 - 5, 40, 10, 34, 2, glo ? K_DIM : K_LINE, !glo || off || (wait && !blink) ? K_BG : K_NOW);
+    }
+    if (glo)
+        cv_text(64, 104, &FONT_XS, proj.rsv[3] & MUTES_AT_BAR ? "knob 1: at the bar" : "knob 1: at once", K_DIM);
+    cv_blit(0, MAIN_Y);
+}
 static void draw_fxtrack(int trk)                    /* AUX_FX1 / AUX_FX2: the effect and a picture of it */
 {
     int pick = fx_pick_of(trk), type = fx_pick_type(pick);
@@ -6342,6 +6404,10 @@ static void draw_page(void)
     }
     if (lst.open) {
         draw_list();
+        return;
+    }
+    if (layer_map()) {
+        draw_layer(layer_map() == 1);
         return;
     }
     switch (ui.page) {
