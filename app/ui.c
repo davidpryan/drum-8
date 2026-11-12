@@ -756,6 +756,27 @@ static void step_fresh_if_empty(step_t *st)      /* a step with no notes left fo
         st->vel = 100;
     }
 }
+/* WARP-8, the FX sequence: a step's amount on the lane picked: d 0 a tap (on at the lane's last amount, or off), else
+ * the amount moved (put on first if the step has none) */
+static void fxl_step(int s, int d)
+{
+    int lane = ui.dsound % NFXLANE, pt = cur_pat(AUX_FXSEQ), ln = lane_find(pats.lane, AUX_FXSEQ, pt, FXL_ID[lane]);
+    int v = ln >= 0 ? pats.lane[ln].val[s] : LOCK_NONE;
+    if (!d && v != LOCK_NONE) {
+        pats.lane[ln].val[s] = LOCK_NONE;
+        lane_drop_empty(ln);
+        step_say(s, 0);
+        return;
+    }
+    if (ln < 0 && (ln = lane_alloc(pats.lane, AUX_FXSEQ, pt, FXL_ID[lane])) < 0) {
+        say_no("NO LANE LEFT", "clear locks first");
+        return;
+    }
+    v = clampi((v == LOCK_NONE ? fxl_last[lane] : v) + d, 0, 127);
+    pats.lane[ln].val[s] = fxl_last[lane] = (uint8_t)v;
+    if (!d)
+        step_say(s, 1);
+}
 static void step_toggle(int i)
 {
     int trk = sel_trk(), s = step_shown(i);
@@ -763,6 +784,11 @@ static void step_toggle(int i)
     if (!is_seqt(trk))
         return;
     undo_keep();
+    if (trk == AUX_FXSEQ && !LARGE) {
+        fxl_step(s, 0);
+        mark_dirty();
+        return;
+    }
     if (is_drum(trk)) {
         if (step_empty(st))                      /* (a step added back starts fresh: no length or comps of the one removed) */
             memset(st, 0, sizeof *st);
@@ -1010,6 +1036,15 @@ static void step_knob(int k, int32_t e)          /* k 4: the nudge (OCT-/OCT+) *
 {
     int trk = sel_trk(), r = HIT_OK, rat = 0, ndg = 0;
     undo_keep();
+    if (trk == AUX_FXSEQ && !LARGE) {            /* WARP-8, the FX sequence: knob 1, the held steps' amount */
+        for (int i = 0; i < 16 && k == 0; i++)
+            if (ui.held >> i & 1u)
+                fxl_step(step_shown(i), (int)e);
+        ui.held_used = 1;
+        touch(0);
+        mark_dirty();
+        return;
+    }
     if (k < 4 && step_kit4()) {                  /* WARP-8, the kit: velocity, chance, ratchets, nudge */
         rat = k == 2;
         ndg = k == 3;
@@ -1384,6 +1419,9 @@ static void track_select(int t)
         int g = page_group(ui.page);
         if (grp_index(ui.page) < 0)
             ui.page = (uint8_t)grp_page(g, 0);
+        if (t == AUX_FXSEQ && (PAGE_BTN[g].btn == B_EDIT || PAGE_BTN[g].btn == B_ARP || PAGE_BTN[g].btn == B_ENV ||
+                               PAGE_BTN[g].btn == B_LFO))
+            ui.page = P_STEPS;                   /* (WARP-8: the FX sequence has its SEQ pages only) */
     }
     ui.touched = -1;
     if (ui.rec_armed)
@@ -1398,9 +1436,9 @@ static void track_step(int e)
     /* WARP-8: the kit, the sample track, the slice track and the throws (Mix: the three and the two effects). LOOM-8's
      * T4-T8, its conductor and its weave track are not reached */
     static const uint8_t MIXT[5] = {0, 1, 2, AUX_FX1, AUX_FX2};
-    static const uint8_t SEQT[4] = {0, 1, 2, AUX_PUNCH};
+    static const uint8_t SEQT[5] = {0, 1, 2, AUX_PUNCH, AUX_FXSEQ};
     const uint8_t *L = ui.page == P_MIX ? MIXT : SEQT;
-    int N = ui.page == P_MIX ? 5 : 4, cur = sel_trk(), i, d = e > 0 ? 1 : -1, n = e > 0 ? e : -e;
+    int N = 5, cur = sel_trk(), i, d = e > 0 ? 1 : -1, n = e > 0 ? e : -e;
     for (i = 0; i < N && L[i] != cur; i++)
         ;
     if (i == N) {                                /* (not in the list: from where it would sit) */
@@ -1591,7 +1629,7 @@ static void key_down(int k)
                                                   * held long, the scene is asked to be cleared (holds) */
         if (w >= 0)
             scene_key(k, ui.scene_pg * 16 + w, proj.rsv[2] & SCENES_AT_END ? SCENE_END : SCENE_BAR);
-        else if (b >= 0 && b < 4 && !LARGE)      /* the first four black keys: a row's track muted, or back */
+        else if (b >= 0 && b < 5 && !LARGE)      /* the first five black keys: a row's track muted, or back */
             track_mute_key(SCENE_ROW[b]);
         return;
     }
@@ -1702,7 +1740,20 @@ static void key_down(int k)
                 step_chord_key(note);
             return;
         }
-        if ((ui.btn >> B_SEQ & 1u) || ui.rec_armed || seq.rec || seq.rec_wait) {   /* a keyboard: SEQ held, recording */
+        if (trk == AUX_FXSEQ && !LARGE) {        /* WARP-8, the FX sequence: a black key picks the lane (as a kit's
+                                                  * drum), a white key is its step, below */
+            if (b >= 0) {
+                char nm[24];
+                nm[0] = 0;
+                ui.kmode[k] = KM_IDLE;
+                if (b < NFXLANE && !ui.held) {
+                    ui.dsound = (uint8_t)b;
+                    fxl_name(b, nm);
+                    say("LANE", nm);
+                }
+                return;
+            }
+        } else if ((ui.btn >> B_SEQ & 1u) || ui.rec_armed || seq.rec || seq.rec_wait) {   /* a keyboard: SEQ held, recording */
             keyboard_down(k);
             return;
         }
@@ -2003,6 +2054,8 @@ static void page_button(int b)
     if (is_aux(sel_trk()) && (b == B_ENV || b == B_LFO || (b == B_ARP && sel_trk() == AUX_WEAVE)))
         track_select(ui.last_inst);              /* (the conductor, the throws, WEAVE have no such page: the track
                                                   * played last, as Mix's FX strips do; each track's weave is its ARP's) */
+    if (sel_trk() == AUX_FXSEQ && (b == B_EDIT || b == B_ARP))   /* (WARP-8, the FX sequence: its SEQ pages only) */
+        track_select(ui.last_inst);
     if ((b == B_ENV || b == B_LFO) && is_midi(sel_trk()))
         say_no(b == B_ENV ? "NO ENVELOPE" : "NO LFO", "on a MIDI track");
     sbrowse = 0;
@@ -2412,6 +2465,23 @@ static void steps_knob(int k, int32_t e)
     }
     if (!is_seqt(trk))
         return;
+    if (trk == AUX_FXSEQ && !LARGE) {            /* WARP-8, the FX sequence: knob 1 where the lane's parameter rests;
+                                                  * then the pattern's length, scale and shape */
+        if (k == 0) {
+            int ft, fp = fxseq_to(FXL_ID[ui.dsound % NFXLANE], &ft);
+            set_tp(ft, fp, proj.trk[ft].par[fp] + (int)e);
+            return;
+        }
+        undo_keep();
+        if (k == 1)
+            tp->len = (uint8_t)clampi(tp->len + e, 1, NSTEP);
+        else if (k == 2)
+            tp->scale = (uint8_t)clampi(tp->scale + e, 0, NTS - 1);
+        else
+            tp->shape = (uint8_t)clampi(tp->shape + e, 0, 100);
+        mark_dirty();
+        return;
+    }
     if (k == 0) {
         pattern_pick(trk, cued_pat(trk) + (int)e);
         return;
@@ -4559,7 +4629,7 @@ static void input(void)
             if (steps_page(ui.page) && (nx < 0 || nx >= DL_NSOUND)) {   /* SEQ: past the last drum, the sample track,
                                                   * the slice track and the throws, then the first drum again (and
                                                   * the other way round) */
-                track_select(nx < 0 ? AUX_PUNCH : 1);
+                track_select(nx < 0 ? AUX_FXSEQ : 1);
                 say("TRACK", TRACK_NAME[sel_trk()]);
             } else {
                 ui.dsound = (uint8_t)((nx + DL_NSOUND) % DL_NSOUND);
@@ -4630,7 +4700,7 @@ static void leds(void)
                 mid |= 1u << WHITE_K[15];
         } else if (ui.page == P_SCENES) {            /* WARP-8, the Scenes page: the scenes on the white keys, the
                                                   * rows' tracks on the first four black (lit: sounding) */
-            for (i = 0; i < 4; i++)
+            for (i = 0; i < 5; i++)
                 if (seq.mute >> SCENE_ROW[i] & 1u)
                     dim |= 1u << BLACK_K[i];
                 else
@@ -4649,7 +4719,8 @@ static void leds(void)
             int ph = eng_step[trk];
             for (i = 0; i < 16; i++) {
                 int s = ui.bar * 16 + (int)i;
-                if ((steps_page(ui.page) ? step_on(&tp->st[s], trk) : kit_has(&tp->st[s], ui.dsound + 1)) && s < tp->len)
+                if ((trk == AUX_FXSEQ ? fxl_val(cur_pat(trk), ui.dsound, s) != LOCK_NONE
+                     : steps_page(ui.page) ? step_on(&tp->st[s], trk) : kit_has(&tp->st[s], ui.dsound + 1)) && s < tp->len)
                     mid |= 1u << WHITE_K[i];         /* (the steps with notes: the mid level, brighter than the glow; a
                                                       * kit's EDIT pages: the steps of the key shown) */
                 if (playing() && s == ph)

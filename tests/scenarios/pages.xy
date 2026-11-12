@@ -181,6 +181,14 @@ release HOME
 expect trk 10
 wait 40
 shot punch.png
+# (WARP-8: the FX sequence: its SEQ pages only)
+press HOME
+spin ALGO 1
+release HOME
+expect trk 9
+expect page Steps
+wait 40
+shot fxseq_steps.png
 press HOME
 spin ALGO 1
 release HOME

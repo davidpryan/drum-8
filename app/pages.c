@@ -154,7 +154,7 @@ static const char *const BTN_LABEL[NB] = {"FX", "SEL", "ENV", "LFO", "EDIT", "GL
 
 /* the tracks: 1-8, then the aux tracks (the tag's short names, the pages' long ones) */
 static const char *const TRACK_NAME[NALLTRK] = {"KIT", "SMP", "SLC", "T4",   /* (WARP-8: one kit, a sample track, a slice
-                                                                             * track; T4-T8 are not reached) */ "T5", "T6", "T7", "T8", "COND", "THROW",
+                                                                             * track; T4-T8 are not reached) */ "T5", "T6", "T7", "T8", "FX", "THROW",
                                                 "FX I", "FX II", "WEAVE"};
 #define PX_NAME(fx) ((fx) >= PX_MEL ? PUNCH2_NAME[(fx) & 15] : PUNCH_NAME[(fx) & 15])   /* a throw's name (seq.h) */
 static const char *const NOTE_NAME[12] = {"C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"};
@@ -609,7 +609,7 @@ enum { AL_INFO, AL_DONE, AL_UNDO, AL_REDO, AL_ASK, AL_NO };
 static int sel_trk(void)                             /* (WARP-8: tracks 4-8, the conductor and WEAVE are not reached) */
 {
     int t = proj.trk_sel;
-    return t < 3 || t == AUX_PUNCH || t == AUX_FX1 || t == AUX_FX2 ? t : 0;
+    return t < 3 || t == AUX_PUNCH || t == AUX_FXSEQ || t == AUX_FX1 || t == AUX_FX2 ? t : 0;
 }
 static int is_aux(int t) { return t >= NTRK; }
 static int is_seqt(int t) { return t < NSEQT; }
@@ -695,8 +695,18 @@ static step_t *chord_step(int t, int i)              /* chord mode's held cell i
 }
 static int home_held(void) { return ui.btn >> B_HOME & 1u; }
 static uint8_t sbrowse;                              /* WARP-8: the sound browser is open (draw_browse, below) */
-static const uint8_t SCENE_ROW[4] = {0, 1, 2, AUX_PUNCH};   /* WARP-8, the Scenes page's rows: the kit, the sample
-                                                             * track, the slice track, the throws */
+static const uint8_t SCENE_ROW[5] = {0, 1, 2, AUX_PUNCH, AUX_FXSEQ};   /* WARP-8, the Scenes page's rows: the kit, the
+                                                             * sample track, the slice track, the throws, the FX sequence */
+/* the FX sequence's eleven lanes (docs/FX-SEQUENCE.md; seq.h fxseq_to): FX I's ALL and four knobs, FX II's, FX I's
+ * send into FX II. The lane picked is ui.dsound, as a kit's drum */
+static const uint16_t FXL_ID[NFXLANE] = {TP_SEND1, TP_E1, TP_E2, TP_E3, TP_E4, TP_SEND2, TP_X1, TP_X2, TP_X3, TP_X4,
+                                         TP_LEVEL};
+static uint8_t fxl_last[NFXLANE] = {100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100};   /* a tapped step's amount */
+static int fxl_val(int pt, int lane, int s)         /* the lane's amount on step s, LOCK_NONE none */
+{
+    int ln = lane_find(pats.lane, AUX_FXSEQ, pt, FXL_ID[lane % NFXLANE]);
+    return ln >= 0 ? pats.lane[ln].val[s] : LOCK_NONE;
+}
 static int glo_held(void) { return ui.btn >> B_GLO & 1u; }   /* WARP-8: GLO held, the keys mute (ui.c key_down) */
 /* REC held: its knobs are the record settings while stopped and on Steps and Bar; on a sound page while playing,
  * the page's own, recorded as they turn (a punch-in of motion, as the keys punch in notes) */
@@ -1602,6 +1612,11 @@ static void step_knobs(knob_t *k)
     const tpat_t *tp = tpat(sel_trk());
     const step_t *st = &tp->st[step_shown(ui.held_first)];
     char t[16];
+    if (sel_trk() == AUX_FXSEQ) {                    /* WARP-8, the FX sequence: the step's amount on the lane picked */
+        int v = fxl_val(cur_pat(AUX_FXSEQ), ui.dsound, step_shown(ui.held_first));
+        kn(&k[0], "AMOUNT", v == LOCK_NONE ? fxl_last[ui.dsound % NFXLANE] : v, 127);
+        return;
+    }
     if (step_kit4()) {
         hit_t h;
         int own = kit_has(st, ui.dsound % NDRUM + 1) ? step_vel(pats.lane, sel_trk(), cur_pat(sel_trk()),
@@ -1963,6 +1978,16 @@ static void page_knobs(knob_t *k)
         }
         if (!is_seqt(trk))
             break;
+        if (trk == AUX_FXSEQ && !LARGE) {            /* WARP-8, the FX sequence: where the lane's parameter rests, the
+                                                      * pattern's length, its steps' scale, its amounts' shape */
+            int ft, fp = fxseq_to(FXL_ID[ui.dsound % NFXLANE], &ft);
+            ktp(&k[0], ft, fp);
+            k[0].name = "REST";
+            kn(&k[1], "LENGTH", tp->len, NSTEP);
+            kname(&k[2], "SCALE", TS_NAME, tp->scale, NTS);
+            kn(&k[3], "SHAPE", tp->shape, 100);
+            break;
+        }
         if (kit_ui()) {                              /* WARP-8: the picked drum's four knobs, as EDIT's first page
                                                       * (the pattern: PRESETS; its length and swing: HOME; its
                                                       * scale: Bar) */
@@ -2524,6 +2549,8 @@ static void page_footer(char *t)
             s_cat(t, ui.wv_step < NSTEP ? "BLACK 1-10 its tracks|WHITE its end" : "WHITE steps: a tap adds, again clears");
         else if (!is_seqt(trk))
             s_cat(t, "ALGO track: no steps here");
+        else if (trk == AUX_FXSEQ && !LARGE && ui.page == P_STEPS)
+            s_cat(t, ui.held ? "KNOB 1 amount" : "BLACK lane|WHITE step|held: KNOB 1 amount");
         else if (ui.lockpg)
             s_cat(t, "KNOBS lock|SELECT page|SEL held + KNOB clear");
         else if (ui.trickpg)
@@ -2555,7 +2582,7 @@ static void page_footer(char *t)
         s_cat(t, "BLACK mute|hold: solo|WHITE play");
         break;
     case P_SCENES:
-        s_cat(t, home_held() ? "KNOBS tempo, groove" : "WHITE scene|BLACK 1-4 mute|KNOBS patterns");
+        s_cat(t, home_held() ? "KNOBS tempo, groove" : "WHITE scene|BLACK 1-5 mute|KNOBS patterns");
         break;
     case P_THROWS:
         s_cat(t, seq.grids_on ? "KNOBS the drum map|SEL keep it" : "KEYS throws, two octaves|WHITE 15 grids");
@@ -3745,16 +3772,18 @@ static void draw_arrange(void)
         cv_blit(0, MAIN_Y);
         return;
     }
-    for (int r = 0; r < 4; r++) {                    /* WARP-8: the kit, the sample track, the slice track, the throws:
+    for (int r = 0; r < 5; r++) {                    /* WARP-8: the kit, the sample track, the slice track, the throws, FX:
                                                       * each its pattern in the scene and where it plays; under the
                                                       * kit, its eleven drums in their inks, the scene's muted hollow */
         const uint8_t *ROW = SCENE_ROW;
-        static const uint8_t RY[4] = {4, 34, 56, 82};
+        static const uint8_t RY[5] = {4, 32, 50, 68, 86};
         int tr = ROW[r];
         int32_t y = RY[r];
         int muted = seq.mute >> tr & 1u, pt = seq.ppat[tr] % NPATT, len = tpat(tr)->len, pos = eng_step[tr];
         uint16_t ink = muted ? K_FAINT : K_DIM;
         text_r(34, y - 3, &FONT_XS, tr == AUX_PUNCH ? "THR" : TRACK_NAME[tr], tr == sel_trk() ? K_TEXT : ink);
+        if (tr == AUX_FXSEQ)                         /* (it lights when a step of its own holds an amount) */
+            amh[0] = 0;
         if (tr < NTRK && mh[tr] > 0)                 /* (its meter, at the left of its name) */
             cv_rect(4, y + 5 - mh[tr], 3, mh[tr], muted ? K_FAINT : trk_ink(tr));
         else if (tr >= NTRK && amh[tr - NTRK] > 0)
@@ -4189,6 +4218,48 @@ static void draw_kit_home(void)
     cv_blit(0, MAIN_Y);
 }
 
+static void fxl_name(int lane, char *t)             /* "I ALL", "II decay", "I > II" */
+{
+    int id = FXL_ID[lane % NFXLANE], ft, fp = fxseq_to(id, &ft);
+    if (id == TP_LEVEL) {
+        s_cat(t, "I > II");
+        return;
+    }
+    t = s_cat(t, ft == AUX_FX1 ? "I " : "II ");
+    s_cat(t, fp == TP_SEND1 ? "ALL" : fx_knob_name(proj.trk[ft].par[TP_ENGINE] % NFXPICK, fp - TP_E1));
+}
+/* WARP-8, the FX sequence's Steps: the picked lane's sixteen steps, a bar each amount; the other ten lanes thin
+ * beneath, where they hold one */
+static void fx_lane(int pt, int ph, const tpat_t *tp)
+{
+    int lane = ui.dsound % NFXLANE;
+    char nm[24];
+    nm[0] = 0;
+    fxl_name(lane, nm);
+    upcase(nm);
+    cv_text(KL_X(0), 0, &FONT_S, nm, seq.mute >> AUX_FXSEQ & 1u ? K_FAINT : K_TEXT);
+    for (int i = 0; i < 16; i++) {
+        int s = ui.bar * 16 + i, v;
+        int32_t x = KL_X(i);
+        if (s >= tp->len)
+            continue;
+        v = fxl_val(pt, lane, s);
+        if (ui.held >> i & 1u)
+            cv_frame(x - 1, 15, 14, 48, 3, K_SEL, K_PANEL);
+        else
+            cv_round(x, 16, 12, 46, 2, playing() && s == ph && v == LOCK_NONE ? K_NOW_T : K_PANEL);
+        if (v != LOCK_NONE)
+            cv_round(x, 62 - (4 + v * 42 / 127), 12, 4 + v * 42 / 127, 2, playing() && s == ph ? K_TEXT : K_NOW);
+        for (int b = 0, r = 0; b < NFXLANE; b++) {
+            if (b == lane)
+                continue;
+            if (fxl_val(pt, b, s) != LOCK_NONE)
+                cv_rect(x, 78 + r * 3, 12, 2, K_DIM);
+            r++;
+        }
+    }
+    kg_bars((tp->len + 15) / 16, ph / 16);
+}
 static void draw_steps_as(void);
 static void draw_steps(void)                         /* large type: the cells in today's faces (eight across) */
 {
@@ -4201,6 +4272,21 @@ static void draw_steps_as(void)
 {
     if (sel_trk() == AUX_WEAVE) {
         draw_weave_steps();
+        return;
+    }
+    if (sel_trk() == AUX_FXSEQ && !LARGE) {          /* WARP-8: the FX sequence's lanes */
+        int pt = cur_pat(AUX_FXSEQ), ph = eng_step[AUX_FXSEQ];
+        const tpat_t *tp = tpat(AUX_FXSEQ);
+        uint32_t h = hash_u(hash_u(2166136261u, 0xF7u), (uint32_t)pt | (uint32_t)ui.bar << 4 | (uint32_t)ui.held << 8 |
+                                              (uint32_t)ui.dsound << 24 | (uint32_t)playing() << 28);
+        h = hash_u(h, (uint32_t)ph | (uint32_t)tp->len << 8 | (uint32_t)(seq.mute >> AUX_FXSEQ & 1u) << 16);
+        for (int b = 0; b < NFXLANE; b++)
+            for (int i = 0; i < 16; i++)
+                h = hash_u(h, (uint32_t)fxl_val(pt, b, ui.bar * 16 + i));
+        if (!begin_main(h))
+            return;
+        fx_lane(pt, ph, tp);
+        cv_blit(0, MAIN_Y);
         return;
     }
     {

@@ -1,5 +1,5 @@
-# WARP-8, SEQ: ALGORITHM goes through the kit's eleven drums, then on to the sample track, the slice track and the
-# throws, and back to the first drum; the other way round too
+# WARP-8, SEQ: ALGORITHM goes through the kit's eleven drums, then on to the sample track, the slice track, the
+# throws and the FX sequence, and back to the first drum; the other way round too
 wait 300
 listen
 expect trk 1
@@ -31,6 +31,11 @@ expect trk 3
 turn ALGO 1
 wait 40
 expect trk 10
+# the FX sequence, then the kit again
+turn ALGO 1
+wait 40
+expect trk 9
+expect page Steps
 turn ALGO 1
 wait 40
 expect trk 1
@@ -38,7 +43,10 @@ said DRUM
 tapkey w0
 wait 40
 expect note 1 1 1 1
-# and back: the throws, the slice track, the sample track, the kit's last drum
+# and back: the FX sequence, the throws, the slice track, the sample track, the kit's last drum
+turn ALGO -1
+wait 40
+expect trk 9
 turn ALGO -1
 wait 40
 expect trk 10

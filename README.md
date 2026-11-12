@@ -26,7 +26,10 @@ What is different from LOOM-8:
   held. Knob 1 with GLO held: mutes at once, or at the next bar line.
 - **Scenes are HOME's second page** (SELECT: the pattern, the scenes, the song): LOOM-8's Arrange drawn for the kit, the
   sample, slice and throw tracks, the kit's drums and their mutes under it, a track's pattern in the scene on knob 4.
-  **ALL** on an effect's Mix strip sends every track into FX I or FX II. **FX held, the keys are
+  **ALL** on an effect's Mix strip sends every track into FX I or FX II.
+- **The FX sequence**, a fifth sequence beside the kit, the sample track, the slice track and the throws: its steps
+  hold amounts for the two effects (each one's ALL, its four knobs, FX I into FX II), eleven lanes, with a shape that
+  ramps between them. `docs/FX-SEQUENCE.md` is its plan. **FX held, the keys are
   the throws**, twenty-four of them. A held button draws its keys on the screen.
 - **Six more factory kits** made of those presets: TRX, EFM, 808, 909, Modern, Hard.
 - **One kit, eleven drums, no menus.** HOME on the kit is the whole pattern, a row a drum, and its white keys write

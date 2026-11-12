@@ -1254,14 +1254,25 @@ static int ramp_degree(seq_t *s, int t, int cv, int kind)
 }
 
 /* ------------------------------------------------------------ the locks --- */
+#ifdef SEQ_LOOM_THROWS
+#define FXSEQ(t) 0
+#else                                 /* WARP-8: the FX sequence's lanes are the effect tracks' parameters (seq.h) */
+#define FXSEQ(t) ((t) == AUX_FXSEQ)
+#endif
+static void lock_send(const seq_sink_t *o, int t, int param, int v)
+{
+    if (FXSEQ(t))
+        param = fxseq_to(param, &t);
+    if (o->lock)
+        o->lock(o->ctx, t, param, v);
+}
 static void lock_put(seq_t *s, int t, const lane_t *l, lane_rt_t *r, int v, const seq_sink_t *o)
 {
     (void)s;
     if (r->applied == v)
         return;
     r->applied = (uint8_t)v;
-    if (o->lock)
-        o->lock(o->ctx, t, l->param, v);
+    lock_send(o, t, l->param, v);
 }
 
 /* a lane that is gone (cleared, or its slot reused) still had a value on the engine: send it back to the knob */
@@ -1271,8 +1282,7 @@ static void lane_forget(seq_t *s, lane_rt_t *r, const seq_sink_t *o)
     r->ramp = 0;
     if (r->applied != LOCK_NONE) {
         r->applied = LOCK_NONE;
-        if (o->lock)
-            o->lock(o->ctx, r->trk, r->param, LOCK_NONE);
+        lock_send(o, r->trk, r->param, LOCK_NONE);
     }
 }
 
@@ -1296,14 +1306,15 @@ static void apply_locks(seq_t *s, int t, int p, uint32_t L, const seq_sink_t *o)
         }
         if (lane_is_note(l->param))
             continue;                 /* (a drum step's note and its sounds' velocities: fire_notes reads them) */
-        if (l->pat != s->ppat[t]) {   /* another pattern's lane: the knob has it */
+        if (l->pat != s->ppat[t] || (FXSEQ(t) && (s->mute >> t & 1u))) {   /* another pattern's lane (or the FX
+                                       * sequence muted): the knob has it */
             lock_put(s, t, l, r, LOCK_NONE, o);
             r->ramp = 0;
             continue;
         }
         v = l->val[p];
         if (v == LOCK_NONE) {
-            if (!tp->shape && !step_empty(&tp->st[p]))
+            if (!tp->shape && (!step_empty(&tp->st[p]) || FXSEQ(t)))   /* (the FX sequence has no notes: every step) */
                 lock_put(s, t, l, r, LOCK_NONE, o);   /* a step that plays, unlocked: the knob's value */
             continue;                 /* (shape: holds, or keeps ramping toward the next lock) */
         }

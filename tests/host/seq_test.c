@@ -3391,8 +3391,53 @@ static void t_hit_rec(void)                       /* a sound recorded back onto 
     printf("ok %s\n", cur);
 }
 
+#ifndef SEQ_LOOM_THROWS
+/* WARP-8's own sequencer (built without SEQ_LOOM_THROWS: tests/host/seq_test.sh's second run): the FX sequence. A
+ * step's amount on a lane of the conductor's track reaches the effect's track as a lock and goes back on the next
+ * step; muted, nothing is applied */
+static const ev_t *lock_ev(int trk, int param, int k)
+{
+    for (int i = 0; i < nev; i++)
+        if (ev[i].kind == E_LOCK && ev[i].trk == trk && ev[i].a == param && k-- == 0)
+            return &ev[i];
+    return 0;
+}
+static void t_fxseq(void)
+{
+    int ln, l2;
+    cur = "fx sequence";
+    reset();
+    P.pat[AUX_FXSEQ][0].scale = TS_1;                         /* (a step a sixteenth, as the firmware sets it) */
+    ln = lane_alloc(P.lane, AUX_FXSEQ, 0, TP_SEND2);          /* FX II's ALL */
+    P.lane[ln].val[4] = 100;
+    l2 = lane_alloc(P.lane, AUX_FXSEQ, 0, TP_X1 + 1);         /* FX II's second knob */
+    P.lane[l2].val[4] = 30;
+    start();
+    run(8 * L16);
+    CHECK(lock_ev(AUX_FX2, TP_SEND1, 0) && lock_ev(AUX_FX2, TP_SEND1, 0)->b == 100 &&
+          near(lock_ev(AUX_FX2, TP_SEND1, 0)->t, 4 * L16, 3));
+    CHECK(lock_ev(AUX_FX2, TP_SEND1, 1) && lock_ev(AUX_FX2, TP_SEND1, 1)->b == LOCK_NONE &&
+          near(lock_ev(AUX_FX2, TP_SEND1, 1)->t, 5 * L16, 3));
+    CHECK(lock_ev(AUX_FX2, TP_E2, 0) && lock_ev(AUX_FX2, TP_E2, 0)->b == 30 && !lock_ev(AUX_FXSEQ, TP_SEND2, 0));
+    stop();
+    S.mute = 1u << AUX_FXSEQ;
+    nev = 0;
+    start();
+    run(8 * L16);
+    CHECK(!lock_ev(AUX_FX2, TP_SEND1, 0) || lock_ev(AUX_FX2, TP_SEND1, 0)->b == LOCK_NONE);
+    stop();
+    S.mute = 0;
+    printf("ok %s\n", cur);
+}
+#endif
 int main(void)
 {
+#ifndef SEQ_LOOM_THROWS
+    t_kit_nudge();
+    t_fxseq();
+    printf("all WARP-8 sequencer tests passed\n");
+    return 0;
+#endif
     t_pattern_helpers();
     t_phase();
     t_cue_bar();

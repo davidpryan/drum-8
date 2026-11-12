@@ -311,6 +311,8 @@ void project_defaults(void)
     proj.master[MS_PUMP_ACC] = 1;
     proj.master[MS_LEVEL] = 100;
     patterns_init(&pats);
+    for (k = 0; k < NPATT; k++)                           /* WARP-8: the FX sequence's steps are sixteenths */
+        pats.pat[AUX_FXSEQ][k].scale = TS_1;
 }
 
 /* ---- validation ----------------------------------------------------------------------------- */
@@ -389,6 +391,13 @@ static void patterns_clamp(void)
                 tp->len = 16;
             if (tp->scale >= NTS)
                 tp->scale = TS_1;
+            if (t == AUX_FXSEQ && tp->scale == TS_4) {    /* WARP-8: the FX sequence's steps are sixteenths (the
+                                                           * conductor's were beats), unless it holds amounts already */
+                for (k = 0; k < NLANE && !(pats.lane[k].used && pats.lane[k].trk == t && pats.lane[k].pat == p); k++)
+                    ;
+                if (k == NLANE)
+                    tp->scale = TS_1;
+            }
             if (tp->groove < -99 || tp->groove > 99)      /* the track's groove amount */
                 tp->groove = 0;
             if (tp->nlen > 100)                           /* the note length, % of a step */

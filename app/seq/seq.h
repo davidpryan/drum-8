@@ -61,6 +61,16 @@ enum { PX_MUTE, PX_STUTTER, PX_REPEAT, PX_ECHO, PX_BUILD, PX_FLOOR, PX_JUMBLE, P
 enum { PY_THIN, PY_ROLL, PY_BUZZ, PY_SOFT, PY_RISE, PY_DROP, PY_DOWN, PY_LOWPASS, PY_DELAY, PY_REVERB, PY_HARD,
        PY_CRUSH };
 extern const char *const PUNCH2_NAME[NPUNCH];         /* "thin", "roll", ... */
+/* WARP-8: the FX sequence (docs/FX-SEQUENCE.md) is LOOM-8's conductor's track: its steps hold no notes, its lock
+ * lanes are amounts for the two effects. A lane's parameter id stands for an effect track's parameter: TP_E1..E4 FX
+ * I's four knobs, TP_X1..X4 FX II's, TP_SEND1 FX I's ALL, TP_SEND2 FX II's ALL, TP_LEVEL FX I's send into FX II */
+#define AUX_FXSEQ AUX_BRAIN
+#define NFXLANE 11
+static inline int fxseq_to(int id, int *trk)          /* -> the parameter, *trk its effect's track */
+{
+    *trk = (id >= TP_X1 && id <= TP_X4) || id == TP_SEND2 ? AUX_FX2 : AUX_FX1;
+    return id >= TP_X1 && id <= TP_X4 ? TP_E1 + (id - TP_X1) : id == TP_LEVEL ? TP_SEND2 : id == TP_SEND2 ? TP_SEND1 : id;
+}
 #define PX_VALID(fx) ((fx) >= 0 && (fx) < NPUNCH_FX && ((fx) & 15) < NPUNCH)   /* a real bit: 0..11, 16..27 */
 extern const char *const PUNCH_NAME[NPUNCH];          /* "mute", "stutter", ... */
 /* a key number 0..26 (F3 = 0) to its punch bit, -1 for the idle keys; and back */

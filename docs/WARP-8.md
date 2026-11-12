@@ -54,8 +54,8 @@ Turn SELECT for the Scenes page, then the Song. HOME pressed again goes straight
 
 The other ten drums run as thin lines beneath, so you can see where they fall.
 
-ALGORITHM goes through the eleven drums and then on: the sample track, the slice track, the throws, and round to the
-first drum again. So every sequence is one turn of ALGORITHM away without leaving SEQ.
+ALGORITHM goes through the eleven drums and then on: the sample track, the slice track, the throws, the FX sequence,
+and round to the first drum again. So every sequence is one turn of ALGORITHM away without leaving SEQ.
 
 The four knobs are the picked drum's own, the same four as EDIT's first page. For nearly every model that is pitch,
 length and its two main tone controls (`MACROS.md` lists all 73). PRESETS changes the pattern.
@@ -163,7 +163,7 @@ A mute waiting for the bar blinks on its key. Stopping applies it.
 
 Turn SELECT on HOME: the pattern, then **Scenes**, then the Song. It is LOOM-8's Arrange page, drawn for WARP-8.
 
-- **A row for each track**: KIT, SMP, SLC and THR (the throws). Each shows which pattern it plays in this scene and a
+- **A row for each sequence**: KIT, SMP, SLC, THR (the throws) and FX (the FX sequence). Each shows which pattern it plays in this scene and a
   line with its playhead. A muted track is dim.
 - **Under the kit, its eleven drums** as squares in their colours. A drum the scene mutes is hollow.
 - **The scene playing**, large, at the right. When another is cued, its number and the beats until it starts.
@@ -172,17 +172,54 @@ Turn SELECT on HOME: the pattern, then **Scenes**, then the Song. It is LOOM-8's
 | Control | Does |
 |---|---|
 | White keys | A scene, at the next bar. Again while it waits: now. An empty key: a copy of the scene playing. Held: asks to clear it |
-| Black keys 1 to 4 | Mute or unmute a row's track: the kit, the sample track, the slice track, the throws |
+| Black keys 1 to 5 | Mute or unmute a row's track: the kit, the sample track, the slice track, the throws, the FX sequence |
 | Knobs 1 to 4 | A row's pattern in this scene: the kit's, the sample track's, the slice track's, the throws'. While it plays, the new pattern comes in at the bar |
 | OCT−, OCT+ | Scenes 1 to 16, or 17 to 32 |
 | PRESETS | The next scene |
-| HOME held + knobs | Fine tempo, the groove type, the selected track's groove amount |
+| HOME held + knobs | Fine tempo, the groove type, the selected track's groove amount; knob 4 the selected row's pattern (the FX row's this way) |
 
 So a scene is built here: set each track's pattern with its knob, mute tracks with the black keys, and mute single
 drums with GLO held. Mutes follow GLO's setting: at once, or at the bar. This is the one page of the kit where the
 white keys are not steps.
 
 HOME held is LOOM-8's shift, as before: REC undoes, PLAY redoes, ALGORITHM picks the track, knob 1 is fine tempo.
+
+## The FX sequence
+
+<img src="img/warp-fxseq.png" width="240" alt="The FX sequence's Steps: the lane II ALL, four bars on steps 13 to 16, the last taller; the knobs REST, LENGTH, SCALE, SHAPE" title="The FX sequence">
+
+A fifth sequence, beside the kit, the sample track, the slice track and the throws. Its steps hold **amounts**, not
+notes: how much of an effect, and when. Reach it with ALGORITHM on SEQ (after the throws), or HOME held + ALGORITHM.
+
+It has eleven lanes. A black key picks one, as it picks a drum on the kit:
+
+| Black key | Lane | A step's amount sets |
+|---|---|---|
+| 1 | I ALL | How much of every track goes into FX I on that step |
+| 2 to 5 | I, its four knobs | FX I's own knobs: a delay's time, repeats, tone and so on |
+| 6 | II ALL | How much of every track goes into FX II |
+| 7 to 10 | II, its four knobs | FX II's own knobs |
+| 11 | I > II | FX I's send into FX II |
+
+| Control | Does |
+|---|---|
+| White key | A step of the picked lane. A tap gives it the lane's last amount, or takes it off |
+| A step held + knob 1 | Its amount. Several held change together |
+| Knob 1 | REST: where the lane's parameter sits on the steps without an amount |
+| Knob 2, 3 | The pattern's length, and its steps' scale |
+| Knob 4 | SHAPE: at 0 an amount lasts its step; turned up, amounts hold and ramp to the next one |
+| PRESETS | The pattern |
+
+A step with an amount has it for that step; the next step without one gives the parameter back to REST. So a reverb
+on the last beat of every bar is the lane II ALL with steps 13 to 16 on. With SHAPE up, two steps far apart make a
+swell from one to the other.
+
+On Steps the picked lane's amounts are bars; the other lanes show as thin lines where they hold one. On Scenes the
+FX sequence is the fifth row, with its own pattern in each scene, and the fifth black key mutes it: muted, no amount
+is applied. EDIT, ENV, LFO and ARP have nothing for it and go back to the instrument.
+
+It differs from the throws in that a throw is on or off and this has an amount, and in that it only reaches the two
+effects: FX I and FX II, whatever they are set to.
 
 ## Mix: an effect on every track
 
