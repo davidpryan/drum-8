@@ -4555,10 +4555,23 @@ static void input(void)
             track_step((int)e);
         } else if (kit_ui() && (ui.page == P_ARRANGE || steps_page(ui.page) ||
                                 (ui.page >= P_ENGINE && ui.page <= P_SENDS))) {   /* a kit's pages: the drum */
-            ui.dsound = (uint8_t)((ui.dsound + (e > 0 ? 1 : -1) + DL_NSOUND) % DL_NSOUND);
-            say("DRUM", KEYNM(ui.dsound));
-        } else
+            int d = e > 0 ? 1 : -1, nx = ui.dsound % DL_NSOUND + d;
+            if (steps_page(ui.page) && (nx < 0 || nx >= DL_NSOUND)) {   /* SEQ: past the last drum, the sample track,
+                                                  * the slice track and the throws, then the first drum again (and
+                                                  * the other way round) */
+                track_select(nx < 0 ? AUX_PUNCH : 1);
+                say("TRACK", TRACK_NAME[sel_trk()]);
+            } else {
+                ui.dsound = (uint8_t)((nx + DL_NSOUND) % DL_NSOUND);
+                say("DRUM", KEYNM(ui.dsound));
+            }
+        } else {
             track_step((int)e);
+            if (steps_page(ui.page) && kit_ui()) {   /* (SEQ: back at the kit: its first drum, or its last) */
+                ui.dsound = (uint8_t)(e > 0 ? 0 : DL_NSOUND - 1);
+                say("DRUM", KEYNM(ui.dsound));
+            }
+        }
     }
     if ((e = ev[EN_PRESET]) != 0) {
         if (home_held())

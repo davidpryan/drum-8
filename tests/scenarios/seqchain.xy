@@ -1,0 +1,59 @@
+# WARP-8, SEQ: ALGORITHM goes through the kit's eleven drums, then on to the sample track, the slice track and the
+# throws, and back to the first drum; the other way round too
+wait 300
+listen
+expect trk 1
+expect page Steps
+turn ALGO 1
+wait 40
+said DRUM
+expect trk 1
+# ten more turns: the eleventh drum, then the sample track
+turn ALGO 1
+turn ALGO 1
+turn ALGO 1
+turn ALGO 1
+turn ALGO 1
+turn ALGO 1
+turn ALGO 1
+turn ALGO 1
+turn ALGO 1
+wait 40
+expect trk 1
+turn ALGO 1
+wait 40
+said TRACK
+expect trk 2
+expect page Steps
+turn ALGO 1
+wait 40
+expect trk 3
+turn ALGO 1
+wait 40
+expect trk 10
+turn ALGO 1
+wait 40
+expect trk 1
+said DRUM
+tapkey w0
+wait 40
+expect note 1 1 1 1
+# and back: the throws, the slice track, the sample track, the kit's last drum
+turn ALGO -1
+wait 40
+expect trk 10
+turn ALGO -1
+turn ALGO -1
+wait 40
+expect trk 2
+turn ALGO -1
+wait 40
+expect trk 1
+tapkey w1
+wait 40
+expect note 1 1 2 11
+# on HOME it still only goes round the drums
+tap HOME
+turn ALGO 1
+wait 40
+expect trk 1

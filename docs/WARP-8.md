@@ -54,6 +54,9 @@ Turn SELECT for the Scenes page, then the Song. HOME pressed again goes straight
 
 The other ten drums run as thin lines beneath, so you can see where they fall.
 
+ALGORITHM goes through the eleven drums and then on: the sample track, the slice track, the throws, and round to the
+first drum again. So every sequence is one turn of ALGORITHM away without leaving SEQ.
+
 The four knobs are the picked drum's own, the same four as EDIT's first page. For nearly every model that is pitch,
 length and its two main tone controls (`MACROS.md` lists all 73). PRESETS changes the pattern.
 
