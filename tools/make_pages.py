@@ -154,7 +154,7 @@ sequencer, mixer and effects with every track a drum kit, and <a href="https://d
 drum models and factory sounds on the keys.</p>
 <div class="shots">
   <img src="img/warp-steps.png" width="240" height="240" alt="A kit's Steps page: a grid of its eleven keys, each a lane of sixteen steps, the playhead's column lit">
-  <img src="img/warp-kit.png" width="240" height="240" alt="A kit's eleven keys on the TRX kit, each named by its Hortator model, with the selected key's four knobs below">
+  <img src="img/warp-kit.png" width="240" height="240" alt="HOME on a kit: eleven rows, a drum each, with its steps and its level; the knobs are the tempo, every drum's length, the swing and the kit">
   <img src="img/warp-generate.png" width="240" height="240" alt="The Generate page with Grids: the hits it would write outlined over the kick, snare and hat lanes, its X, Y and fill on the knobs">
 </div>
 <div class="status"><strong>Version __VERSION__. Not yet tested on an FM-1.</strong> It builds and passes its tests in the
@@ -178,7 +178,8 @@ Installing is at your own risk. It starts with fresh projects: back up @@LOOM@@ 
   <li><b>73 drum models</b>: @@LOOM@@'s thirty and 43 of Hortator's: the 808 and 909 family, Plaits' kicks, snares and hats, a struck membrane, FM, and the TRX and EFM voices measured from the Machinedrum.</li>
   <li><b>DRUM SOUND</b>: 143 of Hortator's factory sounds by type (kick, snare, hat, clap, tom, perc, cymbal), each on the key and heard as you turn to it. On a kit's pads the PRESETS knob steps through whole kits the same way.</li>
   <li><b>Sixteen factory kits</b>, six of them made of Hortator's sounds: TRX, EFM, 808, 909, Modern, Hard.</li>
-  <li><b>A grid of the whole kit</b> on its Steps page: every key a lane of sixteen steps, a black key picks the lane, the white keys write it.</li>
+  <li><b>One kit, eleven drums, no menus</b>: HOME is the whole pattern, a row a drum, with the tempo, every drum's length, the swing and the kit on its knobs. ALGORITHM picks the drum on every page; PRESETS is the kit on HOME, the pattern on SEQ, the drum's next sound on EDIT.</li>
+  <li><b>A grid of the whole kit</b> on its Steps page: every key a lane of sixteen steps, a black key picks the lane, the white keys write it. A drum can have a length of its own and run against the others.</li>
   <li><b>Generators</b>: hold a lane and the knobs set its hits, turn it, vary it; the Generate page previews Euclid, mutate and Mutable Instruments' Grids on the grid before it writes them.</li>
   <li>@@LOOM@@'s <b>sequencer</b>: eight patterns a track of up to 64 steps, tricks and parameter locks on any step, weave, throws, scenes and a song.</li>
   <li><b>Mutes and fills from any page</b>: hold HOME and a black key mutes its track, a white key a drum of the kit; a step's chance can be "fill", played while HOME and the last white key are held.</li>

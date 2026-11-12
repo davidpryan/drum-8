@@ -21,6 +21,10 @@ What is different from LOOM-8:
 - **HOME held, the keys mute**: a black key its track, a white key a drum of the kit shown; the last white key is a
   fill, for steps whose chance is "fill".
 - **Six more factory kits** made of those presets: TRX, EFM, 808, 909, Modern, Hard.
+- **One kit, eleven drums, no menus.** HOME on a kit is the whole pattern, a row a drum, with the tempo, every drum's
+  length, the swing and the kit on its knobs. ALGORITHM picks the drum on HOME, SEQ and EDIT; PRESETS is the kit on
+  HOME, the pattern on SEQ, the drum's next sound on EDIT. HOME held, ALGORITHM is the track. A lane held on the grid,
+  knob 4 is that drum's own length.
 - **A kit's Steps page is a grid** of its eleven keys, each a lane of sixteen steps: a black key picks the lane, the
   white keys write it.
 - **Generators**: a lane held on the grid has its hits, rotation, variation and clearing on the knobs; the Generate
