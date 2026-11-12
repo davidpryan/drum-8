@@ -15,8 +15,11 @@ What is different from LOOM-8:
 - **73 drum models on a key**: LOOM-8's 30 and 43 of Hortator's 45 (all but SAMPL and ACID), with Hortator's own
   knobs on the key's two pages: the 808 and 909 family, Plaits' kicks, snares and hats, SKIN, FM, and the TRX and EFM
   voices measured from the Machinedrum.
-- **DRUM SOUND** in a kit key's SELECT list: 143 of Hortator's factory presets, each a model and its knobs, onto the
-  key shown.
+- **DRUM SOUND** in a kit key's SELECT list: 143 of Hortator's factory presets by type (SOUND TYPE), each put on the
+  key shown and played as ALGORITHM picks it. On a kit's pads the PRESETS knob steps through kits.
+- **Drums named by their models**, the kit's own mark left off where every key carries it (the TRX kit: bd, sd, ch).
+- **HOME held, the keys mute**: a black key its track, a white key a drum of the kit shown; the last white key is a
+  fill, for steps whose chance is "fill".
 - **Six more factory kits** made of those presets: TRX, EFM, 808, 909, Modern, Hard.
 - **A kit's Steps page is a grid** of its eleven keys, each a lane of sixteen steps: a black key picks the lane, the
   white keys write it.

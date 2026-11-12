@@ -176,11 +176,12 @@ Installing is at your own risk. It starts with fresh projects: back up @@LOOM@@ 
 <ul class="feat">
   <li><b>Eight tracks, every one a kit</b> if you like: eleven keys a kit, each key a drum model with its own knobs, envelope, filter, pan and sends. Sample, slice and MIDI out tracks are there too.</li>
   <li><b>73 drum models</b>: @@LOOM@@'s thirty and 43 of Hortator's: the 808 and 909 family, Plaits' kicks, snares and hats, a struck membrane, FM, and the TRX and EFM voices measured from the Machinedrum.</li>
-  <li><b>DRUM SOUND</b>: 143 of Hortator's factory sounds, onto any key from its list.</li>
+  <li><b>DRUM SOUND</b>: 143 of Hortator's factory sounds by type (kick, snare, hat, clap, tom, perc, cymbal), each on the key and heard as you turn to it. On a kit's pads the PRESETS knob steps through whole kits the same way.</li>
   <li><b>Sixteen factory kits</b>, six of them made of Hortator's sounds: TRX, EFM, 808, 909, Modern, Hard.</li>
   <li><b>A grid of the whole kit</b> on its Steps page: every key a lane of sixteen steps, a black key picks the lane, the white keys write it.</li>
   <li><b>Generators</b>: hold a lane and the knobs set its hits, turn it, vary it; the Generate page previews Euclid, mutate and Mutable Instruments' Grids on the grid before it writes them.</li>
   <li>@@LOOM@@'s <b>sequencer</b>: eight patterns a track of up to 64 steps, tricks and parameter locks on any step, weave, throws, scenes and a song.</li>
+  <li><b>Mutes and fills from any page</b>: hold HOME and a black key mutes its track, a white key a drum of the kit; a step's chance can be "fill", played while HOME and the last white key are held.</li>
   <li>Two <b>send effects</b>, a mixer with EQ and a compressor on the master.</li>
 </ul>
 <h2>What's not</h2>
