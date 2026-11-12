@@ -186,7 +186,9 @@ Installing is at your own risk. It starts with fresh projects: back up @@LOOM@@ 
   <li><b>A colour for each drum</b>, the same on every page: its row, its steps, its pad, its key.</li>
   <li><b>A sound browser</b>: PRESETS on a drum lists Hortator's 143 sounds by engine, each heard as you turn to it; ALGORITHM jumps to the next engine.</li>
   <li><b>Generators</b>: hold a drum and the knobs set its hits, turn it, vary it; the Generate page previews Euclid, mutate and Mutable Instruments' Grids before it writes them. <b>Grids is also a throw</b>: held, the kick, snare and hat play from the drum map, and SEL keeps what you hear.</li>
-  <li><b>Held buttons, from any page</b>, each drawing its keys: GLO for the mutes, solo and a fill (at once or at the bar line), HOME for the scenes, FX for the throws. EDIT held, a knob turns every drum's.</li>
+  <li><b>Held buttons, from any page</b>, each drawing its keys: GLO for the mutes, solo and a fill (at once or at the bar line), FX for the throws. EDIT held, a knob turns every drum's.</li>
+  <li><b>A Scenes page</b> beside HOME: every track's pattern in the scene, the kit's drums and their mutes, the scenes on the white keys.</li>
+  <li><b>ALL</b> on an effect's Mix strip: every track into FX I or FX II.</li>
   <li><b>Twenty-four throws</b>: @@LOOM@@'s twelve, and twelve more in the second octave: thin, roll, buzz, soft, hard, rise, drop, down, a low-pass, delay and reverb throws, a crusher.</li>
   <li>@@LOOM@@'s <b>sequencer</b>: eight patterns of up to 64 steps, tricks and parameter locks on any step, weave, throws, scenes and a song.</li>
   <li>Two <b>send effects</b>, a mixer with EQ and a compressor on the master.</li>
