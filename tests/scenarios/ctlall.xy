@@ -1,0 +1,35 @@
+# WARP-8: EDIT held, a knob of the picked drum's turns that knob on all eleven drums; HOME + REC takes it back.
+# RANDOM SOUND in the drum's list: another of its type's sounds
+wait 300
+listen
+expect trk 1
+tap EDIT
+wait 40
+expect page Engine
+expect par1.d1.k2 42
+expect par1.d2.k2 40
+press EDIT
+turn K2 5
+release EDIT
+wait 40
+said ALL DRUMS
+expect page Engine
+expect par1.d1.k2 47
+expect par1.d2.k2 45
+# a knob alone: the picked drum's only
+turn K2 1
+wait 40
+expect par1.d1.k2 48
+expect par1.d2.k2 45
+# the kit's own knobs (Character) are not the drums': EDIT held changes nothing else there
+shot ctlall.png
+# HOME + REC: the hold's turn taken back (the single knob's first, then every drum's)
+press HOME
+tap REC
+release HOME
+wait 40
+expect par1.d1.k2 47
+# the drum's list: RANDOM SOUND puts one of its type's sounds on it
+tap SEL
+wait 40
+said list

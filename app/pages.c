@@ -293,7 +293,7 @@ enum { A_CLEAR_NOTES, A_CLEAR_LOCKS, A_CLEAR_BOTH, A_COPY_PAT, A_PASTE_PAT, A_RO
        A_KIT, A_SAVE_KIT, A_MIDI_CC, A_USB_HOST, A_BT_MIDI, A_BT_AUDIO, A_BT_ADEV, A_BT_DEVICE, A_BT_DEV, A_BT_LOOK,
        A_BT_FORGET, A_BT_DISCONNECT, A_CLEAR, A_ROTATE, A_PASTE, A_COPY_EMPTY, A_CLEAR_BAR,
        A_COPY_SOUND, A_PASTE_SOUND, A_COPY_KEY, A_PASTE_KEY, A_COPY_SCENE, A_PASTE_SCENE, A_DUP_SLOT, A_KIT_FILTER,
-       A_SHIFT, A_LARGE_TYPE, A_CC_IN, A_FX_WIDTH, A_SCALE_LOCK, A_DRUM_SOUND, A_DRUM_TYPE, NACTIONS };
+       A_SHIFT, A_LARGE_TYPE, A_CC_IN, A_FX_WIDTH, A_SCALE_LOCK, A_DRUM_SOUND, A_DRUM_TYPE, A_RANDOM_SOUND, NACTIONS };
 static const char *const ACTION_NAME[NACTIONS] = {
     "CLEAR NOTES", "CLEAR LOCKS", "CLEAR NOTES AND LOCKS", "COPY PATTERN", "PASTE PATTERN", "ROTATE FORWARD",
     "ROTATE BACK", "DUPLICATE BAR", "ENGINE", "PRESET", "SCRAMBLE", "SAVE AS PRESET", "RESET SOUND", "FOLLOWS CONDUCTOR",
@@ -305,7 +305,7 @@ static const char *const ACTION_NAME[NACTIONS] = {
     "USB PORT", "BT MIDI", "BT AUDIO", "AUDIO DEVICE", "MIDI DEVICE", "DEVICE", "LOOK AGAIN", "FORGET", "DISCONNECT",
     "CLEAR", "ROTATE", "PASTE", "COPY TO EMPTY", "CLEAR BAR", "COPY SOUND", "PASTE SOUND", "COPY DRUM", "PASTE DRUM",
     "COPY SCENE", "PASTE SCENE", "DUPLICATE SLOT", "KIT FILTER", "SHIFT NOTES", "LARGE TYPE", "CC IN", "PING WIDTH", "SCALE LOCK",
-    "DRUM SOUND", "SOUND TYPE"};
+    "DRUM SOUND", "SOUND TYPE", "RANDOM SOUND"};
 static const char *const CLEAR_WHAT[3] = {"notes", "locks", "notes and locks"};
 /* a pick ALGORITHM sets at once (a setting: SEL only leaves the list), as against a choice SEL then carries out */
 static int pick_sets(int a)
@@ -3200,6 +3200,7 @@ static void list_sound(int trk)
                                                       * heard as ALGORITHM picks it */
         dsound_label(ui.pick_dsound, snd_t);
         list_add(ACTION_NAME[A_DRUM_SOUND], snd_t, LK_PICK, A_DRUM_SOUND);
+        list_add(ACTION_NAME[A_RANDOM_SOUND], 0, LK_ACTION, A_RANDOM_SOUND);   /* (one of the type's, by chance) */
         list_head("kit");
         kit_label(ui.pick_kit % NKITS, kit_t);
         list_add(ACTION_NAME[A_KIT], kit_t, LK_PICK, A_KIT);

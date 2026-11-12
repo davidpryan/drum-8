@@ -2609,6 +2609,26 @@ static void knob_do(int k, int32_t e)
         aux_knob(trk, k, e);
         return;
     }
+    if (kit_ui() && (ui.btn >> B_EDIT & 1u)) {   /* WARP-8: EDIT held, a knob of the picked drum's turns every drum's
+                                                  * (each within its own range); one undo for the hold */
+        int pg = ui.page == P_STEPS ? P_ENGINE : ui.page, was = ui.dsound, a, b;
+        ui.dsound = 0;
+        a = tp_page_param(pg, k, trk);
+        ui.dsound = 1;
+        b = tp_page_param(pg, k, trk);
+        if (a >= 0 && a != b) {
+            undo_sound(trk);
+            for (int i = 0; i < NDRUM; i++) {
+                ui.dsound = (uint8_t)i;
+                p = tp_page_param(pg, k, trk);
+                set_tp(trk, p, proj.trk[trk].par[p] + (int)e);
+            }
+            ui.dsound = (uint8_t)was;
+            say("ALL DRUMS", e > 0 ? "up" : "down");
+            return;
+        }
+        ui.dsound = (uint8_t)was;
+    }
     p = tp_page_param(ui.page == P_STEPS ? P_ENGINE : ui.page, k, trk);
     if (p < 0)
         return;
@@ -4112,6 +4132,12 @@ static void action_run(int a)
     case A_SAVE_PRESET: act_save_preset(ui.pick_slot % NUSER_PRESETS); return;
     case A_KIT: act_kit(ui.pick_kit % NKITS); break;
     case A_DRUM_SOUND: case A_DRUM_TYPE: break;  /* (picked: already on the key) */
+    case A_RANDOM_SOUND: {                       /* WARP-8: one of the picked type's sounds, by chance (HOME + REC: back) */
+        int ty = ui.pick_dtype % NHPT, n = HPT_START[ty + 1] - HPT_START[ty];
+        ui.pick_dsound = (uint8_t)(HPT_START[ty] + (int)((plat_ms() * 2654435761u >> 8) % (uint32_t)(n > 0 ? n : 1)));
+        act_drum_sound(ui.pick_dsound);
+        break;
+    }
     case A_SAVE_KIT: act_save_kit(ui.pick_kslot % NUSER_KITS); return;
     case A_INIT:
         undo_sound(sel_trk());
