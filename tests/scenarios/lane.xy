@@ -1,0 +1,69 @@
+# WARP-8: Steps on the kit shows the picked drum's lane: a bar a step's velocity, its chance under it, its ratchets,
+# a dot where it holds locks; the other drums thin beneath. (The eleven lanes' grid is HOME's)
+wait 300
+listen
+expect trk 1
+expect page Steps
+# the snare on 5 and 13, a hat on every other step
+tapkey b1
+tapkey w4
+tapkey w12
+tapkey b2
+tapkey w0
+tapkey w2
+tapkey w4
+tapkey w6
+tapkey w8
+tapkey w10
+tapkey w12
+tapkey w14
+# the kick: steps 1, 5, 9, 12, 15
+tapkey b0
+tapkey w0
+tapkey w4
+tapkey w8
+tapkey w11
+tapkey w14
+# step 5 quieter
+key w4 down
+wait 100
+turn K1 -50
+wait 40
+key w4 up
+# step 9: a chance of 60%
+key w8 down
+wait 100
+turn K3 60
+wait 40
+key w8 up
+# step 12: in a fill only
+key w11 down
+wait 100
+turn K3 200
+turn K3 -1
+wait 40
+key w11 up
+# step 15: three ratchets (ARP: its tricks)
+key w14 down
+wait 100
+tap ARP
+turn K1 3
+turn K2 -9
+turn K2 2
+wait 40
+key w14 up
+# step 1: a lock from EDIT
+tap EDIT
+key w0 down
+wait 100
+turn K3 5
+wait 40
+key w0 up
+tap SEQ
+wait 60
+expect page Steps
+shot lane.png
+key w8 down
+wait 200
+shot lane_held.png
+key w8 up

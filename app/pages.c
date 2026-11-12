@@ -3858,6 +3858,16 @@ static int klen_of(int trk, int pt, int key)
     return v >= 1 && v <= NSTEP ? v : 0;
 }
 /* home: the same lanes narrower, each with its key's level at the right (HOME's page on a kit: draw_kit_home) */
+static void kg_bars(int nb, int pb)                  /* the bars: the one shown framed, the one playing lit */
+{
+    for (int b = 0; b < NBAR; b++) {
+        int32_t x = KG_X + b * 14;
+        uint16_t c = b == pb && playing() ? K_NOW : b < nb ? K_DIM : K_LINE;
+        cv_round(x, 113, 12, 5, 2, c);
+        if (b == ui.bar)
+            cv_frame(x - 1, 112, 14, 7, 3, K_SEL, c);
+    }
+}
 static void kit_grid(int trk, int pt, int ph, const tpat_t *tp, int home)
 {
     const uint8_t *par = proj.trk[trk].par;
@@ -3921,13 +3931,79 @@ static void kit_grid(int trk, int pt, int ph, const tpat_t *tp, int home)
                 cv_rect(196, y + 2, w, 4, sel ? trk_ink(trk) : K_DIM);
         }
     }
-    for (int b = 0; b < NBAR; b++) {                 /* the bars: the one shown framed, the one playing lit */
-        int32_t x = KG_X + b * 14;
-        uint16_t c = b == pb && playing() ? K_NOW : b < nb ? K_DIM : K_LINE;
-        cv_round(x, 113, 12, 5, 2, c);
-        if (b == ui.bar)
-            cv_frame(x - 1, 112, 14, 7, 3, K_SEL, c);
+    kg_bars(nb, pb);
+}
+/* a sound's velocity on a step: its own where the step has more sounds than it (LANE_VEL0, ui.c kit_vel) */
+static int snd_vel(int ln, int s, const step_t *st)
+{
+    return ln >= 0 && pats.lane[ln].val[s] != LOCK_NONE ? pats.lane[ln].val[s] : st->vel;
+}
+/* WARP-8, Steps on the kit: the picked drum's sixteen steps, large: a bar its velocity; under it its chance (a bar
+ * for a percent, A for a cycle, F and N for fill and no fill) and its ratchets (a tick each; another trick: a dot);
+ * a red dot where it holds locks. The other ten drums run thin beneath. (The grid of all eleven is HOME's) */
+#define KL_X(i) (7 + (i) * 14 + ((i) / 4) * 2)
+static void kit_lane(int trk, int pt, int ph, const tpat_t *tp)
+{
+    int snd = ui.dsound % DL_NSOUND, own = klen_of(trk, pt, snd), y = 78;
+    int ln = lane_find(pats.lane, trk, pt, (int)(LANE_VEL0 + (unsigned)snd));
+    uint32_t km = seq.kmute[0];
+    char nm[12];
+    s_cat(nm, key_nm_par(proj.trk[trk].par, snd, 0));
+    for (char *q = nm; *q; q++)
+        if (*q >= 'a' && *q <= 'z')
+            *q = (char)(*q - 32);
+    cv_text(KL_X(0), 0, &FONT_S, nm, km >> snd & 1u ? K_FAINT : K_TEXT);
+    for (int i = 0; i < 16; i++) {
+        int s = ui.bar * 16 + i, rep = own && s >= own, on;
+        const step_t *st = &tp->st[own ? s % own : s];
+        int32_t x = KL_X(i);
+        uint16_t c;
+        if (s >= tp->len)
+            continue;
+        on = kit_has(st, snd + 1);
+        c = playing() && s == ph ? K_NOW : km >> snd & 1u || rep ? K_FAINT : trk_ink(trk);
+        {
+            uint16_t pc = playing() && s == ph && !on ? K_NOW_T : K_PANEL;
+            if (ui.held >> i & 1u)
+                cv_frame(x - 1, 15, 14, 48, 3, K_SEL, pc);
+            else if ((ui.rec_armed && s == ui.cursor) || (seq.rec_wait && s == 0 && (ui.frame / 8 & 1u)))
+                cv_frame(x - 1, 15, 14, 48, 3, K_REC, pc);
+            else
+                cv_round(x, 16, 12, 46, 2, pc);
+        }
+        if (on) {
+            hit_t hm;
+            int32_t vh = 4 + snd_vel(ln, own ? s % own : s, st) * 42 / 127;
+            cv_round(x, 62 - vh, 12, vh, 2, c);
+            hit_get(trk, pt, own ? s % own : s, snd, &hm);
+            if (hm.cond && hm.cond < COND_AB) {
+                cv_rect(x, 66, 12, 3, K_PANEL2);
+                cv_rect(x, 66, hm.cond * 12 / 100, 3, K_TEXT);
+            } else if (hm.cond)
+                text_c(x + 6, 62, &FONT_XS, hm.cond < COND_FILL ? "A" : hm.cond == COND_FILL ? "F" : "N", K_TEXT);
+            for (int t = 0; t < 2; t++) {
+                int kind = t ? hm.comp2 : hm.comp, v = t ? hm.cval2 : hm.cval;
+                if (kind == SC_MULTIPLY && v < 9)
+                    for (int r = 0; r <= v && r < 6; r++)
+                        cv_rect(x + r * 2, 72, 1, 3, K_TEXT);
+                else if (kind)
+                    cv_rect(x + 9 - t * 3, 72, 2, 2, K_DIM);
+            }
+            if (!rep && step_has_lock(pats.lane, trk, pt, s))
+                cv_rect(x + 5, 18, 2, 2, K_REC);
+        }
+        if (own && s == own - 1)
+            cv_rect(x + 12, 16, 1, 46, K_TEXT);
+        for (int b = 0, r = 0; b < DL_NSOUND; b++) {    /* the other ten */
+            int o = klen_of(trk, pt, b);
+            if (b == snd)
+                continue;
+            if (kit_has(&tp->st[o ? s % o : s], b + 1))
+                cv_rect(x, y + r * 3, 12, 2, km >> b & 1u ? K_FAINT : K_DIM);
+            r++;
+        }
     }
+    kg_bars((tp->len + 15) / 16, ph / 16);
 }
 static uint32_t hash_pat(uint32_t h, const tpat_t *p);
 static int begin_main(uint32_t h);
@@ -3999,11 +4075,21 @@ static void draw_steps_as(void)
                           (uint32_t)ui.gen_mode << 24 | (uint32_t)ui.gen_seed << 26);
         h = hash_u(h, (uint32_t)ui.gen_amt | (uint32_t)ui.gen_x << 8 | (uint32_t)ui.gen_y << 16 | (uint32_t)ui.gen_fill << 24);
         h = kit_grid_hash(h, trk, pt);
+        if (ui.page == P_STEPS && !LARGE) {          /* (the lane view: its velocities, the mutes) */
+            int ln = lane_find(pats.lane, trk, pt, (int)(LANE_VEL0 + (unsigned)(ui.dsound % DL_NSOUND)));
+            for (int i = 0; i < 16; i++)
+                h = hash_u(h, (uint32_t)snd_vel(ln, ui.bar * 16 + i, &tp->st[ui.bar * 16 + i]));
+            h = hash_u(h, seq.kmute[0] | (uint32_t)ui.held << 16);
+        }
     }
     if (!begin_main(h))
         return;
-    if (drum && !LARGE) {                            /* WARP-8: a kit's steps as a grid of its keys */
-        kit_grid(trk, pt, ph, tp, 0);
+    if (drum && !LARGE) {                            /* WARP-8: a kit's steps: the picked drum's lane (Generate: the
+                                                      * grid of its keys, with what it would write) */
+        if (ui.page == P_STEPS)
+            kit_lane(trk, pt, ph, tp);
+        else
+            kit_grid(trk, pt, ph, tp, 0);
         cv_blit(0, MAIN_Y);
         return;
     }
