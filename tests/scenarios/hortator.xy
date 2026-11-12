@@ -54,3 +54,15 @@ shot hortkit.png
 tapkey b1
 wait 500
 expect peak_db_max 0
+# PRESETS on a kit's pads: the next kit, on the track at once (TRX, then EFM; back: TRX)
+tap EDIT
+wait 40
+expect page Engine
+turn PRESET 1
+wait 60
+said KIT
+expect par1.d1.model 65
+turn PRESET -1
+wait 60
+expect par1.d1.model 52
+shot kitknob.png

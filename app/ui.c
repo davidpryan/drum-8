@@ -159,6 +159,7 @@ static void apply_aux(int trk)
 static void undo_keep(void);
 static void gen_write(void);                      /* WARP-8's generators, below */
 static void act_drum_sound(int i);
+static void act_kit(int k);
 static void gen_knob(int k, int32_t e);
 static void lane_knob(int k, int32_t e);
 static void undo_sound(int trk);
@@ -2426,7 +2427,20 @@ static void presets(int32_t e)
     default:
         if (is_fx(trk))
             fx_pick(trk, d);
-        else if (is_drum(trk) && (ui.page == P_ENGINE || ui.page == P_PLAY || ui.page == P_PLAY2 || ui.page == P_ENV ||
+        else if (is_drum(trk) && ui.page == P_ENGINE) {   /* WARP-8: a kit's pads: the next kit (the factory's, then
+                                                           * the user's that hold one), on the track at once; stopped,
+                                                           * the key shown plays it */
+            int k = ui.pick_kit % NKITS;
+            do
+                k = (k + d + NKITS) % NKITS;
+            while (k >= NFKITS && !user_kit_name[k - NFKITS][0]);
+            ui.pick_kit = (uint8_t)k;
+            act_kit(k);
+            if (!playing()) {
+                engine_key(trk, ui.dsound % DL_NSOUND + 1, 1, 127);
+                engine_key(trk, ui.dsound % DL_NSOUND + 1, 0, 0);
+            }
+        } else if (is_drum(trk) && (ui.page == P_PLAY || ui.page == P_PLAY2 || ui.page == P_ENV ||
                                   ui.page == P_SENDS)) {
             ui.dsound = (uint8_t)((ui.dsound + d + DL_NSOUND) % DL_NSOUND);
             say("KEY", KEYNM(ui.dsound));

@@ -2452,7 +2452,8 @@ static void page_footer(char *t)
             s_cat(t, ui.page == P_KITF ? "PRESET on or off|KEYS play" : "KEYS play");
         else if (is_drum(trk) && ui.page <= P_LFO2)
             s_cat(t, !kit_edit_steps() ? "BLACK pick a key|KEYS play"
-                     : ui.held ? "KNOBS lock the step|SEL held + KNOB clear" : "BLACK pick a key|WHITE its steps");
+                     : ui.held ? "KNOBS lock the step|SEL held + KNOB clear"
+                     : ui.page == P_ENGINE ? "PRESET kit|BLACK key|WHITE its steps" : "BLACK pick a key|WHITE its steps");
         else if (ui.page == P_ENGINE)
             s_cat(t, "PRESET next sound|SEL engine");
         else if (ui.page == P_FILTER && !is_acid(trk))
