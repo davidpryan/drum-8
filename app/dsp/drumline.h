@@ -106,8 +106,8 @@ void drumline_render(drumline_t *d, float *l, float *r, float *s1, float *s2, ui
 int drumline_sounding(const drumline_t *d);
 int drumline_voices(const drumline_t *d);              /* the voices sounding (the engine's core split) */
 extern volatile uint8_t drumline_hitv[DL_NSOUND];      /* the last hit of each sound, 255 = full (UI lets it fall) */
+extern volatile uint8_t dl_throw_send;               /* WARP-8's delay / reverb throws (drumline.c control) */
 #ifdef PLAT_HOST
 extern uint32_t (*drumline_host_clock)(void);    /* the simulator's profiler: each key's time rendering [0] and starting */
 extern uint32_t drumline_host_cost[DL_NSOUND][2];   /* [1] its hits, in the clock's units (app/host.c LOOM_WORK) */
-extern volatile uint8_t dl_throw_send;               /* WARP-8's delay / reverb throws (drumline.c control) */
 #endif
