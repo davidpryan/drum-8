@@ -620,6 +620,14 @@ static int steps_page(int p) { return p == P_STEPS || p == P_BAR || p == P_GEN; 
                                                                                     * (Generate: WARP-8's, a kit's third) */
 static int is_drum(int t) { return t == 0; }          /* WARP-8: one kit, the first track (project.c keeps it so) */
 static int kit_ui(void) { return is_drum(sel_trk()) && !LARGE; }
+/* WARP-8: each of the kit's eleven drums has an ink of its own, the same on every page: the theme's eight tracks'
+ * inks, then three of them lightened. On the kit's pages the page's ink (K_NOW) is the picked drum's */
+static uint16_t drum_ink(int k)
+{
+    k = (k % NDRUM + NDRUM) % NDRUM;
+    return k < NTRK ? theme->ink[k] : col_mix(theme->ink[(k - NTRK) * 2 + 1], theme->text, 8);
+}
+static uint16_t page_ink(int trk) { return kit_ui() ? drum_ink(ui.dsound) : trk_ink(trk); }
 /* the pages whose white keys are the steps and whose held step's knobs are its trig: SEQ's, and WARP-8's HOME on
  * the kit (its scenes are HOME held: ui.c key_down) */
 static int trig_page(int p)                         /* (and the kit's pages with no knob a step can lock: the two
@@ -3954,7 +3962,7 @@ static void kit_grid(int trk, int pt, int ph, const tpat_t *tp, int home)
         for (char *q = nm; *q; q++)
             if (*q >= 'a' && *q <= 'z')
                 *q = (char)(*q - 32);
-        text_r(KG_X - 5, y - 3, &FONT_XS, nm, muted ? K_FAINT : sel ? K_TEXT : K_DIM);
+        text_r(KG_X - 5, y - 3, &FONT_XS, nm, muted ? K_FAINT : sel ? K_TEXT : drum_ink(b));
         for (int i = 0; i < 16; i++) {
             int s = ui.bar * 16 + i, on, rep = own && s >= own;   /* (rep: past its own end, its steps again) */
             const step_t *st = &tp->st[own ? s % own : s];
@@ -3963,9 +3971,9 @@ static void kit_grid(int trk, int pt, int ph, const tpat_t *tp, int home)
             if (s >= tp->len)
                 continue;                            /* (past the pattern's end: nothing) */
             on = kit_has(st, b + 1);
-            c = on ? (muted || rep ? K_FAINT : sel ? trk_ink(trk) : K_DIM) : sel ? K_PANEL2 : K_PANEL;
-            if (playing() && s == ph)
-                c = on ? K_NOW : K_NOW_T;
+            c = on ? (muted || rep ? K_FAINT : sel ? drum_ink(b) : ink_mix(drum_ink(b), 10)) : sel ? K_PANEL2 : K_PANEL;
+            if (playing() && s == ph)                /* (each lane its drum's ink; the playhead's hits white) */
+                c = on ? K_TEXT : K_NOW_T;
             cv_round(x, y, cw, 8, 2, c);
             if (own && s == own - 1)                 /* its own end: a mark after its last step */
                 cv_rect(x + cw, y, 1, 8, K_TEXT);
@@ -3997,7 +4005,7 @@ static void kit_grid(int trk, int pt, int ph, const tpat_t *tp, int home)
             int32_t w = par[TP_DRUM(b, DP_VOLUME)] * 40 / 127;
             cv_rect(196, y + 2, 40, 4, K_PANEL);
             if (!muted)
-                cv_rect(196, y + 2, w, 4, sel ? trk_ink(trk) : K_DIM);
+                cv_rect(196, y + 2, w, 4, sel ? drum_ink(b) : ink_mix(drum_ink(b), 10));
         }
     }
     kg_bars(nb, pb);
@@ -4030,7 +4038,7 @@ static void kit_lane(int trk, int pt, int ph, const tpat_t *tp)
         if (s >= tp->len)
             continue;
         on = kit_has(st, snd + 1);
-        c = playing() && s == ph ? K_NOW : km >> snd & 1u || rep ? K_FAINT : trk_ink(trk);
+        c = playing() && s == ph ? K_TEXT : km >> snd & 1u || rep ? K_FAINT : drum_ink(snd);
         {
             uint16_t pc = playing() && s == ph && !on ? K_NOW_T : K_PANEL;
             if (ui.held >> i & 1u)
@@ -4069,7 +4077,7 @@ static void kit_lane(int trk, int pt, int ph, const tpat_t *tp)
             if (b == snd)
                 continue;
             if (kit_has(&tp->st[o ? s % o : s], b + 1))
-                cv_rect(x, y + r * 3, 12, 2, km >> b & 1u ? K_FAINT : K_DIM);
+                cv_rect(x, y + r * 3, 12, 2, km >> b & 1u ? K_FAINT : ink_mix(drum_ink(b), 11));
             r++;
         }
     }
@@ -4812,9 +4820,10 @@ static void pic_drumline(int32_t x0, int32_t y0, int32_t w, int32_t h, const uin
         int32_t x = x0 + (k % 6) * pw + 2, y = y0 + (k / 6) * ph + 2, hit = eng_drum_hit[k];
         const char *nm = key_nm_par(p, k, 1);        /* (four letters: a second key of a name has a number after) */
         char t[4];
-        cv_round(x, y, pw - 4, ph - 4, 4, hit > 40 ? K_NOW : k == ui.dsound ? K_PANEL2 : K_PANEL);
+        uint16_t ki = LARGE ? K_NOW : drum_ink(k);   /* (WARP-8: each pad its drum's ink: lit as it is hit, its number) */
+        cv_round(x, y, pw - 4, ph - 4, 4, hit > 40 ? ki : k == ui.dsound ? K_PANEL2 : K_PANEL);
         if (k == ui.dsound)
-            cv_frame(x, y, pw - 4, ph - 4, 4, K_SEL, hit > 40 ? K_NOW : K_PANEL2);
+            cv_frame(x, y, pw - 4, ph - 4, 4, K_SEL, hit > 40 ? ki : K_PANEL2);
         if (LARGE) {                                 /* large type: the name alone, the pads in the black keys' order */
             const felucca_font_t *pf = text_w(&FONT_XS, nm) <= pw - 8 ? &FONT_XS : &LFONT_S;   /* (2 px each side) */
             text_c(x + (pw - 4) / 2, cap_y(y, ph - 4, pf), pf, nm, hit > 40 ? K_BG : K_TEXT);
@@ -4826,7 +4835,7 @@ static void pic_drumline(int32_t x0, int32_t y0, int32_t w, int32_t h, const uin
                      hit > 40 ? K_BG : K_TEXT);
         }
         num_s((uint32_t)k + 1u, t);
-        cv_text(x + 3, y, &FONT_XS, t, hit > 40 ? K_BG : K_FAINT);
+        cv_text(x + 3, y, &FONT_XS, t, hit > 40 ? K_BG : ki);
     }
 }
 static void pic_clock(int trk)                       /* (the clock eases out: its speed follows the sound up at once and
@@ -5255,7 +5264,7 @@ static void draw_layer(int glo)
         int wait = glo && (seq.kmute_cue >> k & 1u), off = glo && (seq.kmute[0] >> k & 1u);
         while (WHITE_K[wi] < BLACK_K[k])
             wi++;
-        cv_frame(8 + wi * 14 - 5, 40, 10, 34, 2, glo ? K_DIM : K_LINE, !glo || off || (wait && !blink) ? K_BG : K_NOW);
+        cv_frame(8 + wi * 14 - 5, 40, 10, 34, 2, glo ? K_DIM : K_LINE, !glo || off || (wait && !blink) ? K_BG : drum_ink(k));
     }
     if (glo)
         cv_text(64, 104, &FONT_XS, proj.rsv[3] & MUTES_AT_BAR ? "knob 1: at the bar" : "knob 1: at once", K_DIM);
@@ -6438,15 +6447,15 @@ static void ink_follow(void)                         /* another track: its ink, 
     const bands_t *b = &BANDS[!loom_type(large_type()) ? 0     /* (large type: its faces there, gfx_loom.c) */
                               : steps_page(ui.page) && is_seqt(trk) && trk != AUX_WEAVE ? 2 : 1];
     theme = THEME_OF_PROJ();
-    if (k_th == theme && k_now == trk_ink(trk) && band == b)
+    if (k_th == theme && k_now == page_ink(trk) && band == b)
         return;
     if (k_th != theme || band != b)                  /* another theme or type: the whole screen, the gaps between the
                                                       * bands too */
         lcd_fill(0, 0, 240, 240, K_BG);
     band = b;
     k_th = theme;
-    k_now = trk_ink(trk);
-    k_tint = trk_tint(trk);
+    k_now = page_ink(trk);
+    k_tint = ink_mix(k_now, theme->tint);
     k_mid = ink_mix(k_now, theme->mid);
     for (uint32_t i = 0; i < sizeof ui.sig / sizeof ui.sig[0]; i++)
         ui.sig[i] ^= 0x5A5A5A5Au;
