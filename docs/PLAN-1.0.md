@@ -316,7 +316,7 @@ Phases 1 to 6, 8 and 9 need none of the open ones answered except D4 (phase 5) a
 | Phase 7 | 577,088 | 4,476 | 17,292 | 59 scenarios | |
 | Phase 8 | 577,664 | 3,900 | 17,292 | 60 scenarios | |
 | Phase 9 | 577,840 | 3,724 | 17,292; .data+.bss 94,724 | 61 scenarios | |
-| Final (`seq.c` restored) | 577,504 | 4,060 | 17,292; .data+.bss 94,724 | FINALROW | |
+| Final (`seq.c` restored) | 577,504 | 4,060 | 17,292; .data+.bss 94,724 | 80 of 80 (full suite) | pass, normal and large type | |
 
 "Scenarios" rows were checked with every `tests/scenarios/*.xy` in the simulator; the full suite (unit tests,
 update path, layout sweeps, browser build) ran after phases 0, 1 and 9.
