@@ -2324,6 +2324,8 @@ static void bar_knob(int k, int32_t e)
         tp->quant = (uint8_t)clampi(tp->quant + e, 0, 100);
     else if (k == 1)
         tp->nlen = (uint8_t)clampi(tp->nlen + e, 0, 100);
+    else if (k == 2 && kit_ui())                 /* (WARP-8: the swing is HOME's) */
+        tp->scale = (uint8_t)clampi(tp->scale + e, 0, NTS - 1);
     else if (k == 2)
         tp->groove = (int8_t)clampi(tp->groove + e, -99, 99);
     else
@@ -2485,7 +2487,12 @@ static void knob_do(int k, int32_t e)
         return;
     case P_ARRANGE: arrange_knob(k, e); return;
     case P_SONG: song_knob(k, e); return;
-    case P_STEPS: steps_knob(k, e); return;
+    case P_STEPS:
+        if (!kit_ui()) {
+            steps_knob(k, e);
+            return;
+        }
+        break;                                   /* (WARP-8: the picked drum's knobs, below) */
     case P_BAR: bar_knob(k, e); return;
     case P_GEN: gen_knob(k, e); return;
     case P_MASTER: case P_MASTER2: case P_MASTER3: master_knob(k, e); return;
@@ -2523,7 +2530,7 @@ static void knob_do(int k, int32_t e)
         aux_knob(trk, k, e);
         return;
     }
-    p = tp_page_param(ui.page, k, trk);
+    p = tp_page_param(ui.page == P_STEPS ? P_ENGINE : ui.page, k, trk);
     if (p < 0)
         return;
     set_tp(trk, p, proj.trk[trk].par[p] + (int)e);

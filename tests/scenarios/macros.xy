@@ -1,0 +1,38 @@
+# WARP-8: Steps' knobs are the picked drum's own four, as EDIT's first page: the same hand tunes a drum from either.
+# The steps' scale is Bar's knob 3. A step held on EDIT locks the knob turned
+wait 300
+listen
+expect trk 1
+expect page Steps
+tapkey b0
+expect par1.d1.k1 82
+turn K1 3
+wait 40
+expect par1.d1.k1 85
+turn K2 -2
+wait 40
+expect par1.d1.k2 40
+# another drum: its own knobs
+tapkey b1
+turn K1 1
+wait 40
+expect par1.d2.k1 80
+expect par1.d1.k1 85
+# EDIT shows the same four
+tap EDIT
+wait 40
+expect page Engine
+turn K1 -1
+wait 40
+expect par1.d2.k1 79
+# Bar: knob 3 the steps' scale
+tap SEQ
+turn SELECT 1
+wait 40
+expect page Bar
+turn K3 1
+wait 500
+said SCALE
+shot macros_bar.png
+turn SELECT -1
+shot macros_steps.png

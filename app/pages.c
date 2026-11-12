@@ -1880,6 +1880,13 @@ static void page_knobs(knob_t *k)
         }
         if (!is_seqt(trk))
             break;
+        if (kit_ui()) {                              /* WARP-8: the picked drum's four knobs, as EDIT's first page
+                                                      * (the pattern: PRESETS; its length and swing: HOME; its
+                                                      * scale: Bar) */
+            for (int i = 0; i < 4; i++)
+                ktp(&k[i], trk, tp_page_param(P_ENGINE, i, trk));
+            break;
+        }
         if (playing() && seq.pcue[trk] < NPATT && seq.pcue[trk] != cur_pat(trk)) {   /* cued: "1>2" until the bar */
             char c[8], *ce = num_s((uint32_t)cur_pat(trk) + 1u, c);
             *ce++ = '>';
@@ -1898,7 +1905,10 @@ static void page_knobs(knob_t *k)
         e = num_s(tp->nlen, t);
         s_cat(e, "%");
         kv(&k[1], "NOTE", t, tp->nlen, 100);
-        kn(&k[2], "GROOVE", tp->groove, 0);
+        if (kit_ui())                                /* (WARP-8: the swing is HOME's; the steps' scale here) */
+            kname(&k[2], "SCALE", TS_NAME, tp->scale, NTS);
+        else
+            kn(&k[2], "GROOVE", tp->groove, 0);
         kn(&k[3], "SHAPE", tp->shape, 100);
         break;
     case P_ENGINE:

@@ -2,8 +2,10 @@
 # twice loops that bar; stopped it is at once, playing at the next bar line
 wait 300
 expect trk 1
-tap SEQ
+# (WARP-8: the kit's length is HOME's knob 2; Steps' knobs are the picked drum's)
+tap HOME
 turn K2 48
+tap SEQ
 wait 1200
 turn SELECT 1
 expect page Bar
