@@ -88,3 +88,12 @@ All of sections 1 to 4, as planned. `seq.h` `AUX_FXSEQ`, `fxseq_to`; `seq.c` `lo
 - Cost: 2.2 KB of flash. 1,760 B are left.
 - The picked lane is `ui.dsound`, shared with the kit's picked drum: coming back to the kit, the drum picked is the
   lane's number.
+
+## 7. Redrawn as the throws' sequence (2026-11-12, after 0.10)
+
+David asked for it to look and work more like the THROW sequencer. Steps is now LOOM-8's grid of sixteen squares
+(`draw_steps_as`'s own cells; `fx_lane` is gone): a square is lit where the picked lane has an amount, with the lane's
+short name over the number. A step held and a later key pressed puts the held step's amount on every step between
+(`step_length_to`), as a throw is made longer. The knobs are the throws': PATTERN, LENGTH, SCALE, and SHAPE where
+they have GROOVE; REST is gone (the parameter rests where its own knob is). The other lanes' thin lines are gone
+with the lane view: a lane is seen by picking it.

@@ -829,6 +829,15 @@ static void step_length_to(int j)
     if (e <= s)
         return;
     undo_keep();
+    if (trk == AUX_FXSEQ && !LARGE) {            /* WARP-8, the FX sequence: the held step's amount on every step to
+                                                  * the later one (put on first if it has none) */
+        int v;
+        if (fxl_val(cur_pat(trk), ui.dsound, s) == LOCK_NONE)
+            fxl_step(s, 0);
+        v = fxl_val(cur_pat(trk), ui.dsound, s);
+        for (int q = s + 1; q <= e && v != LOCK_NONE; q++)
+            pats.lane[lane_find(pats.lane, trk, cur_pat(trk), FXL_ID[ui.dsound % NFXLANE])].val[q] = (uint8_t)v;
+    } else
     st->len = (uint8_t)step_len_code((e - s + 1) * 4);
     ui.held_used = 1;
     num_s((uint32_t)(e - s + 1), s_cat(t, "to step "));
@@ -2465,23 +2474,6 @@ static void steps_knob(int k, int32_t e)
     }
     if (!is_seqt(trk))
         return;
-    if (trk == AUX_FXSEQ && !LARGE) {            /* WARP-8, the FX sequence: knob 1 where the lane's parameter rests;
-                                                  * then the pattern's length, scale and shape */
-        if (k == 0) {
-            int ft, fp = fxseq_to(FXL_ID[ui.dsound % NFXLANE], &ft);
-            set_tp(ft, fp, proj.trk[ft].par[fp] + (int)e);
-            return;
-        }
-        undo_keep();
-        if (k == 1)
-            tp->len = (uint8_t)clampi(tp->len + e, 1, NSTEP);
-        else if (k == 2)
-            tp->scale = (uint8_t)clampi(tp->scale + e, 0, NTS - 1);
-        else
-            tp->shape = (uint8_t)clampi(tp->shape + e, 0, 100);
-        mark_dirty();
-        return;
-    }
     if (k == 0) {
         pattern_pick(trk, cued_pat(trk) + (int)e);
         return;
@@ -2493,6 +2485,8 @@ static void steps_knob(int k, int32_t e)
             ui.bar = (uint8_t)((tp->len - 1) / 16);
     } else if (k == 2)
         tp->scale = (uint8_t)clampi(tp->scale + e, 0, NTS - 1);
+    else if (trk == AUX_FXSEQ)                   /* (WARP-8, the FX sequence: its amounts' shape) */
+        tp->shape = (uint8_t)clampi(tp->shape + e, 0, 100);
     else
         tp->groove = (int8_t)clampi(tp->groove + e, -99, 99);
     mark_dirty();

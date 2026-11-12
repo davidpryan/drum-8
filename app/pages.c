@@ -1978,16 +1978,6 @@ static void page_knobs(knob_t *k)
         }
         if (!is_seqt(trk))
             break;
-        if (trk == AUX_FXSEQ && !LARGE) {            /* WARP-8, the FX sequence: where the lane's parameter rests, the
-                                                      * pattern's length, its steps' scale, its amounts' shape */
-            int ft, fp = fxseq_to(FXL_ID[ui.dsound % NFXLANE], &ft);
-            ktp(&k[0], ft, fp);
-            k[0].name = "REST";
-            kn(&k[1], "LENGTH", tp->len, NSTEP);
-            kname(&k[2], "SCALE", TS_NAME, tp->scale, NTS);
-            kn(&k[3], "SHAPE", tp->shape, 100);
-            break;
-        }
         if (kit_ui()) {                              /* WARP-8: the picked drum's four knobs, as EDIT's first page
                                                       * (the pattern: PRESETS; its length and swing: HOME; its
                                                       * scale: Bar) */
@@ -2004,7 +1994,10 @@ static void page_knobs(knob_t *k)
             kn(&k[0], "PATTERN", cur_pat(trk) + 1, NPATT);
         kn(&k[1], "LENGTH", tp->len, NSTEP);
         kname(&k[2], "SCALE", TS_NAME, tp->scale, NTS);
-        kn(&k[3], "GROOVE", tp->groove, 0);
+        if (trk == AUX_FXSEQ)                        /* (WARP-8, the FX sequence: its amounts' shape, no groove) */
+            kn(&k[3], "SHAPE", tp->shape, 100);
+        else
+            kn(&k[3], "GROOVE", tp->groove, 0);
         break;
     case P_BAR:
         if (!is_seqt(trk))
@@ -2550,7 +2543,7 @@ static void page_footer(char *t)
         else if (!is_seqt(trk))
             s_cat(t, "ALGO track: no steps here");
         else if (trk == AUX_FXSEQ && !LARGE && ui.page == P_STEPS)
-            s_cat(t, ui.held ? "KNOB 1 amount" : "BLACK lane|WHITE step|held: KNOB 1 amount");
+            s_cat(t, ui.held ? "KNOB 1 amount|a later WHITE: extend" : "BLACK lane|WHITE step|held: amount");
         else if (ui.lockpg)
             s_cat(t, "KNOBS lock|SELECT page|SEL held + KNOB clear");
         else if (ui.trickpg)
@@ -4228,38 +4221,6 @@ static void fxl_name(int lane, char *t)             /* "I ALL", "II decay", "I >
     t = s_cat(t, ft == AUX_FX1 ? "I " : "II ");
     s_cat(t, fp == TP_SEND1 ? "ALL" : fx_knob_name(proj.trk[ft].par[TP_ENGINE] % NFXPICK, fp - TP_E1));
 }
-/* WARP-8, the FX sequence's Steps: the picked lane's sixteen steps, a bar each amount; the other ten lanes thin
- * beneath, where they hold one */
-static void fx_lane(int pt, int ph, const tpat_t *tp)
-{
-    int lane = ui.dsound % NFXLANE;
-    char nm[24];
-    nm[0] = 0;
-    fxl_name(lane, nm);
-    upcase(nm);
-    cv_text(KL_X(0), 0, &FONT_S, nm, seq.mute >> AUX_FXSEQ & 1u ? K_FAINT : K_TEXT);
-    for (int i = 0; i < 16; i++) {
-        int s = ui.bar * 16 + i, v;
-        int32_t x = KL_X(i);
-        if (s >= tp->len)
-            continue;
-        v = fxl_val(pt, lane, s);
-        if (ui.held >> i & 1u)
-            cv_frame(x - 1, 15, 14, 48, 3, K_SEL, K_PANEL);
-        else
-            cv_round(x, 16, 12, 46, 2, playing() && s == ph && v == LOCK_NONE ? K_NOW_T : K_PANEL);
-        if (v != LOCK_NONE)
-            cv_round(x, 62 - (4 + v * 42 / 127), 12, 4 + v * 42 / 127, 2, playing() && s == ph ? K_TEXT : K_NOW);
-        for (int b = 0, r = 0; b < NFXLANE; b++) {
-            if (b == lane)
-                continue;
-            if (fxl_val(pt, b, s) != LOCK_NONE)
-                cv_rect(x, 78 + r * 3, 12, 2, K_DIM);
-            r++;
-        }
-    }
-    kg_bars((tp->len + 15) / 16, ph / 16);
-}
 static void draw_steps_as(void);
 static void draw_steps(void)                         /* large type: the cells in today's faces (eight across) */
 {
@@ -4272,21 +4233,6 @@ static void draw_steps_as(void)
 {
     if (sel_trk() == AUX_WEAVE) {
         draw_weave_steps();
-        return;
-    }
-    if (sel_trk() == AUX_FXSEQ && !LARGE) {          /* WARP-8: the FX sequence's lanes */
-        int pt = cur_pat(AUX_FXSEQ), ph = eng_step[AUX_FXSEQ];
-        const tpat_t *tp = tpat(AUX_FXSEQ);
-        uint32_t h = hash_u(hash_u(2166136261u, 0xF7u), (uint32_t)pt | (uint32_t)ui.bar << 4 | (uint32_t)ui.held << 8 |
-                                              (uint32_t)ui.dsound << 24 | (uint32_t)playing() << 28);
-        h = hash_u(h, (uint32_t)ph | (uint32_t)tp->len << 8 | (uint32_t)(seq.mute >> AUX_FXSEQ & 1u) << 16);
-        for (int b = 0; b < NFXLANE; b++)
-            for (int i = 0; i < 16; i++)
-                h = hash_u(h, (uint32_t)fxl_val(pt, b, ui.bar * 16 + i));
-        if (!begin_main(h))
-            return;
-        fx_lane(pt, ph, tp);
-        cv_blit(0, MAIN_Y);
         return;
     }
     {
@@ -4314,6 +4260,9 @@ static void draw_steps_as(void)
     }
     for (int i = 0; i < 16; i++)
         h = hash_u(h, step_has_lock(pats.lane, trk, pt, ui.bar * 16 + i));
+    if (trk == AUX_FXSEQ)                            /* (WARP-8, the FX sequence: the picked lane's amounts) */
+        for (int i = 0; i < 16; i++)
+            h = hash_u(h, (uint32_t)fxl_val(pt, ui.dsound, ui.bar * 16 + i));
     if (drum) {                                      /* (the grid names its lanes by their models, dims the muted;
                                                       * Generate draws what it would write) */
         h = hash_u(h, (uint32_t)ui.page | (uint32_t)ui.gen_kind << 8 | (uint32_t)ui.gen_hits << 12 | (uint32_t)ui.gen_rot << 18 |
@@ -4342,6 +4291,10 @@ static void draw_steps_as(void)
         char nm[NAME_LEN + 2];
         int32_t x = ST_X + 2;
         steps_head(trk, nm, t);
+        if (trk == AUX_FXSEQ) {                      /* (WARP-8, the FX sequence: the lane picked) */
+            nm[0] = t[0] = 0;
+            fxl_name(ui.dsound, t);
+        }
         if (nm[0])
             x = text_fit(x, 0, &FONT_XS, nm, 96, K_TEXT) + 8;
         if (t[0])
@@ -4365,7 +4318,8 @@ static void draw_steps_as(void)
         int32_t x = ST_X + (i % 8) * ST_CW, y = ST_Y + (i / 8) * (ST_CH + 4);
         uint16_t bg, fg;
         hit_t hm;
-        on = in && (pl_type(trk) == PL_RAND ? step_slot_on(tp, s) : step_on(st, trk));
+        on = in && (trk == AUX_FXSEQ ? fxl_val(pt, ui.dsound, s) != LOCK_NONE   /* (the FX sequence: an amount) */
+                    : pl_type(trk) == PL_RAND ? step_slot_on(tp, s) : step_on(st, trk));
         implicit = on && pl_type(trk) == PL_RAND && !step_slot_set(tp, s);   /* none set: all on, shown plain */
         bg = !in ? K_BG : on && !implicit ? K_TINT : K_PANEL;
         if (playing() && s == ph && in)
@@ -4413,6 +4367,14 @@ static void draw_steps_as(void)
                     num_i((st->note[0] ? st->note[0] : 60) / 12 - 1, o);
                     text_c(x + ST_MID, y + ST_L2, st_font(o), o, dim);
                 }
+            } else if (trk == AUX_FXSEQ) {           /* WARP-8, the FX sequence: the lane (ALL, K1..K4, I>II) over
+                                                      * its amount on the step */
+                static const char *const FXL_CELL[NFXLANE] = {"ALL", "K1", "K2", "K3", "K4", "ALL", "K1", "K2", "K3", "K4",
+                                                              "I>II"};
+                char a[4];
+                num_s((uint32_t)fxl_val(pt, ui.dsound, s), a);
+                text_c(x + ST_MID, y + ST_L1, &FONT_XS, FXL_CELL[ui.dsound % NFXLANE], fg);
+                text_c(x + ST_MID, y + ST_L2, &FONT_XS, a, dim);
             } else if (trk == AUX_PUNCH) {
                 int fx = st->note[0] - 1;
                 /* the effect in capitals (no descender to meet the line under it), three letters, over its group */
@@ -4484,7 +4446,7 @@ static void draw_steps_as(void)
             ga_text("%", x + 3, y + ST_MK + 4 + cv_oy, x + 7, y + ST_MK + 10 + cv_oy, 0);   /* audited as a label */
 #endif
         }
-        if (step_has_lock(pats.lane, trk, pt, s))
+        if (trk != AUX_FXSEQ && step_has_lock(pats.lane, trk, pt, s))   /* (the FX sequence's amounts are its steps) */
             cv_round(x + ST_CW - 9, y + 3, 4, 4, 2, K_REC);
     }
     {   /* lengths: a bar from a step across the steps its note covers, past the bar and round from the pattern's end

@@ -1,6 +1,6 @@
-# WARP-8: the FX sequence (docs/FX-SEQUENCE.md). On SEQ, ALGORITHM back from the kit's first drum: a black key picks
-# a lane, a white key is a step with an amount (a tap: the lane's last, or off; held: knob 1), and the amounts are
-# the effects' own: FX II's ALL here. A fifth row on Scenes, and its mute
+# WARP-8: the FX sequence (docs/FX-SEQUENCE.md), drawn and played as the throws' sequence: sixteen squares, a black
+# key picks a lane, a white key is a step with an amount (a tap: the lane's last, or off; held: knob 1; held and a
+# later key: the amount on every step between). The amounts are the effects' own: FX II's ALL here. A fifth row on Scenes, and its mute
 wait 300
 listen
 expect trk 1
@@ -14,11 +14,15 @@ expect lanes 0
 tapkey b5
 wait 40
 said LANE
-tapkey w12
-tapkey w13
-tapkey w14
-tapkey w15
+# step 13 held, step 16 pressed: the amount on 13 to 16, as a throw is made longer
+key w12 down
+wait 100
+key w15 down
+wait 60
+key w15 up
+key w12 up
 wait 40
+said LENGTH
 expect lanes 1
 # step 16 louder: held, knob 1
 key w15 down

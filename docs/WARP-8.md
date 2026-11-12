@@ -186,7 +186,7 @@ HOME held is LOOM-8's shift, as before: REC undoes, PLAY redoes, ALGORITHM picks
 
 ## The FX sequence
 
-<img src="img/warp-fxseq.png" width="240" alt="The FX sequence's Steps: the lane II ALL, four bars on steps 13 to 16, the last taller; the knobs REST, LENGTH, SCALE, SHAPE" title="The FX sequence">
+<img src="img/warp-fxseq.png" width="240" alt="The FX sequence's Steps: sixteen squares, the lane II ALL, steps 13 to 16 lit with ALL over 100, the last 120; the knobs PATTERN, LENGTH, SCALE, SHAPE" title="The FX sequence">
 
 A fifth sequence, beside the kit, the sample track, the slice track and the throws. Its steps hold **amounts**, not
 notes: how much of an effect, and when. Reach it with ALGORITHM on SEQ (after the throws), or HOME held + ALGORITHM.
@@ -204,19 +204,21 @@ It has eleven lanes. A black key picks one, as it picks a drum on the kit:
 | Control | Does |
 |---|---|
 | White key | A step of the picked lane. A tap gives it the lane's last amount, or takes it off |
+| A step held + a later white key | The held step's amount on every step up to that one, as a throw is made longer |
 | A step held + knob 1 | Its amount. Several held change together |
-| Knob 1 | REST: where the lane's parameter sits on the steps without an amount |
+| Knob 1, PRESETS | The pattern |
 | Knob 2, 3 | The pattern's length, and its steps' scale |
 | Knob 4 | SHAPE: at 0 an amount lasts its step; turned up, amounts hold and ramp to the next one |
-| PRESETS | The pattern |
 
-A step with an amount has it for that step; the next step without one gives the parameter back to REST. So a reverb
-on the last beat of every bar is the lane II ALL with steps 13 to 16 on. With SHAPE up, two steps far apart make a
-swell from one to the other.
+It looks and plays as the throws' sequence does: sixteen squares, the bars at the top right, a square lit where the
+picked lane has an amount, with the lane's short name (ALL, K1 to K4, I>II) over the amount.
 
-On Steps the picked lane's amounts are bars; the other lanes show as thin lines where they hold one. On Scenes the
-FX sequence is the fifth row, with its own pattern in each scene, and the fifth black key mutes it: muted, no amount
-is applied. EDIT, ENV, LFO and ARP have nothing for it and go back to the instrument.
+A step with an amount has it for that step; the next step without one gives the parameter back to where its own knob
+is (the effect's page, or ALL on its Mix strip). So a reverb on the last beat of every bar is the lane II ALL with
+steps 13 to 16 on: hold 13 and press 16. With SHAPE up, two steps far apart make a swell from one to the other.
+
+On Scenes the FX sequence is the fifth row, with its own pattern in each scene, and the fifth black key mutes it:
+muted, no amount is applied. EDIT, ENV, LFO and ARP have nothing for it and go back to the instrument.
 
 It differs from the throws in that a throw is on or off and this has an amount, and in that it only reaches the two
 effects: FX I and FX II, whatever they are set to.
