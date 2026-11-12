@@ -10,7 +10,8 @@ Every screen here was drawn by the firmware in the simulator. WARP-8 has not yet
 
 With the kit selected:
 
-- **A black key is a drum.** A tap picks it. Stopped, you hear it; while the pattern plays it is picked silently.
+- **A black key is a drum.** A tap picks it and you hear it, while the pattern plays too. ALGORITHM picks a drum
+  without a sound.
 - **A white key is a step** of the picked drum, in the bar shown. A tap puts the drum on the step or takes it off.
 - **Hold something and the knobs are its.** A step held: the step's. A drum held: its lane's. A button held: that
   button's keys and knobs, drawn on the screen while you hold.
@@ -56,6 +57,17 @@ length and its two main tone controls (`MACROS.md` lists all 73). PRESETS change
 **Bar**: knob 1 quantise, knob 2 note length, knob 3 the steps' scale, knob 4 the lock shape.
 
 **Generate**: as before. The grid previews what it would write; SEL writes it.
+
+### Clearing
+
+| Where | Row in SEL's list | Clears |
+|---|---|---|
+| SEQ | CLEAR (notes, locks, or both) | The picked drum's lane only: its hits, or the locks of its knobs. The other drums stay |
+| HOME | CLEAR NOTES AND LOCKS | The kit's whole pattern |
+| HOME | CLEAR SCENE | The scene and its notes: each track's pattern in the scene is emptied |
+
+HOME + REC undoes the first two. A cleared scene's notes do not come back, so it asks first. A pattern that
+another scene also plays is left alone, since it is that scene's too.
 
 ### A step held
 

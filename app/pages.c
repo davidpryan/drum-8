@@ -3151,6 +3151,11 @@ static void list_home(int keep)
             list_add(ACTION_NAME[A_DELETE_SLOT], 0, LK_ACTION, A_DELETE_SLOT);
             list_add(ACTION_NAME[A_CLEAR_SONG], 0, LK_ACTION, A_CLEAR_SONG);
         } else {
+            if (kit_ui()) {                          /* WARP-8: the kit's whole pattern (SEQ's CLEAR is the picked
+                                                      * drum's lane) */
+                list_head("pattern");
+                list_add(ACTION_NAME[A_CLEAR_BOTH], 0, LK_ACTION, A_CLEAR_BOTH);
+            }
             list_head("scenes");
             list_add(ACTION_NAME[A_SCENE_AT], proj.rsv[2] & SCENES_AT_END ? "pattern end" : "next bar", LK_PICK,
                      A_SCENE_AT);

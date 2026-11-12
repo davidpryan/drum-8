@@ -1,0 +1,71 @@
+# WARP-8: SEQ's CLEAR on the kit clears the picked drum's lane only; HOME's list clears the whole pattern; CLEAR
+# SCENE takes the scene's notes with it. A black key is heard as it picks its drum, while the pattern plays too
+wait 300
+listen
+expect trk 1
+expect page Steps
+# a kick on 1 and 9, a snare on 5 and 13
+tapkey b0
+tapkey w0
+tapkey w8
+tapkey b1
+tapkey w4
+tapkey w12
+expect note 1 1 1 1
+expect note 1 1 5 2
+# the snare picked: CLEAR (notes) takes its hits and leaves the kick's (a pause first: the undo's own step)
+wait 3000
+tap SEL
+wait 40
+row CLEAR
+tap SEL
+wait 40
+said CLEARED HITS OF
+expect note 1 1 5 0
+expect note 1 1 13 0
+expect note 1 1 1 1
+expect note 1 1 9 1
+# HOME + REC brings the lane back
+press HOME
+tap REC
+release HOME
+wait 40
+expect note 1 1 5 2
+# a black key is heard while it plays: two picks, two hits more than the pattern's
+# (two picks heard so far, then step 1's kick; the hat's pick is one more)
+tap PLAY
+wait 100
+expect drumhits 3
+tapkey b2
+wait 60
+expect drumhits 4
+tap PLAY
+# HOME's list: the whole pattern
+tap HOME
+tap SEL
+wait 40
+row CLEAR NOTES AND LOCKS
+tap SEL
+wait 40
+said CLEARED
+expect note 1 1 1 0
+expect note 1 1 5 0
+# CLEAR SCENE: the scene's notes go with it
+tap SEQ
+tapkey b0
+tapkey w0
+tapkey w2
+expect note 1 1 1 1
+tap HOME
+tap SEL
+wait 40
+row CLEAR SCENE
+tap SEL
+wait 40
+expect ask 1
+tap SEL
+wait 40
+said CLEARED
+expect note 1 1 1 0
+expect note 1 1 3 0
+expect scene 1

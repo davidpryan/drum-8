@@ -1428,14 +1428,7 @@ static void keyboard_down(int k)
     }
     if (is_aux(trk))
         trk = inst_trk();                        /* FX tracks: the keys audition the instrument selected last */
-    if (b >= 0 && is_drum(trk) && playing() && !srec && !seq.rec && !seq.rec_wait && !steps_page(ui.page) &&
-        !page_btn_held(PAGE_BTN[page_group(ui.page)].btn)) {
-        ui.kmode[k] = KM_IDLE;                   /* playing: a black key on a kit's page picks the key it edits,
-                                                  * without a preview over the beat (white keys still play it) */
-        ui.dsound = (uint8_t)(key_sound(k) - 1);
-        say("KEY", KEYNM(ui.dsound));
-        return;
-    }
+    /* (WARP-8: a black key on a kit's page picks the key it edits and is heard, while it plays too) */
     {
         int note = is_drum(trk) ? key_sound(k) : lock_note(key_note(k));
         ui.kmode[k] = KM_PLAY;
@@ -1717,13 +1710,12 @@ static void key_down(int k)
             mark_dirty();
             return;
         }
-        if (b >= 0 && is_drum(trk) && !ui.held) {   /* a drum track: pick (and hear, stopped) the sound */
-            ui.kmode[k] = playing() ? KM_IDLE : KM_SOUND;   /* (playing: a pick only, no preview over the beat,
-                                                              * and no note-off at its release) */
+        if (b >= 0 && is_drum(trk) && !ui.held) {   /* a drum track: pick and hear the sound (WARP-8: while it plays
+                                                     * too; ALGORITHM picks without a sound) */
+            ui.kmode[k] = KM_SOUND;
             ui.dsound = (uint8_t)b;
             ui.knote[k] = (uint8_t)(b + 1);
-            if (!playing())
-                engine_key(trk, b + 1, 1, 127);
+            engine_key(trk, b + 1, 1, 127);
             return;
         }
         ui.kmode[k] = KM_IDLE;                   /* (the other tracks' black keys: nothing, ALGORITHM picks a track) */
@@ -2179,7 +2171,7 @@ static void holds(void)
                 continue;
             ui.ask_arg = ui.knote[k];
             num_s((uint32_t)ui.ask_arg + 1u, s_cat(q, "CLEAR SCENE "));
-            s_cat(q + s_len(q), "?");
+            s_cat(q + s_len(q), " AND NOTES?");
             {
                 uint32_t i;
                 for (i = 0; i < sizeof ui.ask_q - 1u && q[i]; i++)
@@ -3044,6 +3036,50 @@ static void act_clear_locks(void)
     pattern_clear_locks(pats.lane, sel_trk(), cur_pat(sel_trk()));
     mark_dirty();
 }
+/* WARP-8: SEQ's CLEAR on the kit clears the picked drum's lane only: its hits (with their chances, tricks and
+ * velocities) and, or, the locks of its own knobs. The other drums' steps and locks stay. (The whole pattern: HOME's
+ * list) */
+static int kit_lane_clear(int notes, int locks)
+{
+    int trk = sel_trk(), pt = cur_pat(trk), snd = ui.dsound % NDRUM;
+    tpat_t *tp = tpat(trk);
+    if (!kit_ui() || !steps_page(ui.page))
+        return 0;
+    undo_keep();
+    if (notes) {
+        int ln = lane_find(pats.lane, trk, pt, (int)(LANE_VEL0 + (unsigned)snd));
+        for (int i = 0; i < NSTEP; i++)
+            if (kit_has(&tp->st[i], snd + 1)) {
+                kit_toggle(&tp->st[i], snd + 1);
+                hit_sound_off(trk, pt, i, snd);
+                step_fresh_if_empty(&tp->st[i]);
+            }
+        if (ln >= 0)
+            lane_clear(pats.lane, ln);
+    }
+    if (locks)
+        for (int k = 0; k < NLANE; k++) {
+            int p = (int)pats.lane[k].param;
+            if (pats.lane[k].used && pats.lane[k].trk == trk && pats.lane[k].pat == pt &&
+                ((p >= TP_DRUM(snd, 0) && p < TP_DRUM(snd, DP_N)) || (p >= TP_DRUMX(snd, 0) && p < TP_DRUMX(snd, DPX_N))))
+                lane_clear(pats.lane, k);
+        }
+    mark_dirty();
+    say(notes && locks ? "CLEARED ALL OF" : notes ? "CLEARED HITS OF" : "CLEARED LOCKS OF", KEYNM(snd));
+    return 1;
+}
+/* a pattern emptied: its steps and every lane of it (a scene cleared: act_clear_scene) */
+static void pat_wipe(int trk, int pt)
+{
+    tpat_t *tp = &pats.pat[trk][pt];
+    for (int i = 0; i < NSTEP; i++) {
+        memset(&tp->st[i], 0, sizeof tp->st[i]);
+        tp->st[i].vel = 100;
+    }
+    for (int k = 0; k < NLANE; k++)
+        if (pats.lane[k].used && pats.lane[k].trk == trk && pats.lane[k].pat == pt)
+            lane_clear(pats.lane, k);
+}
 /* a track's kind for PASTE: the synth tracks share one, a kit, each aux track its own (each reads a step's notes its way) */
 static int pat_kind(int trk) { return is_drum(trk) ? NSEQT : trk < NTRK ? 0 : trk; }
 /* PASTE: the pattern copied, its steps and its lanes (locks, motion, a kit's tunes) over this one's */
@@ -3692,6 +3728,17 @@ static void act_clear_scene(void)
     int n = ui.ask_arg % NSCENE, to = -1;
     char t[16];
     undo_arr();
+    if (pats.scene[n].used)                      /* WARP-8: its notes go with it: each track's pattern in the scene is
+                                                  * emptied, unless another scene plays that pattern too (it is that
+                                                  * scene's as much). The notes do not come back with HOME + REC */
+        for (int tr = 0; tr < NSEQT; tr++) {
+            int p = pats.scene[n].pat[tr] < NPATT ? pats.scene[n].pat[tr] : 0, shared = 0;
+            for (int m = 0; m < NSCENE; m++)
+                if (m != n && pats.scene[m].used && (pats.scene[m].pat[tr] < NPATT ? pats.scene[m].pat[tr] : 0) == p)
+                    shared = 1;
+            if (!shared)
+                pat_wipe(tr, p);
+        }
     if (seq.cue == n)
         engine_scene(cur_scene(), SCENE_BAR);    /* (cued: the cue is off) */
     if (n == cur_scene()) {
@@ -3723,7 +3770,7 @@ static void act_clear_scene_ask(void)
     ui.ask_arg = (uint8_t)cur_scene();
     ui.scene_from = 0xFF;
     num_s((uint32_t)cur_scene() + 1u, s_cat(q, "CLEAR SCENE "));
-    s_cat(q + s_len(q), "?");
+    s_cat(q + s_len(q), " AND NOTES?");
     ask(q, act_clear_scene);
 }
 static int save_project(int slot)
@@ -4014,11 +4061,24 @@ static void action_run(int a)
             say("CLEARED", "weaves");
             break;
         }
+        if (kit_lane_clear(1, 0))
+            break;
         act_clear_notes();
         say("CLEARED", "notes");
         break;
-    case A_CLEAR_LOCKS: act_clear_locks(); say("CLEARED", "locks"); break;
-    case A_CLEAR_BOTH: act_clear_notes(); act_clear_locks(); say("CLEARED", "notes and locks"); break;
+    case A_CLEAR_LOCKS:
+        if (kit_lane_clear(0, 1))
+            break;
+        act_clear_locks();
+        say("CLEARED", "locks");
+        break;
+    case A_CLEAR_BOTH:
+        if (kit_lane_clear(1, 1))
+            break;
+        act_clear_notes();
+        act_clear_locks();
+        say("CLEARED", "notes and locks");
+        break;
     case A_COPY_PAT: case A_COPY_BAR: case A_COPY_STEP:
         clip_trk = (uint8_t)sel_trk();
         clip_pat = (uint8_t)cur_pat(sel_trk());

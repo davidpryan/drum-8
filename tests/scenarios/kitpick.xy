@@ -1,5 +1,5 @@
-# a kit's key picked while playing: no preview over the beat (Steps' black key, a sound page's black key); stopped,
-# the same keys sound it. On EDIT's pages a white key writes the key shown on its step (tests/scenarios/kitedit.xy);
+# a kit's key picked is heard, while the pattern plays too (Steps' black key, a sound page's black key: WARP-8;
+# ALGORITHM picks without a sound). On EDIT's pages a white key writes the key shown on its step (tests/scenarios/kitedit.xy);
 # with EDIT held it plays, while playing too
 wait 300
 expect trk 1
@@ -8,24 +8,24 @@ wait 200
 tap SEQ
 tapkey b1
 wait 20
-expect drumhits 0
+expect drumhits 1
 tap EDIT
 tapkey b2
 wait 20
-expect drumhits 0
+expect drumhits 2
 key w3 down
 wait 20
 key w3 up
-expect drumhits 0
+expect drumhits 2
 expect note 1 1 4 3
 press EDIT
 key w3 down
 wait 20
 key w3 up
 release EDIT
-expect drumhits 1
+expect drumhits 3
 tap PLAY
 wait 300
 tapkey b3
 wait 20
-expect drumhits 2
+expect drumhits 4
