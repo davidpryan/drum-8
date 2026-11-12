@@ -694,6 +694,7 @@ static step_t *chord_step(int t, int i)              /* chord mode's held cell i
     return &pats.pat[is_seqt(t) ? t : 0][ui.chord_pat % NPATT].st[(ui.chord_bar * 16 + i) % NSTEP];
 }
 static int home_held(void) { return ui.btn >> B_HOME & 1u; }
+static uint8_t sbrowse;                              /* WARP-8: the sound browser is open (draw_browse, below) */
 static int glo_held(void) { return ui.btn >> B_GLO & 1u; }   /* WARP-8: GLO held, the keys mute (ui.c key_down) */
 /* REC held: its knobs are the record settings while stopped and on Steps and Bar; on a sound page while playing,
  * the page's own, recorded as they turn (a punch-in of motion, as the keys punch in notes) */
@@ -2439,6 +2440,10 @@ static void page_footer(char *t)
         s_cat(t, "KNOBS record motion|KEYS record notes");
         return;
     }
+    if (sbrowse && !lst.open && kit_ui() && (ui.page == P_ENGINE || ui.page == P_SUB)) {
+        s_cat(t, "HOME back|KEYS play");
+        return;
+    }
     if (ui.card) {
         s_cat(t, "let go: nothing changes");
         return;
@@ -2604,6 +2609,10 @@ static void enc_line(char *t)
         return;
     if (glo_held()) {
         s_cat(t, proj.rsv[3] & MUTES_AT_BAR ? "KNOB 1 mutes: at the bar" : "KNOB 1 mutes: at once");
+        return;
+    }
+    if (sbrowse && kit_ui() && (ui.page == P_ENGINE || ui.page == P_SUB)) {
+        s_cat(t, "PRESET sound|ALGO engine");
         return;
     }
     if (home_held()) {
@@ -3002,6 +3011,59 @@ static void proj_slot_text(int slot, char *t)     /* "Proj 2", "Proj 3 (open)", 
 static void dsound_label(int i, char *t)
 {
     s_cat(s_cat(s_cat(t, HPRESET[i % NHPRESET].name), " "), DM_NAME[DM_HORT0 + HPRESET[i % NHPRESET].model % NHM]);
+}
+/* WARP-8: the sound browser. PRESETS on a drum's EDIT pages opens it: Hortator's sounds in the order of their engines
+ * (models), each put on the drum and heard as PRESETS turns to it; ALGORITHM jumps to the next engine's first sound;
+ * HOME (or SEL) closes it */
+static uint8_t sbrowse;
+static int hp_engine(int i, int d)                  /* the first sound of the next engine with any (d < 0: the one before) */
+{
+    int m = HPRESET[i % NHPRESET].model;
+    for (int n = 1; n <= NHM; n++) {
+        int mm = ((m + d * n) % NHM + NHM) % NHM;
+        for (int j = 0; j < NHPRESET; j++)
+            if (HPRESET[j].model == mm)
+                return j;
+    }
+    return i % NHPRESET;
+}
+static int hp_step(int i, int d)                    /* the sound after i (d < 0: before) in that order */
+{
+    int m, j;
+    i %= NHPRESET;
+    m = HPRESET[i].model;
+    for (j = i + d; j >= 0 && j < NHPRESET; j += d)
+        if (HPRESET[j].model == m)
+            return j;
+    j = hp_engine(i, d);
+    if (d < 0)                                       /* (the engine before: its last sound) */
+        for (int k = j; k < NHPRESET; k++)
+            if (HPRESET[k].model == HPRESET[j].model)
+                j = k;
+    return j;
+}
+static int begin_main(uint32_t h);
+static void draw_browse(void)
+{
+    int cur = ui.pick_dsound % NHPRESET, row[9], i;
+    if (!begin_main(hash_u(hash_u(2166136261u, 0xB5u), (uint32_t)cur | (uint32_t)ui.dsound << 8)))
+        return;
+    row[4] = cur;
+    for (i = 3; i >= 0; i--)
+        row[i] = hp_step(row[i + 1], -1);
+    for (i = 5; i < 9; i++)
+        row[i] = hp_step(row[i - 1], 1);
+    for (i = 0; i < 9; i++) {
+        int32_t y = 2 + i * 13;
+        int m = HPRESET[row[i]].model % NHM;
+        if (i && HPRESET[row[i - 1]].model != HPRESET[row[i]].model)   /* an engine's first sound: a rule over it */
+            cv_rect(4, y - 1, 232, 1, K_LINE);
+        if (i == 4)
+            cv_round(4, y, 232, 12, 3, K_NOW);
+        cv_text(10, y - 1, &FONT_XS, HPRESET[row[i]].name, i == 4 ? K_BG : K_TEXT);
+        text_r(230, y - 1, &FONT_XS, DM_NAME[DM_HORT0 + m], i == 4 ? K_BG : K_DIM);
+    }
+    cv_blit(0, MAIN_Y);
 }
 #define NFKITS (1 + NGKITS)
 #define NKITS (NFKITS + NUSER_KITS)
@@ -6592,6 +6654,10 @@ static void draw_page(void)
     }
     if (layer_map()) {
         draw_layer(layer_map() == 1);
+        return;
+    }
+    if (sbrowse && kit_ui() && (ui.page == P_ENGINE || ui.page == P_SUB)) {   /* WARP-8: a drum's sounds, browsed */
+        draw_browse();
         return;
     }
     switch (ui.page) {

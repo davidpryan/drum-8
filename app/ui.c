@@ -2003,6 +2003,7 @@ static void page_button(int b)
                                                   * played last, as Mix's FX strips do; each track's weave is its ARP's) */
     if ((b == B_ENV || b == B_LFO) && is_midi(sel_trk()))
         say_no(b == B_ENV ? "NO ENVELOPE" : "NO LFO", "on a MIDI track");
+    sbrowse = 0;
     for (uint32_t i = 0; i < NPAGE_BTN; i++)
         if (PAGE_BTN[i].btn == b) {
             ui.page = (uint8_t)(b == B_HOME && ui.page == P_ARRANGE ? P_SONG : grp_page((int)i, 0));
@@ -2016,6 +2017,7 @@ static void page_button(int b)
 }
 static void page_turn(int d)
 {
+    sbrowse = 0;
     int g = page_group(ui.page), n = group_n(g), i = grp_index(ui.page);
     ui.page = (uint8_t)grp_page(g, ((i < 0 ? 0 : i + d) % n + n) % n);
     ui.touched = -1;
@@ -2045,6 +2047,8 @@ static void button_up(int b)
     case B_SEL:
         if (ui.ask)
             ask_end(1);
+        else if (sbrowse && !lst.open)
+            sbrowse = 0;
         else if (lst.open)
             list_sel();
         else if (ui.page == P_GEN && is_drum(sel_trk()))   /* Generate: SEL writes what the grid shows */
@@ -2061,6 +2065,8 @@ static void button_up(int b)
             ask_end(0);
         else if (lst.open)
             lst.open = 0;
+        else if (sbrowse)                        /* (WARP-8: the sound browser closes; the sound stays) */
+            sbrowse = 0;
         else
             page_button(B_HOME);
         break;
@@ -2239,26 +2245,32 @@ static void kit_knob(int d)
         engine_key(trk, ui.dsound % DL_NSOUND + 1, 0, 0);
     }
 }
-/* and the next of Hortator's sounds of the drum shown's type (its model's; a model of LOOM-8's: the type picked
- * last), on the drum and played */
-static void sound_knob(int d)
+/* WARP-8: the sound browser (pages.c draw_browse): sound i on the drum shown, and heard */
+static void browse_go(int i)
 {
-    int trk = sel_trk(), key = ui.dsound % DL_NSOUND, m = proj.trk[trk].par[TP_DRUM(key, DP_MODEL)] % NDM, ty, lo, n, at;
+    int trk = sel_trk(), key = ui.dsound % DL_NSOUND;
     if (!is_drum(trk))
         return;
-    ty = DM_ISHORT(m) ? HPT_OF[m - DM_HORT0] : ui.pick_dtype % NHPT;
-    lo = HPT_START[ty];
-    n = HPT_START[ty + 1] - lo;
-    at = ui.pick_dsound >= lo && ui.pick_dsound < lo + n ? ui.pick_dsound - lo : -1;
-    if (at < 0)                                  /* (another type's sound was picked last: this type's first, or last) */
-        at = d > 0 ? 0 : n - 1;
-    else
-        at = ((at + d) % n + n) % n;
-    ui.pick_dtype = (uint8_t)ty;
-    ui.pick_dsound = (uint8_t)(lo + at);
+    ui.pick_dsound = (uint8_t)(i % NHPRESET);
     act_drum_sound(ui.pick_dsound);
     engine_key(trk, key + 1, 1, 127);
     engine_key(trk, key + 1, 0, 0);
+}
+/* PRESETS on a drum's EDIT pages: the browser opens on the drum's own engine (its first sound, if the sound picked
+ * last is another engine's), then each turn is the next sound */
+static void sound_knob(int d)
+{
+    int trk = sel_trk(), m = proj.trk[trk].par[TP_DRUM(ui.dsound % DL_NSOUND, DP_MODEL)] % NDM, cur = ui.pick_dsound % NHPRESET;
+    if (!sbrowse && DM_ISHORT(m) && HPRESET[cur].model != m - DM_HORT0) {
+        for (int j = 0; j < NHPRESET; j++)
+            if (HPRESET[j].model == m - DM_HORT0) {
+                sbrowse = 1;
+                browse_go(j);
+                return;
+            }
+    }
+    sbrowse = 1;
+    browse_go(hp_step(cur, d));
 }
 static void arrange_knob(int k, int32_t e)
 {
@@ -4522,7 +4534,9 @@ static void input(void)
             page_turn(e > 0 ? 1 : -1);
     }
     if ((e = ev[EN_ALGO]) != 0) {
-        if (lst.open)
+        if (sbrowse && !lst.open && kit_ui() && (ui.page == P_ENGINE || ui.page == P_SUB))
+            browse_go(hp_engine(ui.pick_dsound, e > 0 ? 1 : -1));   /* (WARP-8, the sound browser: the next engine) */
+        else if (lst.open)
             list_change(e);
         else if (0) {                             /* (WARP-8: a track's engine is its own: none to pick)
                                                    * EDIT held, ALGORITHM picked LOOM-8's */

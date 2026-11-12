@@ -1,0 +1,35 @@
+# WARP-8: the sound browser. PRESETS on a drum's EDIT page opens a list of Hortator's sounds by engine, each put on
+# the drum and heard; ALGORITHM jumps to the next engine's first sound; HOME closes it, the sound kept
+wait 300
+listen
+expect trk 1
+tap EDIT
+wait 40
+expect page Engine
+turn PRESET 1
+wait 60
+said DRUM SOUND
+expect par1.d1.model >29
+turn PRESET 1
+wait 60
+said DRUM SOUND
+shot browse.png
+turn ALGO 1
+wait 60
+said DRUM SOUND
+shot browse_engine.png
+turn ALGO -1
+wait 60
+said DRUM SOUND
+# HOME closes the list and stays on the page; again, it is HOME
+tap HOME
+wait 40
+expect page Engine
+expect par1.d1.model >29
+shot browse_closed.png
+turn ALGO 1
+wait 40
+said DRUM
+tap HOME
+wait 40
+expect page Arrange

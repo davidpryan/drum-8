@@ -16,6 +16,9 @@ With the kit selected:
 - **Hold something and the knobs are its.** A step held: the step's. A drum held: its lane's. A button held: that
   button's keys and knobs, drawn on the screen while you hold.
 
+**Each drum has a colour of its own**, the same on every page: its row on HOME, its bars on Steps, its pad on EDIT,
+its key in the mutes. The page's own colour is the picked drum's.
+
 This holds on every page of the kit. The exceptions are the Throws page, the shared LFO page (white keys pick the
 sound it moves), the master and setup pages (the keys play), and the Song page (white keys add scenes to the song).
 
@@ -119,6 +122,22 @@ HOME + REC takes it back.
 
 **RANDOM SOUND** in the drum's list (SEL on EDIT) puts another sound of its type on it.
 
+### The sound browser
+
+<img src="img/warp-browse.png" width="240" alt="The sound browser: nine sounds, the one on the drum lit, each with its engine's name at the right, a rule between engines" title="The sound browser">
+
+Turn PRESETS on a drum's EDIT page and a list of the 143 sounds opens, in the order of their engines, each with its
+engine at the right. It opens on the drum's own engine.
+
+| Control | Does |
+|---|---|
+| PRESETS | The next or the last sound: put on the drum and heard at once |
+| ALGORITHM | The first sound of the next engine, or of the one before |
+| HOME, SEL | Close the list. The sound stays on the drum |
+| Keys, knobs | As on the page: play the drum, shape the sound |
+
+HOME + REC takes a sound back.
+
 ## GLO held: mutes and fill
 
 <img src="img/warp-glo-held.png" width="240" alt="GLO held: the keys drawn, the muted drum dark, K S L under the track keys, C and F under clear and fill" title="GLO held">
@@ -152,11 +171,36 @@ HOME held is also LOOM-8's shift: REC undoes, PLAY redoes, ALGORITHM picks the t
 
 <img src="img/warp-fx-held.png" width="240" alt="FX held: the Throws page, stutter lit on its key" title="FX held">
 
-From any page of the kit, hold FX and the keys are the throws, as on the Throws page: mute, stutter, repeat, echo,
-build, floor, jumble on the white keys, warble, pan, octave, chop, ring on the black. The lower octave works on the
-drums. Let go of FX and you are back on your page with nothing left on, unless LATCH is on.
+From any page of the kit, hold FX and the keys are the throws, as on the Throws page. Let go of FX and you are back
+on your page with nothing left on, unless LATCH is on. A tap of FX still opens its pages.
 
-A tap of FX still opens its pages.
+The first octave is LOOM-8's twelve:
+
+| White keys | | Black keys | |
+|---|---|---|---|
+| mute | nothing sounds | warble | a high-pass and a wobble |
+| stutter | the last two sixteenths repeat | pan | the pan swings |
+| repeat | the last beat repeats | octave | an octave up |
+| echo | the stutter, fading | chop | every hit short |
+| build | snares, eighths then sixteenths | ring | every hit long |
+| floor | a kick on the beats, hats between | | |
+| jumble | the first three drums at random | | |
+
+The second octave is twelve more, in place of LOOM-8's melodic throws:
+
+| White keys | | Black keys | |
+|---|---|---|---|
+| thin | only the hits on the eighths | low-pass | the kit's filter closes |
+| roll | the step playing repeats, in sixteenths | delay | every hit all the way to FX I |
+| buzz | the same in thirty-seconds | reverb | every hit all the way to FX II |
+| soft | every hit quiet | hard | every hit at full |
+| rise | each step a semitone higher, to two octaves | crush | the kit through a bit crusher |
+| drop | each step a semitone lower | | |
+| down | an octave down | | |
+
+Both octaves now reach every track. Hortator's reverse, tape stop and freeze are not here: each needs a recording of
+the output to play back, and there is neither the memory nor the flash for one. Drop is the nearest thing to a tape
+stop that drum synthesis can do.
 
 ### GRIDS
 
@@ -185,9 +229,16 @@ With LATCH on, a press turns it on and the next turns it off. X, Y and FILL are 
 | Held step: velocity, length, chance, pitch | Velocity, chance, ratchets, nudge; SELECT for length and pitch |
 | Mix with the kit selected: black keys mute and solo tracks | They pick drums. From another track they are the tracks, as before |
 | Throws: on their page | Also FX held, from anywhere |
+| The second octave: the melodic tracks' throws | Twelve more throws |
+| EDIT: PRESETS steps through the sounds of the drum's type | A list of all the sounds by engine; ALGORITHM jumps engines |
+| A nudge moves the whole step | Knob 4 moves the picked drum alone; OCT the whole step |
+| CLEAR on SEQ empties the pattern; CLEAR SCENE keeps the notes | CLEAR on SEQ is the picked drum's lane; CLEAR SCENE takes its notes |
+| A black key is silent while the pattern plays | It is heard |
+| One colour for the kit | A colour for each drum |
 
 ## Not built
 
 - Chaos, accents and the map's thirty-second notes in GRIDS; GRIDS recorded on the THROW track; the hollow cells
   that would show the map over the written pattern.
+- Reverse, tape stop and freeze as throws (see above).
 - Rolls of one drum, knobs that spring back in the FX layer, kit morph, more than one level of undo, kits as text.
