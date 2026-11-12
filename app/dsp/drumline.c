@@ -1887,6 +1887,7 @@ static float volume_lin(int v)
     return fm_db2lin((float)(v - VOL0) * (20.0f / (float)(127 - VOL0)));
 }
 
+volatile uint8_t dl_throw_send;                       /* bit 0: every sound to FX I, bit 1: to FX II (engine.c, the throws) */
 /* the chunk's targets from par[]: volume, pan, the key's sends; ramped over m samples */
 static void control(const uint8_t *par, dvoice_t *v, int m)
 {
@@ -1895,8 +1896,9 @@ static void control(const uint8_t *par, dvoice_t *v, int m)
     lin = volume_lin(p[DP_VOLUME]);
     l = lin * fm_sin_turns(0.25f * (1.0f - a));       /* constant power: cos, sin of a quarter turn */
     r = lin * fm_sin_turns(0.25f * a);
-    s1 = lin * (float)p[DP_SEND1] * (1.0f / 127.0f);
-    s2 = lin * (float)p[DP_SEND2] * (1.0f / 127.0f);
+    s1 = dl_throw_send & 1u ? lin : lin * (float)p[DP_SEND1] * (1.0f / 127.0f);   /* (WARP-8's delay and reverb
+                                                       * throws: every sound all the way to its effect) */
+    s2 = dl_throw_send & 2u ? lin : lin * (float)p[DP_SEND2] * (1.0f / 127.0f);
     if (v->age == 0) {                                /* a fresh voice starts at its gains */
         v->gl = l; v->gr = r; v->gs1 = s1; v->gs2 = s2;
     }

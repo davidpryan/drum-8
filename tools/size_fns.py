@@ -68,7 +68,12 @@ COLD = {
                       "kit_set", "kit_toggle", "kit_add", "cond_ab", "notes_cross", "weave_step", "pattern_woven"],
     "seq/seq.c": ["fire_notes", "key_in", "seq_init", "bar_end", "do_start", "emit_drum", "rec_key_off",
                   "rec_key_on", "restart", "track_reset", "seq_rec_pos", "deg_to_note", "seq_cue_pattern",
-                  "arp_stop", "keys_all_off"],
+                  "arp_stop", "keys_all_off",
+                  # WARP-8: the step-rate code too (it runs once a step, not once a block): room for the throws
+                  "punch_update", "arp_fire", "keys_play", "kit_group", "apply_locks", "kit_emit", "step_note", "brain_note",
+                  "resolve_set", "next_pos", "rec_step1", "seq_keys_live", "jump_set", "kit_lanes", "kit_ndgs",
+                  "scene_read", "chord_at", "loop_release", "brain_set_near_notes", "fill_hit", "fill_collect",
+                  "roll_fire", "step_roll_fire", "seq_step_rec", "seq_until_event", "grid_index", "rand_wrap"],
 }
 # the two FX slots' and the master's per-sample code, closed under calls (~18 KB; the 24 KB RAMTEXT region holds
 # .ram_text's ~3 KB and the second core's loop besides)

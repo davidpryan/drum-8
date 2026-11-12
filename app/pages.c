@@ -156,6 +156,7 @@ static const char *const BTN_LABEL[NB] = {"FX", "SEL", "ENV", "LFO", "EDIT", "GL
 static const char *const TRACK_NAME[NALLTRK] = {"KIT", "SMP", "SLC", "T4",   /* (WARP-8: one kit, a sample track, a slice
                                                                              * track; T4-T8 are not reached) */ "T5", "T6", "T7", "T8", "COND", "THROW",
                                                 "FX I", "FX II", "WEAVE"};
+#define PX_NAME(fx) ((fx) >= PX_MEL ? PUNCH2_NAME[(fx) & 15] : PUNCH_NAME[(fx) & 15])   /* a throw's name (seq.h) */
 static const char *const NOTE_NAME[12] = {"C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"};
 /* the step components (SC_*: the OP-XY's 14, on the white keys with HOME and a step held), their letter on
  * the grid and their name */
@@ -2522,7 +2523,7 @@ static void page_footer(char *t)
         s_cat(t, "BLACK mute|hold: solo|WHITE play");
         break;
     case P_THROWS:
-        s_cat(t, seq.grids_on ? "KNOBS the drum map|SEL keep it" : "KEYS throw: low drums, high|WHITE 15 grids");
+        s_cat(t, seq.grids_on ? "KNOBS the drum map|SEL keep it" : "KEYS throws, two octaves|WHITE 15 grids");
         break;
     case P_WEAVE:
         s_cat(t, "BLACK the track woven in|WHITE its pattern");
@@ -3344,7 +3345,7 @@ static void list_build(void)
             if (is_drum(trk))
                 s_cat(e, KEYNM((st->note[i] - 1) % DL_NSOUND));
             else if (trk == AUX_PUNCH)
-                s_cat(e, PX_VALID(st->note[i] - 1) ? PUNCH_NAME[(st->note[i] - 1) & 15] : "fx");
+                s_cat(e, PX_VALID(st->note[i] - 1) ? PX_NAME(st->note[i] - 1) : "fx");
             else if (pl_type(trk) == PL_RAND)
                 s_cat(e, "slot");
             else
@@ -3898,7 +3899,7 @@ static void steps_head(int trk, char *nm, char *t)
     } else if (trk == AUX_PUNCH) {
         e = s_cat(t, "fx: ");
         if (ui.rem_fx && PX_VALID(ui.rem_fx - 1))
-            s_cat(s_cat(e, PUNCH_NAME[(ui.rem_fx - 1) & 15]), ui.rem_fx - 1 >= PX_MEL ? " (melodic)" : " (drums)");
+            s_cat(e, PX_NAME(ui.rem_fx - 1));
         else
             s_cat(e, "play a key on EDIT first");
         return;
@@ -4240,9 +4241,11 @@ static void draw_steps_as(void)
             } else if (trk == AUX_PUNCH) {
                 int fx = st->note[0] - 1;
                 /* the effect in capitals (no descender to meet the line under it), three letters, over its group */
-                static const char *const PX_CELL[NPUNCH] = {"MUT", "STU", "REP", "ECH", "BLD", "FLR", "JMB", "WBL",
-                                                            "PAN", "OCT", "CHP", "RNG"};
-                const char *a = PX_VALID(fx) ? PX_CELL[(fx & 15) % NPUNCH] : "?", *b = PX_VALID(fx) && fx >= PX_MEL ? "mel" : "drm";
+                static const char *const PX_CELL[2][NPUNCH] = {{"MUT", "STU", "REP", "ECH", "BLD", "FLR", "JMB", "WBL",
+                                                               "PAN", "OCT", "CHP", "RNG"},
+                                                              {"THN", "ROL", "BUZ", "SFT", "RIS", "DRP", "DWN", "LPF",
+                                                               "DLY", "REV", "HRD", "CRU"}};   /* (seq.h PY_*) */
+                const char *a = PX_VALID(fx) ? PX_CELL[fx >= PX_MEL][(fx & 15) % NPUNCH] : "?", *b = "thr";
                 text_c(x + ST_MID, y + ST_L1, st_font(a), a, fg);
                 text_c(x + ST_MID, y + ST_L2, st_font(b), b, dim);
             } else {                                 /* notes: two lines, each one name (they never fit two a line) */
@@ -5162,7 +5165,7 @@ static void draw_punch(void)
         if (n++)
             e = s_cat(e, ", ");
         if (s_len(t) < 40)
-            e = s_cat(e, PUNCH_NAME[fx & 15]);
+            e = s_cat(e, PX_NAME(fx));
     }
     if (seq.grids_on)                                /* (WARP-8: the GRIDS throw, the fifteenth white key) */
         s_cat(e, n++ ? ", grids" : "grids");
@@ -5172,8 +5175,8 @@ static void draw_punch(void)
         const felucca_font_t *f = !n ? &FONT_S : text_w(&FONT_B, t) <= 220 ? &FONT_B : text_w(&FONT_S, t) <= 220 ? &FONT_S : &FONT_XS;
         text_fit(10, f == &FONT_XS ? 6 : 4, f, t, 220, n ? K_NOW : K_DIM);
     }
-    cv_text(10, 24, &FONT_XS, "drums", K_DIM);
-    text_r(230, 24, &FONT_XS, "melodic", K_DIM);
+    cv_text(10, 24, &FONT_XS, "throws", K_DIM);
+    text_r(204, 24, &FONT_XS, "more throws", K_DIM);
     for (int k = 0; k < 16; k++) {                   /* the keys: two octaves, the ones in effect lit */
         int32_t x = 8 + k * 14;
         int fx = punch_of_key(WHITE_K[k]);
@@ -5183,8 +5186,8 @@ static void draw_punch(void)
         cv_round(x, 40, 13, 60, 2, on ? K_NOW : fx < 0 ? K_PANEL : K_PANEL2);
         if (k == 14)
             text_c(x + 6, 102, &FONT_XS, "g", K_DIM);
-        else if (fx >= 0 && k < 7) {                      /* the drum octave's initials: m s r e b f j */
-            char ini[2] = {PUNCH_NAME[fx & 15][0], 0};
+        else if (fx >= 0) {                          /* the throws' initials: m s r e b f j, t r b s r d d */
+            char ini[2] = {PX_NAME(fx)[0], 0};
             text_c(x + 6, 102, &FONT_XS, ini, K_DIM);
         }
     }
@@ -5197,7 +5200,7 @@ static void draw_punch(void)
         cv_frame(8 + wi * 14 - 5, 40, 10, 34, 2, fx < 0 ? K_LINE : K_DIM, on ? K_NOW : K_BG);
     }
     cv_rect(8 + 7 * 14 - 1, 36, 2, 70, K_DIM);
-    cv_text(120, 104, &FONT_XS, proj.trk[AUX_PUNCH].par[TP_E1] ? "latch on" : "while held", K_DIM);
+    text_c(100, 24, &FONT_XS, proj.trk[AUX_PUNCH].par[TP_E1] ? "latch on" : "while held", K_DIM);
     cv_blit(0, MAIN_Y);
 }
 /* WARP-8: the map of a held button's keys, drawn while it is held (after LAYER_MS, or at its first key): GLO's

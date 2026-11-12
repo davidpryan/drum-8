@@ -96,6 +96,8 @@ static const uint8_t ARP_NUM[9] = {4, 8, 2, 4, 1, 2, 1, 1, 1}, ARP_DEN[9] = {1, 
 
 const char *const PUNCH_NAME[NPUNCH] = {"mute", "stutter", "repeat", "echo", "build", "floor", "jumble",
                                         "warble", "pan", "octave", "chop", "ring"};
+const char *const PUNCH2_NAME[NPUNCH] = {"thin", "roll", "buzz", "soft", "rise", "drop", "down",
+                                         "low-pass", "delay", "reverb", "hard", "crush"};
 /* an octave's keys in chromatic order (F F# G G# A A# B C C# D D# E) to their effect */
 static const uint8_t KEY2PX[12] = {PX_MUTE, PX_WARBLE, PX_STUTTER, PX_PAN, PX_REPEAT, PX_OCTAVE, PX_ECHO,
                                    PX_BUILD, PX_CHOP, PX_FLOOR, PX_RING, PX_JUMBLE};
@@ -305,8 +307,23 @@ uint32_t seq_step_q8(const seq_t *s, int trk)
 int seq_bar_step(const seq_t *s) { return s->bar16 & 15; }
 
 /* ----------------------------------------------------------- punch-in --- */
+#ifdef SEQ_LOOM_THROWS
 int punch_group_of(const seq_t *s, int trk) { return is_perc(s, trk) ? 0 : 1; }
 static int grp_oct(const seq_t *s, int t) { return is_perc(s, t) ? 0 : PX_MEL; }
+#define fy_on(s, t, py) 0
+#else                                 /* WARP-8: one group; the second octave its own throws (seq.h PY_*) */
+int punch_group_of(const seq_t *s, int trk) { (void)s; (void)trk; return 0; }
+static int grp_oct(const seq_t *s, int t) { (void)s; (void)t; return 0; }
+static int fy_on(const seq_t *s, int t, int py)
+{
+    uint32_t b = 1u << (py + PX_MEL);
+    if (t >= NTRK)
+        return 0;
+    if (s->punch_seq & b)
+        return 1;
+    return (s->punch_keys & b) && (s->punch_tgt[py + PX_MEL] == 0xFF || s->punch_tgt[py + PX_MEL] == t);
+}
+#endif
 
 /* a punch-in effect in force on track t: sequenced ones reach the whole group, held ones the group or
  * the track they are aimed at */
@@ -337,7 +354,7 @@ uint32_t seq_punch_mask(const seq_t *s, int trk)
     return m;
 }
 
-static int punch_muted(const seq_t *s, int t) { return fx_on(s, t, PX_MUTE); }
+static int punch_muted(const seq_t *s, int t) { return fx_on(s, t, PX_MUTE) || s->t[t].thin; }
 
 /* the sixteenth of the bar a step of track t falls on (its scale), or -1 between sixteenths */
 static int step_six(const tpat_t *p, int step)
@@ -947,6 +964,10 @@ static void emit_drum(seq_t *s, int t, int sound, int vel, int semi, uint32_t ta
         if (o->ghost)
             o->ghost(o->ctx, t, sound, vel);
         return;
+    }
+    if (tag != TAG_KEY) {             /* (WARP-8: soft, hard; rise, drop and down: the sequenced hits) */
+        vel = fy_on(s, t, PY_HARD) ? 127 : fy_on(s, t, PY_SOFT) ? vel * 2 / 5 + 1 : vel;
+        semi += s->t[t].dive - (fy_on(s, t, PY_DOWN) ? 12 : 0);
     }
     if (o->drum)
         o->drum(o->ctx, t, sound, vel, semi + (fx_on(s, t, PX_OCTAVE) ? 12 : 0), fx_on(s, t, PX_CHOP), fx_on(s, t, PX_RING));
@@ -1831,6 +1852,8 @@ static void kit_group(seq_t *s, int t, const step_t *st, int p, uint32_t L, uint
         int cv = g->mul - 1;
         n = cv == SC_RANDOM_VAL ? 1 + (int)(rng_next(&tr->rng) % 9u) : cv + 1;
     }
+    if (n < 2 && fy_on(s, t, PY_BUZZ))   /* (WARP-8, buzz: each hit twice in its step) */
+        n = 2;
     for (b = m; b; b &= b - 1u) {
         kit_rt_t *r = &R[__builtin_ctz(b)];
         r->i = 0;
@@ -1996,6 +2019,11 @@ static void fire_step(seq_t *s, int t, const seq_sink_t *o)
     if (tr->skip_pos != p)
         skip_clear(tr);
     tr->pos = (uint8_t)p;
+    {   /* WARP-8: thin: off the eighths nothing plays; rise and drop: a semitone a step, two octaves at most */
+        int up = fy_on(s, t, PY_RISE), dn = fy_on(s, t, PY_DROP);
+        tr->thin = (uint8_t)(fy_on(s, t, PY_THIN) && (step_six(tp, p) & 1));
+        tr->dive = (int8_t)(up == dn ? 0 : up ? (tr->dive < 24 ? tr->dive + 1 : 24) : tr->dive > -24 ? tr->dive - 1 : -24);
+    }
     tr->grid_h = (uint8_t)ts_halves(tp);
     tr->grid_len = (uint8_t)loop_len(tp);
     tr->age = 0;
@@ -3164,10 +3192,11 @@ static void punch_update(seq_t *s, const seq_sink_t *o)
     }
     for (t = 0; t < NTRK; t++) {
         seq_trk_t *tr = &s->t[t];
-        int lp = fx_on(s, t, PX_STUTTER) || fx_on(s, t, PX_REPEAT) || fx_on(s, t, PX_ECHO);
+        int roll = fy_on(s, t, PY_ROLL) || fy_on(s, t, PY_BUZZ);   /* (WARP-8: the step alone, again and again) */
+        int lp = roll || fx_on(s, t, PX_STUTTER) || fx_on(s, t, PX_REPEAT) || fx_on(s, t, PX_ECHO);
         int fl = fx_on(s, t, PX_BUILD) || fx_on(s, t, PX_FLOOR) || fx_on(s, t, PX_JUMBLE);
         if (lp) {
-            int six = fx_on(s, t, PX_REPEAT) && !fx_on(s, t, PX_STUTTER) && !fx_on(s, t, PX_ECHO) ? 4 : 2, steps;
+            int six = roll ? 1 : fx_on(s, t, PX_REPEAT) && !fx_on(s, t, PX_STUTTER) && !fx_on(s, t, PX_ECHO) ? 4 : 2, steps;
             if (!tr->loop_on) {       /* the punch-in point: the step playing */
                 tr->loop_on = 1;
                 tr->loop_from = tr->started ? tr->pos : 0;

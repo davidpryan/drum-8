@@ -109,4 +109,5 @@ extern volatile uint8_t drumline_hitv[DL_NSOUND];      /* the last hit of each s
 #ifdef PLAT_HOST
 extern uint32_t (*drumline_host_clock)(void);    /* the simulator's profiler: each key's time rendering [0] and starting */
 extern uint32_t drumline_host_cost[DL_NSOUND][2];   /* [1] its hits, in the clock's units (app/host.c LOOM_WORK) */
+extern volatile uint8_t dl_throw_send;               /* WARP-8's delay / reverb throws (drumline.c control) */
 #endif

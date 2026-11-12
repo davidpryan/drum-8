@@ -5279,9 +5279,9 @@ static void speak_dump(void)
             sp_text(comp_val_text(c, (int)SK_VAL(3u, (uint32_t)m), vt));
             sp_print("MSG", sp_buf);
         }
-    for (int i = 0; i < NPUNCH; i++) {
+    for (int i = 0; i < 2 * NPUNCH; i++) {
         sp_n = 0;
-        sp_text(PUNCH_NAME[i]);
+        sp_text(i < NPUNCH ? PUNCH_NAME[i] : PUNCH2_NAME[i - NPUNCH]);
         sp_print("MSG", sp_buf);
     }
     sp_front(1);

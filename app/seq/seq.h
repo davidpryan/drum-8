@@ -49,6 +49,18 @@ enum { SEQ_CLK_INTERNAL, SEQ_CLK_SEND, SEQ_CLK_RECEIVE, SEQ_NCLK };
 enum { PX_MUTE, PX_STUTTER, PX_REPEAT, PX_ECHO, PX_BUILD, PX_FLOOR, PX_JUMBLE, PX_WARBLE, PX_PAN, PX_OCTAVE,
        PX_CHOP, PX_RING };
 #define PX_MEL 16                     /* + PX_* = the melodic octave's bit */
+/* WARP-8: the second octave's keys are twelve more throws (PX_MEL + PY_*), on every track, and the first octave's
+ * reach every track too (LOOM-8's two groups, drums and melodic: SEQ_LOOM_THROWS, as its sequencer tests build it):
+ *   thin    only the hits on the eighths play
+ *   roll    the step playing repeats, a sixteenth
+ *   buzz    the same in thirty-seconds (a kit's hits doubled)
+ *   soft    every drum hit quiet; hard: every one at full
+ *   rise    each step's hits a semitone higher than the last's (two octaves at most); drop: lower
+ *   down    the drums an octave down
+ *   low-pass, delay, reverb, crush: the engine's (the kit's filter closed, every hit to FX I, to FX II, the kit crushed) */
+enum { PY_THIN, PY_ROLL, PY_BUZZ, PY_SOFT, PY_RISE, PY_DROP, PY_DOWN, PY_LOWPASS, PY_DELAY, PY_REVERB, PY_HARD,
+       PY_CRUSH };
+extern const char *const PUNCH2_NAME[NPUNCH];         /* "thin", "roll", ... */
 #define PX_VALID(fx) ((fx) >= 0 && (fx) < NPUNCH_FX && ((fx) & 15) < NPUNCH)   /* a real bit: 0..11, 16..27 */
 extern const char *const PUNCH_NAME[NPUNCH];          /* "mute", "stutter", ... */
 /* a key number 0..26 (F3 = 0) to its punch bit, -1 for the idle keys; and back */
@@ -174,6 +186,8 @@ typedef struct {                      /* one track's runtime (interrupt only) */
     int32_t off_q8;                   /* the current step's timing offset (groove, nudge), Q8 */
     step_t wv_st;                     /* the woven step playing (weave_step), while the track weaves */
     uint8_t wv_on;                    /* 1: the step playing is wv_st (its ratchets repeat it) */
+    uint8_t thin;                     /* WARP-8, the thin throw: this step is off the eighths, its hits do not play */
+    int8_t dive;                      /* WARP-8, rise and drop: the semitones so far */
 } seq_trk_t;
 
 /* a kit sound's tricks as it plays (seq.c kit_step): each sound of a kit its own ratchets or flam, its pulse or hold, its

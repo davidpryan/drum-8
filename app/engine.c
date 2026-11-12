@@ -405,6 +405,7 @@ __attribute__((noinline)) static void meter(int p, const float *l, const float *
 /* ------------------------------------------------------------- params --- */
 /* a drum track's Filter page into its drumline (engine.h: the dynamic filter's four values, forced on
  * with a raised low cut while the punch filter is on it) */
+#define PUNCH_LP 38                                        /* the low-pass throw: the kit's high cut */
 static void dl_filter_update(int t)
 {
     const uint8_t *p = epar[t];
@@ -419,7 +420,10 @@ static void dl_filter_update(int t)
             locut = 0;
         }
         type = FT_DYNAMIC;
-        if (locut < PUNCH_HP)
+        if (dl_punch_hp[t] & 2u) {                          /* (WARP-8's low-pass throw: the high cut down) */
+            if (hicut > PUNCH_LP)
+                hicut = PUNCH_LP;
+        } else if (locut < PUNCH_HP)
             locut = PUNCH_HP;
     }
     drumline_filter(DL(t), type, locut, comp, drive, hicut);
@@ -653,6 +657,7 @@ static void s_punch(void *x, uint32_t drum_mask, uint32_t mel_mask)
     punch_m = mel_mask;
     eng_punch_drum = drum_mask;
     eng_punch_mel = mel_mask;
+    dl_throw_send = (uint8_t)((mel_mask >> PY_DELAY & 1u) | (mel_mask >> PY_REVERB & 1u) << 1);
 }
 #if defined(PLAT_HOST) && !defined(PLAT_WEB)
 static void host_midi_out(uint32_t pkt);                  /* (host.c: the simulator's log of it not counted as work) */
@@ -885,26 +890,27 @@ static void perf_tick(uint32_t n)
     for (t = 0; t < NTRK; t++) {
         perf_t *p = synth_perf(SY, t);
         int drum = eng_drum[t], slice = epar[t][TP_ENGINE] == EG_SLICE, perc = drum || slice;
-        uint32_t m = perc ? punch_d : punch_m;
+        uint32_t m = punch_d, y = punch_m;                /* (WARP-8: one group; the second octave's own throws) */
+        int lp = (int)(y >> PY_LOWPASS & 1u);
         int mute = (int)((m >> PX_MUTE) & 1u), pan_on = (int)((m >> PX_PAN) & 1u);
         int filt = (int)((m >> PX_WARBLE) & 1u), tail = (int)((m >> PX_RING) & 1u), pan;
         int up = slice && (seq_punch_mask(&seq, t) >> PX_OCTAVE & 1u);   /* a slice track's octave: up, as the
                                                                          * drums (its note picks the slice) */
         p->pitch_c = (int16_t)(bend_c[t] + (up ? 1200 : 0) +
                                (filt ? (int)(vib * (perc ? PUNCH_VIB_DRUM : PUNCH_VIB_MEL)) : 0));
-        p->cut = 0;
+        p->cut = (int16_t)(lp ? -90 : 0);
         p->hp = (uint8_t)(drum && filt ? PUNCH_HP : 0);
         pan = perf_pan_base[t] + (pan_on ? (int)(lfo * 60.0f) : 0);
         p->pan = (int8_t)(pan < -127 ? -127 : pan > 127 ? 127 : pan);
         p->mute = (uint8_t)mute;
-        p->send1 = 0;
-        p->send2 = 0;
+        p->send1 = (uint8_t)(y >> PY_DELAY & 1u ? 127 : 0);
+        p->send2 = (uint8_t)(y >> PY_REVERB & 1u ? 127 : 0);
         p->long_tail = (uint8_t)tail;
         perf_tail[t] = (uint8_t)tail;
         perf_mute[t] = (uint8_t)mute;
         perf_pan[t] = p->pan;
-        if (drum && dl_punch_hp[t] != (uint8_t)filt) {    /* the drumline's filter follows the punch state */
-            dl_punch_hp[t] = (uint8_t)filt;
+        if (drum && dl_punch_hp[t] != (uint8_t)(filt | lp << 1)) {   /* the drumline's filter follows the punch state */
+            dl_punch_hp[t] = (uint8_t)(filt | lp << 1);
             dl_filter_update(t);
         }
     }
@@ -1262,6 +1268,14 @@ static void render_drums(uint32_t n)                    /* the drum tracks (the 
         zerof(ts1, n);
         zerof(ts2, n);
         drumline_render(DL(t), tl, tr, ts1, ts2, n);
+        if (punch_m >> PY_CRUSH & 1u) {                    /* WARP-8's crush throw: the kit's character a crusher while held */
+            static uint8_t cp[NTP];
+            memcpy(cp, epar[t], sizeof cp);
+            cp[TP_CTYPE] = CT_CRUSH;
+            cp[TP_CAMT] = 104;
+            cp[TP_CMIX] = 127;
+            char_bus(&dl_ch[dl_slot[t]], cp, tl, tr, (int)n);
+        } else
         char_bus(&dl_ch[dl_slot[t]], epar[t], tl, tr, (int)n);   /* the kit's character, after its bus filter */
         g = perf_mute[t] || !HOST_ON(t) ? 0.0f : tp_level_gain(epar[t][TP_LEVEL]);
         pan_gains(epar[t][TP_PAN] + perf_pan[t], &gl, &gr);

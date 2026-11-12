@@ -1,0 +1,62 @@
+# WARP-8: the second octave's keys on the Throws page (FX held) are twelve more throws on the kit: thin, roll, buzz,
+# soft, rise, drop, down on the white keys; low-pass, delay, reverb, hard, crush on the black
+wait 300
+listen
+expect trk 1
+# a kick on every step of the bar: sixteen hits a bar, 125 ms a step
+tapkey b0
+tapkey w0
+tapkey w1
+tapkey w2
+tapkey w3
+tapkey w4
+tapkey w5
+tapkey w6
+tapkey w7
+tapkey w8
+tapkey w9
+tapkey w10
+tapkey w11
+tapkey w12
+tapkey w13
+tapkey w14
+tapkey w15
+expect drumhits 1
+# two bars as written: 32 hits
+tap PLAY
+wait 3900
+tap PLAY
+expect drumhits 33
+# thin (white 8): only the eighths: 16 in two bars
+press FX
+key w7 down
+wait 60
+expect page Throws
+tap PLAY
+wait 3900
+tap PLAY
+expect drumhits 49
+shot throws2.png
+key w7 up
+# buzz (white 10): each hit twice
+key w9 down
+wait 60
+tap PLAY
+wait 1900
+tap PLAY
+expect drumhits 81
+key w9 up
+# the black keys of the second octave reach the engine (low-pass, delay, reverb, crush): held and let go
+key b6 down
+wait 100
+expect punch_mel >0
+key b6 up
+key b9 down
+wait 100
+expect punch_mel >0
+key b9 up
+wait 60
+expect punch_mel 0
+release FX
+wait 40
+expect page Steps
