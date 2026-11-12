@@ -195,7 +195,7 @@ static const uint8_t BLACK_K[11] = {1, 3, 5, 8, 10, 13, 15, 17, 20, 22, 25};
 #define KEY_BASE 53                                  /* F3 at octave 0 */
 enum { KM_NONE, KM_PLAY, KM_STEP, KM_SCENE, KM_MUTE, KM_PUNCH, KM_BRAIN, KM_SOUND,
        KM_TRACK, KM_SAVE, KM_SOLO, KM_SCALE, KM_ROUTE, KM_STEPSOUND, KM_IDLE, KM_WEAVE, KM_BARK,
-       KM_STEPCHORD, KM_FILL, KM_GSOLO };   /* KM_IDLE: does nothing */   /* what a held key does */
+       KM_STEPCHORD, KM_FILL, KM_GSOLO, KM_GRIDS };   /* KM_IDLE: does nothing */   /* what a held key does */
 
 /* the input's and the screen's state */
 static struct {
@@ -1745,6 +1745,15 @@ static void lane_mutate(uint8_t *on, int n, int amt, uint32_t seed)
             on[i] = 1;
     }
 }
+/* WARP-8, the GRIDS throw: the map's kick, snare and hat (bits 0..2) at a sixteenth, for the sequencer (seq_t
+ * grids_fn; called from the audio interrupt: table reads only) */
+static uint32_t grids_mask3(int s16, int x, int y, int fill)
+{
+    uint32_t m = 0;
+    for (int ch = 0; ch < 3; ch++)
+        m |= (uint32_t)grids_hit(s16, ch, x, y, fill) << ch;
+    return m;
+}
 /* what the Generate page would write now: out[j] the lane of key[j], for the lanes returned (1: EUCLID and MUTATE,
  * the lane shown; 3: GRIDS, the kit's first three keys: kick, snare, hat) */
 static int gen_result(const tpat_t *tp, uint8_t out[3][NSTEP], int key[3])
@@ -2001,6 +2010,12 @@ static void page_knobs(knob_t *k)
     }
     case P_THROWS: {
         static const char *const LATCH[2] = {"off", "on"};
+        if (seq.grids_on) {                          /* WARP-8, GRIDS on: the map's X, Y and FILL */
+            kn(&k[0], "X", ui.gen_x, 127);
+            kn(&k[1], "Y", ui.gen_y, 127);
+            kn(&k[2], "FILL", ui.gen_fill, 127);
+            break;
+        }
         kname(&k[0], "LATCH", LATCH, proj.trk[AUX_PUNCH].par[TP_E1] & 1u, 2);
         break;
     }
@@ -2493,7 +2508,7 @@ static void page_footer(char *t)
         s_cat(t, "BLACK mute|hold: solo|WHITE play");
         break;
     case P_THROWS:
-        s_cat(t, "KEYS throw: low drums, high melodic|REC held: record");
+        s_cat(t, seq.grids_on ? "KNOBS the drum map|SEL keep it" : "KEYS throw: low drums, high|WHITE 15 grids");
         break;
     case P_WEAVE:
         s_cat(t, "BLACK the track woven in|WHITE its pattern");
@@ -5111,7 +5126,8 @@ static void draw_brain(void)
 static void draw_punch(void)
 {
     uint32_t dm = eng_punch_drum, mm = eng_punch_mel;
-    uint32_t h = hash_u(hash_u(2166136261u, 0xD0u), dm ^ (mm << 12) ^ (ui.keys << 3) ^ (ui.punch_latched << 7));
+    uint32_t h = hash_u(hash_u(2166136261u, 0xD0u), dm ^ (mm << 12) ^ (ui.keys << 3) ^ (ui.punch_latched << 7) ^
+                                          ((uint32_t)seq.grids_on << 31));
     char t[64], *e;
     int n = 0;
     if (!begin_main(h))
@@ -5127,6 +5143,8 @@ static void draw_punch(void)
         if (s_len(t) < 40)
             e = s_cat(e, PUNCH_NAME[fx & 15]);
     }
+    if (seq.grids_on)                                /* (WARP-8: the GRIDS throw, the fifteenth white key) */
+        s_cat(e, n++ ? ", grids" : "grids");
     if (!n)
         s_cat(t, "hold a key for an effect");
     {   /* (the effects held: smaller as more are held, cut only past the smallest) */
@@ -5139,8 +5157,12 @@ static void draw_punch(void)
         int32_t x = 8 + k * 14;
         int fx = punch_of_key(WHITE_K[k]);
         int on = fx >= 0 && (fx < PX_MEL ? (dm >> fx & 1u) : (mm >> (fx - PX_MEL) & 1u));
+        if (k == 14)
+            on = seq.grids_on, fx = 0;
         cv_round(x, 40, 13, 60, 2, on ? K_NOW : fx < 0 ? K_PANEL : K_PANEL2);
-        if (fx >= 0 && k < 7) {                      /* the drum octave's initials: m s r e b f j */
+        if (k == 14)
+            text_c(x + 6, 102, &FONT_XS, "g", K_DIM);
+        else if (fx >= 0 && k < 7) {                      /* the drum octave's initials: m s r e b f j */
             char ini[2] = {PUNCH_NAME[fx & 15][0], 0};
             text_c(x + 6, 102, &FONT_XS, ini, K_DIM);
         }

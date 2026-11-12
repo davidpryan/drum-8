@@ -1759,6 +1759,19 @@ static void key_down(int k)
             say("NO WEAVE", TRACK_NAME[trk]);
         return;
     }
+    if (p == P_THROWS && w == 14 && kit_slot(0) >= 0) {   /* WARP-8: the fifteenth white key, the GRIDS throw: the kit's
+                                                  * kick, snare and hat from the drum map while it is held (LATCH on:
+                                                  * a press turns it on, the next off); the knobs are X, Y, FILL */
+        int latch = proj.trk[AUX_PUNCH].par[TP_E1] & 1u;
+        seq.grids_x = ui.gen_x;
+        seq.grids_y = ui.gen_y;
+        seq.grids_fill = ui.gen_fill;
+        seq.grids_fn = grids_mask3;
+        seq.grids_on = (uint8_t)(latch ? !seq.grids_on : 1);
+        ui.kmode[k] = latch ? KM_IDLE : KM_GRIDS;
+        say("GRIDS", seq.grids_on ? (latch ? "on" : "held") : "off");
+        return;
+    }
     if (p == P_THROWS) {                         /* the throws' page: the keys fire them (punch_key) */
         ui.kmode[k] = KM_PUNCH;
         punch_key(k, 1);
@@ -1895,6 +1908,9 @@ static void key_up(int k)
     case KM_FILL:
         seq.fill = 0;
         break;
+    case KM_GRIDS:
+        seq.grids_on = 0;
+        break;
     case KM_GSOLO:
         if (gsolo >> ui.knote[k] & 1u) {
             gsolo &= (uint16_t)~(1u << ui.knote[k]);
@@ -2007,6 +2023,10 @@ static void button_up(int b)
             list_sel();
         else if (ui.page == P_GEN && is_drum(sel_trk()))   /* Generate: SEL writes what the grid shows */
             gen_write();
+        else if (ui.page == P_THROWS && seq.grids_on && kit_ui()) {   /* WARP-8, GRIDS on: what plays is kept */
+            ui.gen_kind = GEN_GRIDS;
+            gen_write();
+        }
         else
             list_open();
         break;
@@ -2098,6 +2118,9 @@ static void fx_layer_out(void)
     for (int k = 0; k < NKEYS; k++)
         if (ui.kmode[k] == KM_PUNCH) {
             punch_key(k, 0);
+            ui.kmode[k] = KM_IDLE;
+        } else if (ui.kmode[k] == KM_GRIDS) {
+            seq.grids_on = 0;
             ui.kmode[k] = KM_IDLE;
         }
     ui.page = (uint8_t)(fx_back - 1);
@@ -2519,6 +2542,16 @@ static void knob_do(int k, int32_t e)
     }
     switch (ui.page) {
     case P_THROWS:
+        if (seq.grids_on) {                      /* WARP-8, GRIDS on: the map's X, Y, FILL (Generate's own) */
+            uint8_t *v = k == 0 ? &ui.gen_x : k == 1 ? &ui.gen_y : &ui.gen_fill;
+            if (k < 3) {
+                *v = (uint8_t)clampi(*v + e, 0, 127);
+                seq.grids_x = ui.gen_x;
+                seq.grids_y = ui.gen_y;
+                seq.grids_fill = ui.gen_fill;
+            }
+            return;
+        }
         if (k == 0)
             set_tp(AUX_PUNCH, TP_E1, clampi(proj.trk[AUX_PUNCH].par[TP_E1] + (e > 0 ? 1 : -1), 0, 1));
         return;

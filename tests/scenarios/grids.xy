@@ -1,0 +1,32 @@
+# WARP-8: GRIDS as a throw. FX held, the fifteenth white key held: the kit's kick, snare and hat play from the drum
+# map, the knobs X, Y and FILL; let go, the written pattern again. SEL while it is on keeps what plays
+wait 300
+listen
+expect trk 1
+expect drumhits 0
+tap PLAY
+wait 1100
+expect drumhits 0
+press FX
+key w14 down
+wait 60
+said GRIDS
+expect page Throws
+turn K3 40
+wait 1900
+expect drumhits >4
+shot grids_on.png
+tap SEL
+wait 40
+said WRITTEN
+key w14 up
+release FX
+wait 40
+expect page Steps
+tap PLAY
+# kept: the pattern has steps now
+expect lanes 0
+tap PLAY
+wait 1900
+tap PLAY
+expect drumhits >8

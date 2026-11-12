@@ -1858,6 +1858,8 @@ static void kit_step(seq_t *s, int t, const step_t *st, int p, uint32_t L, uint3
                 }
         }
     }
+    if (s->grids_on && s->grids_fn)   /* WARP-8, the GRIDS throw: the first three lanes from the map, not the step */
+        mask = (mask & ~7u) | (s->grids_fn(p, s->grids_x, s->grids_y, s->grids_fill) & 7u);
     for (i = 0; i < NDRUM; i++)
         if (R[i].stall) {
             R[i].stall--;

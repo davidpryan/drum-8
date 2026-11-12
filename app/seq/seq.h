@@ -278,6 +278,9 @@ typedef struct {
     /* added runtime */
     volatile uint16_t kmute_cue, mute_cue;   /* WARP-8, mutes at the bar: the first kit's sounds and the tracks whose
                                               * mute changes at the next bar line (seq.c; the UI sets the bits) */
+    volatile uint8_t grids_on, grids_x, grids_y, grids_fill;   /* WARP-8, the GRIDS throw: while on, the kit's kick,
+                                       * snare and hat lanes come from the drum map at X, Y and FILL (seq.c kit_step) */
+    uint32_t (*grids_fn)(int s16, int x, int y, int fill);     /* the map's read (the UI's: its table is there) */
     volatile uint8_t fill;            /* a fill is held (WARP-8: steps of COND_FILL play, of COND_NFILL rest) */
     volatile uint16_t kmute[NKITL];   /* the scene's kit sounds muted, per kit track (pattern.h scene_t) */
     volatile uint8_t loop_free;       /* a loop throw let go: the track goes on from where the loop left it (0: back in
