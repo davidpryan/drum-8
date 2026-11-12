@@ -937,6 +937,37 @@ static void kit_vel(int trk, int s, int e)
     }
     pats.lane[ln].val[s] = (uint8_t)v;
 }
+/* WARP-8: a held kit step's nudge on knob 4 is the picked drum's own (a LANE_NDG0 lane, on top of the step's) where
+ * the step has other drums too; alone on it (or not on it), the step's, as OCT- and OCT+ always are */
+static void kit_ndg(int trk, int s, int e)
+{
+    step_t *st = &tpat(trk)->st[s];
+    int snd = ui.dsound % NDRUM, pt = cur_pat(trk), ln = lane_find(pats.lane, trk, pt, (int)(LANE_NDG0 + (unsigned)snd));
+    int own = ln >= 0 && pats.lane[ln].val[s] <= 24 ? pats.lane[ln].val[s] - 12 : 0, v;
+    if (!kit_has(st, snd + 1) || __builtin_popcount(kit_mask(st)) < 2) {
+        st->nudge = (int8_t)clampi(st->nudge + own + e, -12, 12);
+        if (ln >= 0) {
+            pats.lane[ln].val[s] = LOCK_NONE;
+            lane_drop_empty(ln);
+        }
+        return;
+    }
+    v = clampi(own + e, -12, 12);
+    if (!v) {
+        if (ln >= 0) {
+            pats.lane[ln].val[s] = LOCK_NONE;
+            lane_drop_empty(ln);
+        }
+        return;
+    }
+    if (ln < 0)
+        ln = lane_alloc(pats.lane, trk, pt, (int)(LANE_NDG0 + (unsigned)snd));
+    if (ln < 0) {
+        say_no("NO LANE LEFT", "clear locks first");
+        return;
+    }
+    pats.lane[ln].val[s] = (uint8_t)(v + 12);
+}
 /* WARP-8: a held kit step's ratchets, 1 to 9 then random: a multiply trick in the hit's first trick's place if it is
  * free or already one, else its second's; back at 1 the trick goes. Both taken by other tricks: nothing, and said */
 static int step_ratchet(int trk, int sh, int d)
@@ -977,10 +1008,11 @@ static int step_ratchet(int trk, int sh, int d)
 }
 static void step_knob(int k, int32_t e)          /* k 4: the nudge (OCT-/OCT+) */
 {
-    int trk = sel_trk(), r = HIT_OK, rat = 0;
+    int trk = sel_trk(), r = HIT_OK, rat = 0, ndg = 0;
     undo_keep();
     if (k < 4 && step_kit4()) {                  /* WARP-8, the kit: velocity, chance, ratchets, nudge */
         rat = k == 2;
+        ndg = k == 3;
         k = k == 1 ? 2 : k == 3 ? 4 : k;
     }
     for (int i = 0; i < 16; i++)
@@ -990,7 +1022,9 @@ static void step_knob(int k, int32_t e)          /* k 4: the nudge (OCT-/OCT+) *
                 int q = step_ratchet(trk, step_shown(i), e > 0 ? 1 : -1);
                 if (r == HIT_OK)
                     r = q;
-            } else if (k == 0 && is_drum(trk))
+            } else if (ndg)
+                kit_ndg(trk, step_shown(i), (int)e);
+            else if (k == 0 && is_drum(trk))
                 kit_vel(trk, step_shown(i), (int)e);
             else if (k == 0)
                 st->vel = (uint8_t)clampi(st->vel + e, 1, 127);
@@ -3054,6 +3088,9 @@ static int kit_lane_clear(int notes, int locks)
                 hit_sound_off(trk, pt, i, snd);
                 step_fresh_if_empty(&tp->st[i]);
             }
+        if (ln >= 0)
+            lane_clear(pats.lane, ln);
+        ln = lane_find(pats.lane, trk, pt, (int)(LANE_NDG0 + (unsigned)snd));
         if (ln >= 0)
             lane_clear(pats.lane, ln);
     }

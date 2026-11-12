@@ -78,12 +78,16 @@ another scene also plays is left alone, since it is that scene's too.
 | 1 | Velocity |
 | 2 | Chance: always, 1 to 99%, then the A:B cycles, then fill and no fill |
 | 3 | Ratchets, 1 to 9 hits in the step, then random |
-| 4 | Nudge, earlier or later |
+| 4 | Nudge, earlier or later: the picked drum's own, where the step has other drums too |
 
 Turn SELECT while holding for the step's other knobs: length on knob 2 and pitch in semitones on knob 4. Turn it
 again to come back.
 
 <img src="img/warp-step-alt.png" width="240" alt="A step held after SELECT: the knobs read velocity, length, chance and pitch" title="The other knobs">
+
+The nudge is in 24ths of a step, twelve either way. Knob 4 moves only the picked drum when other drums share the
+step, so a snare can drag while the kick under it stays put; OCT− and OCT+ move the whole step. On Steps a nudged
+hit's bar sits a little left or right of its place.
 
 Press ARP while holding for the full list of tricks. Press EDIT, ENV, FX or LFO while holding to lock that page's
 knobs on the step. Hold several steps and they change together. HOME + REC undoes.

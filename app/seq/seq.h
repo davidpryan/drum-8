@@ -185,7 +185,8 @@ typedef struct {
     uint8_t velk;                     /* its velocity trick's value + 1 (0 none) */
     uint8_t stall, kind;              /* pulse / hold: steps it still covers, SC_PULSE or SC_HOLD */
     uint8_t svel, sp;                 /* a pulse's repeats: the hit's velocity (0 a silent one), the trick's step */
-} kit_rt_t;                           /* 12 bytes */
+    uint8_t late;                     /* WARP-8: its own nudge puts its first hit this many ticks after the step's (0: with it) */
+} kit_rt_t;                           /* 16 bytes */
 
 typedef struct {
     uint8_t gen, applied;             /* lane runtime: the value last applied (LOCK_NONE = none) */

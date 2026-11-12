@@ -131,12 +131,16 @@ static inline void pat_loop(const tpat_t *p, int *from, int *to)
  * project's hit settings (patterns_t hit[]) for each step; none (LOCK_NONE): the step's own cond and tricks. A sound
  * with its own plays by them alone; the step's sounds without their own play by the step's, together, as before */
 #define LANE_HIT0 0xFF10u
+/* WARP-8: a kit step's sound with a nudge of its own: lane LANE_NDG0 + k (k 0..10) holds its ticks + 12 (0..24) for
+ * each step, on top of the step's own nudge; none (LOCK_NONE): with the step. The step fires when its earliest sound
+ * does, the later ones after it (seq.c kit_ndgs) */
+#define LANE_NDG0 0xFF20u
 #define LANE_POOL 0xFFFDu                     /* a random track's pattern: its pitch-class pool, val[0] | val[1] << 8
                                                * (12 bits), one lane for the whole pattern (seq.c rand_pool) */
 static inline int lane_is_step_note(unsigned param)   /* a lane of a step's notes (a kit's tunes, its sounds' velocities
                                                        * and hit settings) */
 {
-    return param == LANE_TUNE || (param >= LANE_VEL0 && param < LANE_VEL0 + 32u);
+    return param == LANE_TUNE || (param >= LANE_VEL0 && param < LANE_VEL0 + 48u);   /* (.. LANE_HIT0, LANE_NDG0) */
 }
 static inline int lane_is_hit(unsigned param) { return param >= LANE_HIT0 && param < LANE_HIT0 + NDRUM; }
 static inline int lane_is_pool(unsigned param) { return param == LANE_POOL; }

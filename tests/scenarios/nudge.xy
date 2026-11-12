@@ -1,0 +1,47 @@
+# WARP-8: a held step's knob 4 on the kit nudges the picked drum alone where the step has other drums too (a lane of
+# its own); alone on the step it is the step's nudge. OCT- and OCT+ with the step held move the whole step
+wait 300
+listen
+expect trk 1
+tapkey b0
+tapkey w4
+expect lanes 0
+# the kick alone on step 5: the step's nudge, no lane
+key w4 down
+wait 100
+turn K4 3
+wait 500
+said NUDGE
+key w4 up
+wait 40
+expect lanes 0
+# a snare beside it: knob 4 is the snare's own
+tapkey b1
+tapkey w4
+key w4 down
+wait 100
+turn K4 -5
+wait 500
+said NUDGE
+shot nudge.png
+key w4 up
+wait 40
+expect lanes 1
+# back to none: the lane goes
+key w4 down
+wait 100
+turn K4 5
+wait 40
+key w4 up
+wait 40
+expect lanes 0
+# and the snare taken off a step leaves no nudge of its own behind
+key w4 down
+wait 100
+turn K4 2
+wait 40
+key w4 up
+expect lanes 1
+tapkey w4
+wait 40
+expect lanes 0

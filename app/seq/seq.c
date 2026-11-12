@@ -360,12 +360,40 @@ static int groove_roll(seq_t *s, int t, int range)   /* -range .. range */
     return (int)(rng_next(&s->t[t].rng) % (uint32_t)(2 * range + 1)) - range;
 }
 
+/* WARP-8: the nudges of their own of a kit step's sounds (d[i]: sound i's ticks, 0 none), and the earliest of the
+ * sounds in mask (0: none in it) */
+static uint8_t lane_masks_ok;
+static void lane_masks_make(const seq_t *s);
+static int lane_next(int t, int i);
+static int kit_ndgs(seq_t *s, int t, int p, uint32_t mask, int8_t *d)
+{
+    int i, base = 0;
+    for (i = 0; i < NDRUM; i++)
+        d[i] = 0;
+    if (!lane_masks_ok)
+        lane_masks_make(s);
+    for (i = lane_next(t, 0); i >= 0; i = lane_next(t, i + 1)) {
+        const lane_t *l = &s->P->lane[i];
+        if (l->used && l->trk == t && l->pat == s->ppat[t] && l->param >= LANE_NDG0 && l->param < LANE_NDG0 + NDRUM &&
+            l->val[p] <= 24)
+            d[l->param - LANE_NDG0] = (int8_t)(l->val[p] - 12);
+    }
+    if (mask)
+        for (base = 127; mask; mask &= mask - 1u)
+            if (d[__builtin_ctz(mask)] < base)
+                base = d[__builtin_ctz(mask)];
+    return base;
+}
 /* the step's timing offset, Q8: the groove's ticks on its sixteenth scaled by the pattern's amount, plus its nudge */
 static int32_t step_off(seq_t *s, int t, int p, uint32_t L)
 {
     const tpat_t *tp = tpat(s, t);
     const step_t *st = &tp->st[p];
     int32_t off = (int32_t)(L / PPS) * st->nudge;
+    if (t < NTRK && is_drum(s, t)) {  /* (a kit: when its earliest sound plays) */
+        int8_t d[NDRUM];
+        off += (int32_t)(L / PPS) * kit_ndgs(s, t, p, kit_mask(st), d);
+    }
     int six, amt, g = s->groove_type < NGROOVE ? s->groove_type : 0, tk;
     if (ts_halves(tp) == 1)
         off /= 2;                     /* a half-sixteenth step: a full nudge would swallow it */
@@ -1828,6 +1856,15 @@ static void kit_group(seq_t *s, int t, const step_t *st, int p, uint32_t L, uint
         bend_start(s, t, g->bend - 1, L);
         *bent = 1;
     }
+    for (b = m; b; b &= b - 1u) {     /* WARP-8: a sound nudged later than the step's earliest: its first hit then
+                                       * (fire_sub), its ratchets or its flam's own hit after that one */
+        kit_rt_t *r = &R[__builtin_ctz(b)];
+        if (r->late) {
+            r->sub = carry + L / PPS * r->late;
+            s->ksub[t] |= (uint16_t)(1u << __builtin_ctz(b));
+            m &= ~(1u << __builtin_ctz(b));
+        }
+    }
     kit_emit(s, t, st, p, L, m, o);
 }
 /* a kit track's step: the sounds a pulse or hold of their own covers give way (a pulse plays them again), the others
@@ -1868,6 +1905,14 @@ static void kit_step(seq_t *s, int t, const step_t *st, int p, uint32_t L, uint3
     mask &= ~cov;
     s->ksub[t] = 0;
     kit_lanes(s, t, p, vl, hs);
+    {   /* WARP-8: the sounds' own nudges: each one's ticks after the earliest (which is when the step fired) */
+        int8_t nd[NDRUM];
+        int nb = kit_ndgs(s, t, p, kit_mask(st), nd);
+        for (i = 0; i < NDRUM; i++) {
+            int w = (kit_has(st, i + 1) ? nd[i] : 0) - nb;
+            R[i].late = (uint8_t)(w < 0 ? 0 : w > PPS - 1 ? PPS - 1 : w);
+        }
+    }
     for (b = mask; b; b &= b - 1u)
         if (hs[__builtin_ctz(b)])
             mine |= 1u << __builtin_ctz(b);
@@ -2071,17 +2116,23 @@ static void fire_sub(seq_t *s, int t, const seq_sink_t *o)
     const step_t *st = tr->wv_on ? &tr->wv_st : &tpat(s, t)->st[tr->pos];
     uint32_t carry = tr->sub_to_next < SEQ_DUE ? tr->sub_to_next : 0;
     if (t < NTRK && is_drum(s, t)) {  /* a kit: the sounds whose ratchet is due, each by its own count */
-        uint32_t due = 0, m;
+        uint32_t due = 0, first = 0, m;
         for (m = s->ksub[t]; m; m &= m - 1u)
             if (s->krt[t][__builtin_ctz(m)].sub < SEQ_DUE) {
                 due |= 1u << __builtin_ctz(m);
-                s->krt[t][__builtin_ctz(m)].i++;
+                if (s->krt[t][__builtin_ctz(m)].late) {   /* (WARP-8: a nudged sound's first hit, not a ratchet) */
+                    s->krt[t][__builtin_ctz(m)].late = 0;
+                    first |= 1u << __builtin_ctz(m);
+                } else
+                    s->krt[t][__builtin_ctz(m)].i++;
             }
         kit_emit(s, t, st, tr->pos, tr->step_q8, due, o);
         for (m = due; m; m &= m - 1u) {
             kit_rt_t *r = &s->krt[t][__builtin_ctz(m)];
             uint32_t c = r->sub < SEQ_DUE ? r->sub : 0;
-            if (!r->flam && r->i + 1 < r->n)
+            if ((first >> __builtin_ctz(m) & 1u) && r->flam)
+                r->sub = c + tr->step_q8 / 32u * r->flam;
+            else if (!r->flam && r->i + 1 < r->n)
                 r->sub = c + tr->step_q8 / r->n;
             else
                 s->ksub[t] &= (uint16_t)~(1u << __builtin_ctz(m));

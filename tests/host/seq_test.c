@@ -2298,6 +2298,55 @@ static void t_pitch_short_long(void)
 /* sequenced punch-ins, and recording held punch keys into the PUNCH track */
 /* a muted track's steps: nothing plays, each would-be hit goes to the sink's ghost (the master's pump) at the
  * step's velocity; a playing track sends none */
+/* WARP-8: a kit sound's own nudge (LANE_NDG0 + k): late, it plays after the step's other sounds; early, the step
+ * comes early for it and the others keep their time. The step's own nudge moves them all */
+static const ev_t *drum_hit(int sound, int k)
+{
+    for (int i = 0; i < nev; i++)
+        if (ev[i].kind == E_DRUM && ev[i].trk == 0 && ev[i].a == sound && k-- == 0)
+            return &ev[i];
+    return 0;
+}
+static void t_kit_nudge(void)
+{
+    int ln;
+    cur = "kit nudge";
+    reset();
+    par[0][TP_ENGINE] = EG_DRUMLINE;
+    note(0, 4, 1, 100);                           /* a kick and a snare on step 5 */
+    note(0, 4, 2, 100);
+    ln = lane_alloc(P.lane, 0, 0, (int)(LANE_NDG0 + 1u));
+    P.lane[ln].val[4] = 12 + 6;                   /* the snare a quarter of a step late */
+    start();
+    run(6 * L16);
+    CHECK(count(E_DRUM, 0) == 2 && drum_hit(0, 0) && drum_hit(1, 0));
+    CHECK(near(drum_hit(0, 0)->t, 4 * L16, 3) && near(drum_hit(1, 0)->t, 4 * L16 + L16 / 4, 4));
+    stop();
+    P.lane[ln].val[4] = 12 - 6;                   /* a quarter early: the kick stays on the step */
+    nev = 0;
+    start();
+    run(6 * L16);
+    CHECK(count(E_DRUM, 0) == 2 && drum_hit(0, 0) && drum_hit(1, 0));
+    CHECK(near(drum_hit(0, 0)->t, 4 * L16, 4) && near(drum_hit(1, 0)->t, 4 * L16 - L16 / 4, 4));
+    stop();
+    st(0, 4)->nudge = 6;                          /* the step's own on top: both a quarter later */
+    nev = 0;
+    start();
+    run(6 * L16);
+    CHECK(near(drum_hit(0, 0)->t, 4 * L16 + L16 / 4, 4) && near(drum_hit(1, 0)->t, 4 * L16, 4));
+    stop();
+    st(0, 4)->nudge = 0;                          /* a late sound's ratchets follow its first hit */
+    P.lane[ln].val[4] = 12 + 6;
+    st(0, 4)->comp = SC_MULTIPLY;
+    st(0, 4)->cval = 1;
+    nev = 0;
+    start();
+    run(6 * L16);
+    CHECK(count(E_DRUM, 0) == 4 && near(drum_hit(1, 0)->t, 4 * L16 + L16 / 4, 4) &&
+          near(drum_hit(1, 1)->t, 4 * L16 + L16 / 4 + L16 / 2, 6) && near(drum_hit(0, 1)->t, 4 * L16 + L16 / 2, 4));
+    stop();
+    printf("ok %s\n", cur);
+}
 static void t_kit11(void)            /* a kit step holds all eleven sounds, and plays them in key order */
 {
     cur = "kit11";
@@ -3375,6 +3424,7 @@ int main(void)
     t_cond();
     t_locks();
     t_kit11();
+    t_kit_nudge();
     t_hit_cond();
     t_hit_flam();
     t_hit_multiply();

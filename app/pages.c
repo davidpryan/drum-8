@@ -1564,8 +1564,19 @@ static void hit_sound_off(int trk, int pt, int s, int snd)   /* a sound taken of
         pats.lane[ln].val[s] = LOCK_NONE;
         lane_drop_empty(ln);
     }
+    ln = lane_find(pats.lane, trk, pt, (int)(LANE_NDG0 + (unsigned)snd));   /* (and its own nudge) */
+    if (ln >= 0) {
+        pats.lane[ln].val[s] = LOCK_NONE;
+        lane_drop_empty(ln);
+    }
 }
 
+/* a kit sound's own nudge on a step, ticks (0 none: pattern.h LANE_NDG0) */
+static int snd_ndg(int trk, int pt, int s, int snd)
+{
+    int ln = lane_find(pats.lane, trk, pt, (int)(LANE_NDG0 + (unsigned)snd));
+    return ln >= 0 && pats.lane[ln].val[s] <= 24 ? pats.lane[ln].val[s] - 12 : 0;
+}
 /* WARP-8: a held step's knobs on the kit are its velocity, chance, ratchets and nudge; SELECT turned while it is
  * held shows the others (step_alt: velocity, length, chance, pitch, as LOOM-8 has them) */
 static uint8_t step_alt;
@@ -1596,12 +1607,15 @@ static void step_knobs(knob_t *k)
         else
             num_s((uint32_t)n, s_cat(t, "x"));
         kv(&k[2], "RATCHET", t, n - 1, 9);
-        if (st->nudge > 0)
-            e = s_cat(e, "+");
-        else
-            *e = 0;
-        num_i(st->nudge, e);
-        kv(&k[3], "NUDGE", t, st->nudge + 12, 24);
+        {                                            /* the picked drum's: the step's and its own */
+            int ng = st->nudge + snd_ndg(sel_trk(), cur_pat(sel_trk()), step_shown(ui.held_first), ui.dsound % NDRUM);
+            if (ng > 0)
+                e = s_cat(e, "+");
+            else
+                *e = 0;
+            num_i(ng, e);
+            kv(&k[3], "NUDGE", t, ng + 24, 48);
+        }
         return;
     }
     if (is_drum(sel_trk())) {                         /* a kit: the velocity of the sound shown (its own, or the step's) */
@@ -4028,7 +4042,8 @@ static void kit_lane(int trk, int pt, int ph, const tpat_t *tp)
         if (on) {
             hit_t hm;
             int32_t vh = 4 + snd_vel(ln, own ? s % own : s, st) * 42 / 127;
-            cv_round(x, 62 - vh, 12, vh, 2, c);
+            int ng = st->nudge + snd_ndg(trk, pt, own ? s % own : s, snd);   /* (its nudge: the bar a little early or late) */
+            cv_round(x + (ng > 0) * (1 + ng / 5) - (ng < 0) * (1 - ng / 5), 62 - vh, 12, vh, 2, c);
             hit_get(trk, pt, own ? s % own : s, snd, &hm);
             if (hm.cond && hm.cond < COND_AB) {
                 cv_rect(x, 66, 12, 3, K_PANEL2);
