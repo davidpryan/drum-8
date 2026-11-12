@@ -1,13 +1,12 @@
-# (WARP-8: the kit's scenes are HOME held + a white key, its mutes GLO held)
+# (WARP-8: the kit's scenes are HOME's second page, Scenes; its mutes GLO held)
 # scenes on the Arrange page: a second scene cloned, a mute; while playing a white key waits for the bar (again: now),
 # SEL's SCENES SWITCH at the pattern's end: a key waits for track 1's end; the song
 wait 200
 tap HOME
-expect page Arrange
+turn SELECT 1
+expect page Scenes
 expect scene 1
-press HOME
 tapkey w1
-release HOME
 expect scene 2
 wait 40
 shot scene2.png
@@ -18,22 +17,16 @@ wait 40
 shot scene2_mute.png
 tap PLAY
 wait 300
-press HOME
 tapkey w0
-release HOME
 wait 40
 expect scene 2
 shot scene_cue_bar.png
 wait 2500
 expect scene 1
-press HOME
 tapkey w1
-release HOME
 wait 40
 expect scene 1
-press HOME
 tapkey w1
-release HOME
 wait 40
 expect scene 2
 tap SEL
@@ -41,9 +34,7 @@ turn ALGO 1
 wait 40
 shot scene_switch_list.png
 tap HOME
-press HOME
 tapkey w0
-release HOME
 wait 40
 expect scene 2
 shot scene_cue.png
@@ -54,25 +45,19 @@ turn ALGO -1
 tap HOME
 tap PLAY
 # holding a scene's key asks CLEAR SCENE?; another scene's key, or that key again, is no
-press HOME
 key w1 down
 wait 1100
 expect ask 1
 tapkey w0
 key w1 up
-release HOME
 wait 40
 expect ask 0
 expect scene 2
-press HOME
 key w1 down
 wait 1100
 expect ask 1
 key w1 up
-release HOME
-press HOME
 tapkey w1
-release HOME
 wait 40
 expect ask 0
 expect scene 2

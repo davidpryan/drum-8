@@ -1587,10 +1587,10 @@ static void key_down(int k)
         say(proj.trk[AUX_BRAIN].par[q] & bit ? "MOVES" : "LEAVES", TRACK_NAME[b]);
         return;
     }
-    if (home_held() && kit_ui() && w >= 0 && !ui.held && p != P_SONG) {   /* WARP-8: HOME held, the white keys the
-                                                  * scenes (OCT: 17-32), from any of the kit's pages; held long, the
-                                                  * scene is asked to be cleared (holds) */
-        scene_key(k, ui.scene_pg * 16 + w, proj.rsv[2] & SCENES_AT_END ? SCENE_END : SCENE_BAR);
+    if (p == P_SCENES) {                         /* WARP-8: HOME's Scenes page: the white keys the scenes (OCT: 17-32);
+                                                  * held long, the scene is asked to be cleared (holds) */
+        if (w >= 0)
+            scene_key(k, ui.scene_pg * 16 + w, proj.rsv[2] & SCENES_AT_END ? SCENE_END : SCENE_BAR);
         return;
     }
     if ((p == P_ARRANGE && !kit_ui()) || p == P_SONG) {
@@ -2105,8 +2105,7 @@ static void button_up(int b)
             pattern_octave(sel_trk(), d);           /* SEQ held: the pattern's notes an octave down or up */
             break;
         }
-        if (kit_ui() && ui.page != P_SONG ? home_held()
-                                             : (ui.page == P_ARRANGE || ui.page == P_SONG) && !home_held()) {
+        if (ui.page == P_SCENES || (((ui.page == P_ARRANGE && !kit_ui()) || ui.page == P_SONG) && !home_held())) {
                                                  /* the white keys' scenes: 1-16, 17-32 (the kit: HOME held) */
             ui.scene_pg = (uint8_t)(d > 0);
             say("SCENES", ui.scene_pg ? "17 to 32" : "1 to 16");
@@ -2602,7 +2601,7 @@ static void knob_do(int k, int32_t e)
             weave_set(trk, -1, -1, -1);          /* (applied, marked unsaved) */
         }
         return;
-    case P_ARRANGE: arrange_knob(k, e); return;
+    case P_ARRANGE: case P_SCENES: arrange_knob(k, e); return;
     case P_SONG: song_knob(k, e); return;
     case P_STEPS:
         if (!kit_ui()) {
@@ -2690,6 +2689,9 @@ static void presets(int32_t e)
         return;
     }
     switch (ui.page) {
+    case P_SCENES:                               /* (WARP-8: the next scene, at the bar) */
+        scene_go(((scene_aim() + d) % NSCENE + NSCENE) % NSCENE, SCENE_BAR);
+        break;
     case P_ARRANGE:
         if (kit_ui())
             kit_knob(d);
@@ -4605,7 +4607,7 @@ static void leds(void)
                 k |= 1u << WHITE_K[15];
             else
                 mid |= 1u << WHITE_K[15];
-        } else if (home_held() && kit_ui() && ui.page != P_SONG) {   /* WARP-8, HOME held: the scenes on the white keys */
+        } else if (ui.page == P_SCENES) {            /* WARP-8, the Scenes page: the scenes on the white keys */
             int f = ui.scene_pg * 16;
             for (i = 0; i < 16; i++)
                 if (pats.scene[f + i].used)

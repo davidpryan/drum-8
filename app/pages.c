@@ -105,11 +105,11 @@ static uint16_t col_mix(uint16_t a, uint16_t b, uint32_t s)   /* a moved s/16 of
  * oscillator 2, level, sub, noise; rayon's fall); a kit or an FX track Engine and Play; the conductor Engine, Play (routing), Sub (Follow) */
 enum { P_ARRANGE, P_SONG, P_STEPS, P_BAR, P_GEN, P_ENGINE, P_PLAY, P_PLAY2, P_SUB, P_ENV, P_FILTER, P_ENV2, P_KITF, P_CHARACTER, P_SENDS,
        P_FX1, P_FX2, P_THROWS, P_LFO, P_LFO2, P_PLAYERS, P_PLAYERS2, P_PLAYERS3, P_WEAVE, P_MIX, P_MASTER, P_MASTER2, P_MASTER3, P_GLFO, P_SETUP,
-       P_STATUS, NPAGES };
+       P_STATUS, P_SCENES, NPAGES };   /* (P_SCENES: WARP-8's, HOME's second on the kit; last, so no page's number moves) */
 static const char *const PAGE_NAME[NPAGES] = {"Arrange", "Song", "Steps", "Bar", "Generate", "Engine", "Play", "Play 2", "Sub", "Envelope",
                                               "Filter", "Filter env", "Kit filter", "Character", "Sends", "FX I",
                                               "FX II", "Throws", "LFO", "LFO 2", "Players", "Players 2", "Hold", "Weave", "Mix",
-                                              "Master EQ", "Master color", "Master out", "LFO", "Setup", "Debug"};
+                                              "Master EQ", "Master color", "Master out", "LFO", "Setup", "Debug", "Scenes"};
 static char *s_cat(char *b, const char *s);
 static char *num_s(uint32_t v, char *b);
 static const char *const GLFO_SHAPE[NGS + 1] = {"off", "sine", "triangle", "saw up", "saw down", "square", "random"};
@@ -816,6 +816,8 @@ static int group_n(int g)
         return 3;                                    /* (grp_page: FX I, FX II, Throws: no Character, no Sends) */
     if (b == B_GLO)
         return DEBUG_BUILD ? 7 : 6;                  /* Debug last, in a debug build only */
+    if (b == B_HOME)                                 /* (WARP-8, the kit: the pattern, the scenes, the song) */
+        return kit_ui() ? 3 : 2;
     return PAGE_BTN[g].n;
 }
 /* a button's i-th page now (ARP's depend on the player: the arp has Hold before Weave; the conductor and the
@@ -828,6 +830,8 @@ static int wv_cued(int t) { return proj.trk[t].rsv[3] & 1u; }   /* PLAYS: 0 alwa
 static int wv_kind(int t) { return t == AUX_PUNCH ? WK_FX : is_drum(t) ? WK_KIT : WK_MEL; }
 static int grp_page(int g, int i)
 {
+    if (PAGE_BTN[g].btn == B_HOME && kit_ui())       /* WARP-8: the scenes between the pattern and the song */
+        return i == 1 ? P_SCENES : i == 2 ? P_SONG : P_ARRANGE;
     if ((PAGE_BTN[g].btn == B_ENV || PAGE_BTN[g].btn == B_LFO) && is_midi(sel_trk()))
         return P_ENGINE;                             /* (a MIDI track has no sound to shape: its knobs instead) */
     if (PAGE_BTN[g].btn == B_EDIT && sel_trk() == AUX_BRAIN)   /* Engine, Play (routing), Sub (Follow) */
@@ -1888,6 +1892,7 @@ static void page_knobs(knob_t *k)
         return;
     }
     switch (p) {
+    case P_SCENES:
     case P_ARRANGE:
         if (kit_ui()) {                              /* WARP-8, HOME on a kit: the tempo, every drum's length, the swing,
                                                       * the kit */
@@ -2480,13 +2485,13 @@ static void page_footer(char *t)
         return;
     }
     if (home_held()) {
-        s_cat(t, kit_ui() ? "WHITE scene|REC undo|PLAY redo|ALGO track" : "REC undo|PLAY redo|ALGO track");
+        s_cat(t, "REC undo|PLAY redo|ALGO track");
         return;
     }
     switch (ui.page) {
     case P_ARRANGE:
         if (kit_ui()) {
-            s_cat(t, "ALGO drum|PRESET kit|WHITE step|HOME held: scenes");
+            s_cat(t, "ALGO drum|PRESET kit|WHITE step|SELECT scenes");
             break;
         }
         for (int i = 0; i < NKEYS; i++)             /* a kit's black key held: its sounds' mutes on the white keys */
@@ -2534,6 +2539,9 @@ static void page_footer(char *t)
         break;
     case P_MIX:
         s_cat(t, "BLACK mute|hold: solo|WHITE play");
+        break;
+    case P_SCENES:
+        s_cat(t, "WHITE scene: at the bar|held: clear|OCT 17-32");
         break;
     case P_THROWS:
         s_cat(t, seq.grids_on ? "KNOBS the drum map|SEL keep it" : "KEYS throws, two octaves|WHITE 15 grids");
@@ -2622,10 +2630,10 @@ static void enc_line(char *t)
     if (n > 1)                        /* SELECT names what it turns to where that is the point of the page */
         e = s_cat(t, p == P_CHARACTER ? "SELECT sends" : p == P_SENDS ? "SELECT effects" : p == P_ENV ? "SELECT filter"
                      : p == P_LFO ? "SELECT more" : "SELECT page");
-    if (p != P_ARRANGE && p != P_SONG && p != P_THROWS && p < P_MASTER)
+    if (p != P_ARRANGE && p != P_SONG && p != P_THROWS && p < P_MASTER && p != P_SCENES)
         e = s_cat(e, *t ? "|ALGO track" : "ALGO track");
     {
-        const char *a = p == P_ARRANGE ? "scene" : p == P_SONG ? "slot"
+        const char *a = p == P_ARRANGE || p == P_SCENES ? "scene" : p == P_SONG ? "slot"
                         : steps_page(p) && is_drum(trk) ? "sound"
                         : steps_page(p) && is_seqt(trk) ? "pattern"
                         : (p == P_ENGINE || p == P_PLAY || p == P_ENV) && is_drum(trk) ? "key"
@@ -3439,7 +3447,7 @@ static void list_build(void)
                 s_cat(keep_t, "none empty");
             list_add(ACTION_NAME[A_WEAVE], keep_t, LK_ACTION, A_WEAVE);
         }
-    } else if (keep == P_ARRANGE || keep == P_SONG) {
+    } else if (keep == P_ARRANGE || keep == P_SONG || keep == P_SCENES) {
         list_home(keep);
     } else if (fx_page(keep)) {                     /* an effect: the type, its filter, the feed into FX II, the
                                                      * delay's PING WIDTH */
@@ -5283,8 +5291,6 @@ static int layer_map(void)
         return 0;
     if (glo_held() && (ui.keys || plat_ms() - ui.btn_t[B_GLO] >= LAYER_MS))
         return 1;
-    if (home_held() && kit_ui() && ui.page != P_SONG && !ui.held && (ui.keys || plat_ms() - ui.btn_t[B_HOME] >= LAYER_MS))
-        return 2;
     return 0;
 }
 static void draw_layer(int glo)
@@ -6661,6 +6667,7 @@ static void draw_page(void)
         return;
     }
     switch (ui.page) {
+    case P_SCENES: draw_layer(0); break;             /* WARP-8: the scenes on the white keys */
     case P_ARRANGE:
         if (kit_ui())
             draw_kit_home();

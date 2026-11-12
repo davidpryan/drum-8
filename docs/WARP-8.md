@@ -19,7 +19,7 @@ With the kit selected:
 **Each drum has a colour of its own**, the same on every page: its row on HOME, its bars on Steps, its pad on EDIT,
 its key in the mutes. The page's own colour is the picked drum's.
 
-This holds on every page of the kit. The exceptions are the Throws page, the shared LFO page (white keys pick the
+This holds on every page of the kit. The exceptions are the Scenes page (white keys are scenes), the Throws page, the shared LFO page (white keys pick the
 sound it moves), the master and setup pages (the keys play), and the Song page (white keys add scenes to the song).
 
 OCT− and OCT+ show the previous and next bar of the pattern. With a step held they nudge it.
@@ -40,7 +40,7 @@ Eleven rows, one per drum, sixteen steps at a time. The picked drum is brighter;
 | White keys | Steps of the picked drum |
 | Black keys | Pick a drum; held, its lane (below) |
 
-Press HOME again for the Song.
+Turn SELECT for the Scenes page, then the Song. HOME pressed again goes straight to the Song.
 
 ## SEQ: Steps, Bar, Generate
 
@@ -154,18 +154,22 @@ From any page, without leaving it:
 
 A mute waiting for the bar blinks on its key. Stopping applies it.
 
-## HOME held: scenes
+## Scenes: HOME's second page
 
-<img src="img/warp-home-held.png" width="240" alt="HOME held: SCENES 1-16, the playing scene's key lit" title="HOME held">
+<img src="img/warp-home-held.png" width="240" alt="The Scenes page: SCENES 1-16, the playing scene's key lit, the used ones grey" title="Scenes">
 
-From any page of the kit, the white keys are the scenes. A scene is a pattern for each track and the mutes.
+Turn SELECT on HOME: the pattern, then **Scenes**, then the Song. On Scenes the white keys are the scenes. A scene is a
+pattern for each track and the mutes.
 
 - Tap a key: that scene at the next bar. Tap it again while it waits: now.
 - An empty key makes a copy of the scene playing.
 - Hold a key to be asked to clear its scene.
-- OCT− and OCT+ with HOME held: scenes 1 to 16, or 17 to 32.
+- OCT− and OCT+: scenes 1 to 16, or 17 to 32. PRESETS: the next scene.
+- The knobs are HOME's: tempo, length, swing, kit.
 
-HOME held is also LOOM-8's shift: REC undoes, PLAY redoes, ALGORITHM picks the track, knob 1 is fine tempo.
+This is the one page of the kit where the white keys are not steps.
+
+HOME held is LOOM-8's shift, as before: REC undoes, PLAY redoes, ALGORITHM picks the track, knob 1 is fine tempo.
 
 ## FX held: throws
 
@@ -222,7 +226,7 @@ With LATCH on, a press turns it on and the next turns it off. X, Y and FILL are 
 | 0.5 | Now |
 |---|---|
 | HOME held + keys: mutes and fill | GLO held + keys |
-| HOME: white keys are scenes | HOME: white keys are steps; scenes are HOME held |
+| HOME: white keys are scenes | HOME: white keys are steps; scenes are HOME's second page |
 | HOME: a black key mutes a drum | It picks the drum |
 | Steps: a grid of eleven lanes | The picked drum's lane; the grid is HOME's |
 | Steps: knobs are pattern, length, scale, groove | The drum's four knobs. Pattern: PRESETS. Length, swing: HOME. Scale: Bar |

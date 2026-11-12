@@ -1,6 +1,6 @@
 # WARP-8: HOME on the kit writes steps. A black key picks the drum, a white key is its step (a tap toggles; held,
-# the knobs are the step's); a black key held, the knobs shape its lane; OCT is the bar. HOME held, the white keys
-# are the scenes, and the page stays
+# the knobs are the step's); a black key held, the knobs shape its lane; OCT is the bar. SELECT turns to the Scenes
+# page, then the Song
 wait 300
 listen
 expect trk 1
@@ -41,16 +41,21 @@ expect note 1 1 9 6
 expect note 1 1 13 6
 key b5 up
 wait 40
-# HOME held: a white key is a scene (a new one: a copy), and HOME's page stays
-press HOME
+# SELECT: the Scenes page, between the pattern and the song: a white key is a scene (a new one: a copy)
+turn SELECT 1
+wait 40
+expect page Scenes
 tapkey w1
-release HOME
 wait 40
 expect scene 2
-expect page Arrange
-press HOME
 tapkey w0
-release HOME
 wait 40
 expect scene 1
+shot scenes_page.png
+turn SELECT 1
+wait 40
+expect page Song
+turn SELECT 1
+wait 40
+expect page Arrange
 shot homesteps.png

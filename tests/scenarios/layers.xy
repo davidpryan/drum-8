@@ -1,5 +1,5 @@
 # WARP-8: a held button's keys. FX held on the kit is the Throws page while it is held: a key fires its throw, and
-# FX's release goes back to the page before with nothing left on. GLO held and HOME held draw their keys
+# FX's release goes back to the page before with nothing left on. GLO held draws its keys
 wait 300
 listen
 expect trk 1
@@ -40,12 +40,3 @@ shot glo_held.png
 release GLO
 expect page Steps
 expect kmute 4
-# HOME held: the scenes' map
-press HOME
-wait 300
-shot home_held.png
-tapkey w1
-release HOME
-wait 40
-expect scene 2
-expect page Steps

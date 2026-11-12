@@ -11,6 +11,10 @@ expect page Arrange
 wait 40
 shot arrange.png
 turn SELECT 1
+expect page Scenes
+wait 40
+shot scenes.png
+turn SELECT 1
 expect page Song
 wait 40
 shot song.png
