@@ -5,7 +5,7 @@
   "author": "David Ryan",
   "license": "GPL-3.0-only",
   "tagline": "a pocket drum machine",
-  "description": "WARP-8 turns the M-VAVE FM-1 into a pocket drum machine: LOOM-8's sequencer, mixer and effects with every track a drum kit. Eight kits of eleven keys each play 73 drum models, 43 of them Hortator's (the 808 and 909 family, Plaits' drums, a struck membrane, FM, and the voices measured from the Machinedrum), each key with its own envelope, filter and sends, and 143 of Hortator's factory sounds a turn away. A sample player, a break slicer and MIDI out tracks remain. A fork of LOOM-8 by Charles Vestal.",
+  "description": "WARP-8 turns the M-VAVE FM-1 into a pocket drum machine: LOOM-8's sequencer, mixer and effects around a single kit. Its eleven drums play 73 drum models, 43 of them Hortator's (the 808 and 909 family, Plaits' drums, a struck membrane, FM, and the voices measured from the Machinedrum), each key with its own envelope, filter and sends, and 143 of Hortator's factory sounds a turn away. A black key is a drum and a white key a step on every page; held buttons give mutes, scenes and throws from anywhere. A sample track, a slice track and the throws sit beside it. A fork of LOOM-8 by Charles Vestal.",
   "tags": ["drum-machine", "groovebox", "sequencer", "sampler", "midi"],
   "install": "https://davidpryan.github.io/drum-8/install/",
   "site": "https://davidpryan.github.io/drum-8/",

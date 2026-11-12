@@ -22,7 +22,7 @@ OCT− and OCT+ show the previous and next bar of the pattern. With a step held 
 
 ## HOME: the whole pattern
 
-![HOME](img/warp-home.png)
+<img src="img/warp-home.png" width="240" alt="HOME on the kit: eleven rows of sixteen steps, the picked drum brighter, each drum's level at the right" title="HOME">
 
 Eleven rows, one per drum, sixteen steps at a time. The picked drum is brighter; its level is the bar at the right.
 
@@ -40,7 +40,7 @@ Press HOME again for the Song.
 
 ## SEQ: Steps, Bar, Generate
 
-![Steps](img/warp-steps.png)
+<img src="img/warp-steps.png" width="240" alt="Steps: the kick's sixteen steps as bars of velocity, a chance bar, an F for fill and ratchet ticks under them, a red dot on a locked step, the other drums as thin lines" title="Steps">
 
 **Steps** shows the picked drum alone. Each step is a bar as tall as its velocity. Under a step:
 
@@ -59,7 +59,7 @@ length and its two main tone controls (`MACROS.md` lists all 73). PRESETS change
 
 ### A step held
 
-![A step held](img/warp-step-held.png)
+<img src="img/warp-step-held.png" width="240" alt="Step 9 held: the knobs read velocity, chance 60%, ratchet and nudge" title="A step held">
 
 | Knob | Does |
 |---|---|
@@ -71,7 +71,7 @@ length and its two main tone controls (`MACROS.md` lists all 73). PRESETS change
 Turn SELECT while holding for the step's other knobs: length on knob 2 and pitch in semitones on knob 4. Turn it
 again to come back.
 
-![The other knobs](img/warp-step-alt.png)
+<img src="img/warp-step-alt.png" width="240" alt="A step held after SELECT: the knobs read velocity, length, chance and pitch" title="The other knobs">
 
 Press ARP while holding for the full list of tricks. Press EDIT, ENV, FX or LFO while holding to lock that page's
 knobs on the step. Hold several steps and they change together. HOME + REC undoes.
@@ -105,7 +105,7 @@ HOME + REC takes it back.
 
 ## GLO held: mutes and fill
 
-![GLO held](img/warp-glo-held.png)
+<img src="img/warp-glo-held.png" width="240" alt="GLO held: the keys drawn, the muted drum dark, K S L under the track keys, C and F under clear and fill" title="GLO held">
 
 From any page, without leaving it:
 
@@ -121,7 +121,7 @@ A mute waiting for the bar blinks on its key. Stopping applies it.
 
 ## HOME held: scenes
 
-![HOME held](img/warp-home-held.png)
+<img src="img/warp-home-held.png" width="240" alt="HOME held: SCENES 1-16, the playing scene's key lit" title="HOME held">
 
 From any page of the kit, the white keys are the scenes. A scene is a pattern for each track and the mutes.
 
@@ -134,7 +134,7 @@ HOME held is also LOOM-8's shift: REC undoes, PLAY redoes, ALGORITHM picks the t
 
 ## FX held: throws
 
-![FX held](img/warp-fx-held.png)
+<img src="img/warp-fx-held.png" width="240" alt="FX held: the Throws page, stutter lit on its key" title="FX held">
 
 From any page of the kit, hold FX and the keys are the throws, as on the Throws page: mute, stutter, repeat, echo,
 build, floor, jumble on the white keys, warble, pan, octave, chop, ring on the black. The lower octave works on the
@@ -144,7 +144,7 @@ A tap of FX still opens its pages.
 
 ### GRIDS
 
-![GRIDS](img/warp-grids.png)
+<img src="img/warp-grids.png" width="240" alt="GRIDS on: the fifteenth white key lit, the knobs X, Y and FILL" title="GRIDS">
 
 The fifteenth white key on the Throws page (so: FX held + that key) is GRIDS. While it is held, the kit's first three
 drums play from the drum map and not from their steps. The other drums keep their steps.

@@ -84,7 +84,7 @@ SITE_CSS = """<style>
 @media (max-width: 520px) { .lm-top nav { margin-left: 0; width: 100%%; } }
 </style>""" % (tokens(PALETTE["light"]), tokens(PALETTE["dark"]), tokens(PALETTE["dark"]))
 
-SECTIONS = [("emu/", "Try it"), ("manual/", "Manual"), ("install/", "Install"), ("samples/", "Samples"),
+SECTIONS = [("emu/", "Try it"), ("kit/", "Manual"), ("manual/", "@@LOOM@@ manual"), ("install/", "Install"), ("samples/", "Samples"),
             ("backup/", "Backup"), ("mirror/", "Mirror")]
 
 
@@ -153,7 +153,7 @@ code { font-size: .9em; }
 sequencer, mixer and effects around a single kit of eleven drums, and <a href="https://deadactive.github.io/hortator/">Hortator</a>'s
 drum models and factory sounds on the keys.</p>
 <div class="shots">
-  <img src="img/warp-steps.png" width="240" height="240" alt="A kit's Steps page: a grid of its eleven keys, each a lane of sixteen steps, the playhead's column lit">
+  <img src="img/warp-steps.png" width="240" height="240" alt="Steps: the picked drum's sixteen steps as bars of velocity, its chance, ratchets and locks marked under them, the other drums thin beneath">
   <img src="img/warp-kit.png" width="240" height="240" alt="HOME on a kit: eleven rows, a drum each, with its steps and its level; the knobs are the tempo, every drum's length, the swing and the kit">
   <img src="img/warp-generate.png" width="240" height="240" alt="The Generate page with Grids: the hits it would write outlined over the kick, snare and hat lanes, its X, Y and fill on the knobs">
 </div>
@@ -164,7 +164,8 @@ Installing is at your own risk. It starts with fresh projects: back up @@LOOM@@ 
 <nav class="ways" aria-label="Get WARP-8">
   <a href="emu/"><strong>Try it in the browser</strong><span>The same code the FM-1 runs, with sound. No FM-1 needed.</span></a>
   <a href="install/"><strong>Install</strong><span>From Chrome or Edge, with the FM-1 connected by USB. Nothing to install on the computer.</span></a>
-  <a href="manual/"><strong>Read @@LOOM@@'s manual</strong><span>WARP-8 has no manual of its own yet. The sequencer, the kit, the mixer and the effects work as @@LOOM@@'s do; its synth engines are not here.</span></a>
+  <a href="kit/"><strong>Read the manual</strong><span>The kit, its keys and its held buttons: what WARP-8 does its own way.</span></a>
+  <a href="manual/"><strong>Read @@LOOM@@'s manual</strong><span>For the rest: the sample and slice tracks, the mixer, the effects and saving work as @@LOOM@@'s do; its synth engines are not here.</span></a>
   <a href="samples/"><strong>Samples</strong><span>Put your own samples on the FM-1: add, replace, rename, reorder and remove up to 32.</span></a>
   <a href="backup/"><strong>Backup</strong><span>Save your projects, presets and samples to a file, and load them back later.</span></a>
   <a href="mirror/"><strong>Mirror</strong><span>The FM-1's screen on your computer, live, and its buttons, keys and knobs to play from there.</span></a>
@@ -178,18 +179,19 @@ Installing is at your own risk. It starts with fresh projects: back up @@LOOM@@ 
   <li><b>73 drum models</b>: @@LOOM@@'s thirty and 43 of Hortator's: the 808 and 909 family, Plaits' kicks, snares and hats, a struck membrane, FM, and the TRX and EFM voices measured from the Machinedrum.</li>
   <li><b>DRUM SOUND</b>: 143 of Hortator's factory sounds by type (kick, snare, hat, clap, tom, perc, cymbal), each on the key and heard as you turn to it. On a kit's pads the PRESETS knob steps through whole kits the same way.</li>
   <li><b>Sixteen factory kits</b>, six of them made of Hortator's sounds: TRX, EFM, 808, 909, Modern, Hard.</li>
-  <li><b>One kit, eleven drums, no menus</b>: HOME is the whole pattern, a row a drum, with the tempo, every drum's length, the swing and the kit on its knobs. ALGORITHM picks the drum on every page; PRESETS is the kit on HOME, the pattern on SEQ, the drum's next sound on EDIT.</li>
-  <li><b>A grid of the whole kit</b> on its Steps page: every key a lane of sixteen steps, a black key picks the lane, the white keys write it. A drum can have a length of its own and run against the others.</li>
-  <li><b>Generators</b>: hold a lane and the knobs set its hits, turn it, vary it; the Generate page previews Euclid, mutate and Mutable Instruments' Grids on the grid before it writes them.</li>
+  <li><b>One rule for the keys</b>: a black key is a drum, a white key is a step of the picked drum, on every page of the kit. Hold a step, a drum or a button and the knobs and keys are its.</li>
+  <li><b>HOME is the whole pattern</b>, a row a drum, and you write it there: the tempo, every drum's length, the swing and the kit on its knobs. ALGORITHM picks the drum on every page; PRESETS is the kit on HOME, the pattern on SEQ, the drum's next sound on EDIT.</li>
+  <li><b>Steps is the picked drum alone</b>: a bar each step's velocity, its chance, ratchets and locks marked, the other drums thin beneath, and the drum's own four knobs under your hand. A drum can have a length of its own and run against the others.</li>
+  <li><b>A held step</b>: velocity, chance, ratchets and nudge on the knobs; on a sound page, the page's knobs locked to that step.</li>
+  <li><b>Generators</b>: hold a drum and the knobs set its hits, turn it, vary it; the Generate page previews Euclid, mutate and Mutable Instruments' Grids before it writes them. <b>Grids is also a throw</b>: held, the kick, snare and hat play from the drum map, and SEL keeps what you hear.</li>
+  <li><b>Held buttons, from any page</b>, each drawing its keys: GLO for the mutes, solo and a fill (at once or at the bar line), HOME for the scenes, FX for the throws. EDIT held, a knob turns every drum's.</li>
   <li>@@LOOM@@'s <b>sequencer</b>: eight patterns of up to 64 steps, tricks and parameter locks on any step, weave, throws, scenes and a song.</li>
-  <li><b>Mutes and fills from any page</b>: hold HOME and a black key mutes its track, a white key a drum of the kit; a step's chance can be "fill", played while HOME and the last white key are held.</li>
   <li>Two <b>send effects</b>, a mixer with EQ and a compressor on the master.</li>
 </ul>
 <h2>What's not</h2>
 <ul class="feat">
   <li>@@LOOM@@'s synth engines (knit, rayon, jacquard, bellows, cane, voile, acid), its other tracks, its conductor and its weave track.</li>
   <li>Hortator's ACID and SAMPL models, and their eight presets.</li>
-  <li>A manual of its own.</li>
 </ul>
 <p class="small">To go back to the official firmware, use the installer's "Back to the stock firmware", or
 M-VAVE's updater, M-UPGRADE, from <a href="https://www.m-vave.com/download">m-vave.com/download</a>. @@LOOM@@'s
@@ -309,12 +311,17 @@ def main(pkg, version, out):
                     str(out / "manual" / "index.html")], check=True)
     for f in (out / "manual" / "index.html",):    # the manual's pictures are the site's img/
         f.write_text(f.read_text(encoding="utf-8").replace('src="img/', 'src="../img/'), encoding="utf-8")
+    (out / "kit").mkdir()                         # WARP-8's own manual for the kit (docs/WARP-8.md)
+    subprocess.run([sys.executable, str(SRC / "tools" / "make_manual.py"), str(SRC / "docs" / "WARP-8.md"),
+                    str(out / "kit" / "index.html")], check=True)
+    kf = out / "kit" / "index.html"
+    kf.write_text(kf.read_text(encoding="utf-8").replace('src="img/', 'src="../img/').replace("LOOM-8", LOOM), encoding="utf-8")
     # the manual is LOOM-8's own: say so at its top, and keep its name through the renaming below
     mf = out / "manual" / "index.html"
     banner = ('<p style="border-left:4px solid var(--accent);padding:4px 0 4px 12px"><b>This is LOOM-8\'s manual.</b> '
-              'WARP-8 has none of its own yet. The sequencer, the kit, the mixer, the effects and the pages work as written '
-              'here; the synth engines (knit, rayon, jacquard, bellows, cane, voile, acid) and their presets are not in '
-              'WARP-8, a new project is eight kits, and a kit key has Hortator\'s models and DRUM SOUND besides.</p>')
+              'WARP-8\'s own, for the kit, its keys and its held buttons, is <a href="../kit/">here</a>. The sample and '
+              'slice tracks, the mixer, the effects and saving work as written here; the synth engines (knit, rayon, '
+              'jacquard, bellows, cane, voile, acid) are not in WARP-8, and a project is one kit, not eight tracks.</p>')
     mt = mf.read_text(encoding="utf-8").replace("LOOM-8", LOOM)
     mf.write_text(re.sub(r"(<h1[^>]*>)", lambda m: banner.replace("LOOM-8", LOOM) + m.group(1), mt, count=1), encoding="utf-8")
     emu = SRC / "app" / "build" / "emu"
@@ -323,7 +330,7 @@ def main(pkg, version, out):
     shutil.copytree(emu, out / "emu")
     # the screen reader's words files (fm1-reader): every one ever made, for the devices that point at them
     shutil.copytree(SRC / "app" / "web" / "words", out / "words")
-    for path, here in (("index.html", ""), ("manual/index.html", "manual/"), ("install/index.html", "install/"),
+    for path, here in (("index.html", ""), ("manual/index.html", "manual/"), ("kit/index.html", "kit/"), ("install/index.html", "install/"),
                        ("backup/index.html", "backup/"), ("mirror/index.html", "mirror/"), ("samples/index.html", "samples/"),
                        ("emu/index.html", "emu/")):
         f = out / path
