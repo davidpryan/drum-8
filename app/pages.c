@@ -695,6 +695,8 @@ static step_t *chord_step(int t, int i)              /* chord mode's held cell i
 }
 static int home_held(void) { return ui.btn >> B_HOME & 1u; }
 static uint8_t sbrowse;                              /* WARP-8: the sound browser is open (draw_browse, below) */
+static const uint8_t SCENE_ROW[4] = {0, 1, 2, AUX_PUNCH};   /* WARP-8, the Scenes page's rows: the kit, the sample
+                                                             * track, the slice track, the throws */
 static int glo_held(void) { return ui.btn >> B_GLO & 1u; }   /* WARP-8: GLO held, the keys mute (ui.c key_down) */
 /* REC held: its knobs are the record settings while stopped and on Steps and Bar; on a sound page while playing,
  * the page's own, recorded as they turn (a punch-in of motion, as the keys punch in notes) */
@@ -1893,6 +1895,16 @@ static void page_knobs(knob_t *k)
     }
     switch (p) {
     case P_SCENES:
+        if (!LARGE && !home_held()) {                /* WARP-8: a knob a row: its track's pattern in the scene (the
+                                                      * one cued, until the bar); HOME held: LOOM-8's four, below */
+            static const char *const RN[4] = {"KIT", "SMP", "SLC", "THR"};
+            for (int i = 0; i < 4; i++) {
+                int tr = SCENE_ROW[i], pt = seq.pcue[tr] < NPATT ? seq.pcue[tr] : cur_pat(tr);
+                kn(&k[i], RN[i], pt + 1, NPATT);
+            }
+            break;
+        }
+        /* fallthrough */
     case P_ARRANGE:
         if (kit_ui() && p == P_ARRANGE) {            /* (Scenes: LOOM-8's own four, below) */                              /* WARP-8, HOME on a kit: the tempo, every drum's length, the swing,
                                                       * the kit */
@@ -2543,7 +2555,7 @@ static void page_footer(char *t)
         s_cat(t, "BLACK mute|hold: solo|WHITE play");
         break;
     case P_SCENES:
-        s_cat(t, "WHITE scene|held: clear|OCT 17-32|KNOB 4 pattern");
+        s_cat(t, home_held() ? "KNOBS tempo, groove" : "WHITE scene|BLACK 1-4 mute|KNOBS patterns");
         break;
     case P_THROWS:
         s_cat(t, seq.grids_on ? "KNOBS the drum map|SEL keep it" : "KEYS throws, two octaves|WHITE 15 grids");
@@ -3736,7 +3748,7 @@ static void draw_arrange(void)
     for (int r = 0; r < 4; r++) {                    /* WARP-8: the kit, the sample track, the slice track, the throws:
                                                       * each its pattern in the scene and where it plays; under the
                                                       * kit, its eleven drums in their inks, the scene's muted hollow */
-        static const uint8_t ROW[4] = {0, 1, 2, AUX_PUNCH};
+        const uint8_t *ROW = SCENE_ROW;
         static const uint8_t RY[4] = {4, 34, 56, 82};
         int tr = ROW[r];
         int32_t y = RY[r];

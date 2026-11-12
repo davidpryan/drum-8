@@ -51,19 +51,28 @@ expect scene 2
 tapkey w0
 wait 40
 expect scene 1
-# knob 4: the selected track's pattern in the scene; ALGORITHM: the track
-turn K4 1
-wait 500
-said PAT
-turn ALGO 1
+# a knob a row: knob 1 the kit's pattern in the scene, knob 2 the sample track's
+turn K1 1
+wait 300
+where
+said P2
+turn K1 -1
+wait 300
+where
+said P1
+turn K2 2
+wait 60
+# the first four black keys mute the rows' tracks
+tapkey b1
 wait 40
-expect trk 2
-expect page Scenes
-turn ALGO -1
+expect mute 2
+said MUTED
+tapkey b0
 wait 40
-expect trk 1
-turn K4 -1
+expect mute 3
+tapkey b3
 wait 40
+expect mute 515
 shot scenes_page.png
 turn SELECT 1
 wait 40

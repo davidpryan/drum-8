@@ -1591,6 +1591,8 @@ static void key_down(int k)
                                                   * held long, the scene is asked to be cleared (holds) */
         if (w >= 0)
             scene_key(k, ui.scene_pg * 16 + w, proj.rsv[2] & SCENES_AT_END ? SCENE_END : SCENE_BAR);
+        else if (b >= 0 && b < 4 && !LARGE)      /* the first four black keys: a row's track muted, or back */
+            track_mute_key(SCENE_ROW[b]);
         return;
     }
     if ((p == P_ARRANGE && !kit_ui()) || p == P_SONG) {
@@ -2274,6 +2276,12 @@ static void sound_knob(int d)
 static void arrange_knob(int k, int32_t e)
 {
     int trk = sel_trk();
+    if (ui.page == P_SCENES && !LARGE && !home_held()) {   /* WARP-8, Scenes: a knob a row: the kit's, the sample
+                                                  * track's, the slice track's and the throws' pattern in the scene (at
+                                                  * the bar while it plays). HOME held: the tempo, the groove, below */
+        pattern_pick(SCENE_ROW[k & 3], cued_pat(SCENE_ROW[k & 3]) + (e > 0 ? 1 : -1));
+        return;
+    }
     if (kit_ui() && ui.page == P_ARRANGE) {      /* WARP-8, HOME on a kit: the tempo, every drum's length (their own
                                                   * lengths go), the swing, the kit */
         if (k == 3)
@@ -4607,7 +4615,13 @@ static void leds(void)
                 k |= 1u << WHITE_K[15];
             else
                 mid |= 1u << WHITE_K[15];
-        } else if (ui.page == P_SCENES) {            /* WARP-8, the Scenes page: the scenes on the white keys */
+        } else if (ui.page == P_SCENES) {            /* WARP-8, the Scenes page: the scenes on the white keys, the
+                                                  * rows' tracks on the first four black (lit: sounding) */
+            for (i = 0; i < 4; i++)
+                if (seq.mute >> SCENE_ROW[i] & 1u)
+                    dim |= 1u << BLACK_K[i];
+                else
+                    k |= 1u << BLACK_K[i];
             int f = ui.scene_pg * 16;
             for (i = 0; i < 16; i++)
                 if (pats.scene[f + i].used)
