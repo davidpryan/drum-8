@@ -276,7 +276,8 @@ typedef struct {
     uint32_t step_tick;               /* sixteenths since start (the metronome, the arp grid) */
     uint8_t metro_beat;
     /* added runtime */
-    volatile uint16_t kmute[NKITM];   /* the scene's kit sounds muted, per kit track (pattern.h scene_t) */
+    volatile uint8_t fill;            /* a fill is held (WARP-8: steps of COND_FILL play, of COND_NFILL rest) */
+    volatile uint16_t kmute[NKITL];   /* the scene's kit sounds muted, per kit track (pattern.h scene_t) */
     volatile uint8_t loop_free;       /* a loop throw let go: the track goes on from where the loop left it (0: back in
                                        * time, where it would be had it never looped) */
     volatile uint8_t crop_dirty;      /* a queued loop was applied to a pattern: the main loop marks the project unsaved */

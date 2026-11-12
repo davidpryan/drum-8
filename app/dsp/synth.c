@@ -3415,6 +3415,11 @@ static const tp_info_t *dknob_of(int m, int k)   /* model m's knob k (0..7) */
         i->hi = 2;
         i->names = DM9_SIZE_N;
     }
+    if (DM_ISHORT(m) && k == 0) {                /* Hortator's TUNE: semitones about 64, +-24 (hort.c hort_start) */
+        i->kind = PK_BIPST;
+        i->lo = 40;
+        i->hi = 88;
+    }
     if (m == DM_SAMPLE) {                        /* the sample model: sample, pitch (+-24 semitones), start, reverse */
         static const uint8_t KIND[4] = {PK_SAMPLE, PK_BIPST, PK_PCT, PK_SWITCH};
         i->kind = KIND[k];

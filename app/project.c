@@ -397,7 +397,7 @@ static void patterns_clamp(void)
                     s->comp = SC_NONE;
                 if (s->comp2 >= NSC)
                     s->comp2 = SC_NONE;
-                if (s->cond >= COND_AB + COND_NAB)
+                if (s->cond >= COND_END)
                     s->cond = 0;
             }
         }
@@ -424,7 +424,7 @@ static void patterns_clamp(void)
             h->comp = SC_NONE;
         if (h->comp2 >= NSC)
             h->comp2 = SC_NONE;
-        if (h->cond >= COND_AB + COND_NAB)
+        if (h->cond >= COND_END)
             h->cond = 0;
     }
     for (k = 0; k < NSCENE; k++) {

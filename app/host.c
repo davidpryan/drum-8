@@ -467,7 +467,7 @@ int app_expect(const char *what, int *got)
         *got = lane_count(pats.lane);
     else if (!strncmp(what, "kmute", 5))           /* kmute (the first kit's) or kmuteK (kit K's, from 1): the scene's
                                                      * kit sounds muted (bit k: sound k + 1) */
-        *got = seq.kmute[(what[5] ? atoi(what + 5) - 1 : 0) & (NKITM - 1)];
+        *got = seq.kmute[(what[5] ? atoi(what + 5) - 1 : 0) & (NKITL - 1)];
     else if (!strcmp(what, "songpos"))              /* the song slot playing, from 1 */
         *got = seq.song_pos + 1;
     else if (!strcmp(what, "used"))                 /* the scenes that exist: bit s-1 for scene s */

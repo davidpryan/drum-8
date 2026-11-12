@@ -18,18 +18,27 @@ tapkey b1
 wait 500
 expect peak_db_max 0
 shot trxkick2.png
-# DRUM SOUND (the key's list): Hortator's factory presets, the model and its eight knobs onto the key shown (b1: key 2)
+# DRUM SOUND (the key's list): Hortator's factory presets by type, each put on the key shown (b1: key 2) and played as
+# ALGORITHM picks it: the second kick (BIGBOOM, b2trx), then SOUND TYPE to the snares: the first (HARDSNAP, sdtrx)
 tap SEL
 row DRUM SOUND
 turn ALGO 1
-tap SEL
 wait 40
 said DRUM SOUND
+expect par1.d2.model 64
+expect par1.d2.k1 63
+expect par1.d2.k2 74
+expect par1.d2.k3 33
+expect par1.d2.k7 31
+row SOUND TYPE
+turn ALGO 1
+wait 40
 expect par1.d2.model 53
 expect par1.d2.k1 64
 expect par1.d2.k2 7
 expect par1.d2.k3 127
-expect par1.d2.k7 92
+tap SEL
+wait 40
 # the factory kits of Hortator's presets, after LOOM-8's ten: TRX (Loom, ten, then it)
 tap SEL
 row KIT

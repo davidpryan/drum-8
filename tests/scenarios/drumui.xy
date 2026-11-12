@@ -1,0 +1,59 @@
+# WARP-8: HOME held, the keys mute (a black key its track, a white key a sound of the kit shown, for every kit: the
+# scenes keep the first four kits'); the last white key held is a fill, and a step's chance can be "fill"
+wait 300
+listen
+expect trk 1
+press HOME
+tapkey b2
+release HOME
+wait 40
+expect mute 4
+press HOME
+tapkey b2
+release HOME
+wait 40
+expect mute 0
+# the sixth kit's first sound: muted, and back
+turn ALGO 5
+wait 40
+expect trk 6
+press HOME
+tapkey w0
+release HOME
+wait 40
+expect kmute6 1
+press HOME
+tapkey w0
+release HOME
+wait 40
+expect kmute6 0
+turn ALGO -5
+wait 40
+expect trk 1
+# a kick on step 1, and one on step 9 that plays only in a fill
+tap SEQ
+tapkey b0
+tapkey w0
+tapkey w8
+key w8 down
+wait 400
+turn K3 200
+turn K3 -1
+wait 40
+key w8 up
+wait 40
+expect drumhits 1
+tap PLAY
+wait 1500
+tap PLAY
+expect drumhits 2
+press HOME
+key w15 down
+wait 40
+release HOME
+said FILL
+tap PLAY
+wait 1500
+tap PLAY
+key w15 up
+expect drumhits 4

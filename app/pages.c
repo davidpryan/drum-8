@@ -193,7 +193,7 @@ static const uint8_t BLACK_K[11] = {1, 3, 5, 8, 10, 13, 15, 17, 20, 22, 25};
 #define KEY_BASE 53                                  /* F3 at octave 0 */
 enum { KM_NONE, KM_PLAY, KM_STEP, KM_SCENE, KM_MUTE, KM_PUNCH, KM_BRAIN, KM_SOUND,
        KM_TRACK, KM_SAVE, KM_SOLO, KM_SCALE, KM_ROUTE, KM_STEPSOUND, KM_IDLE, KM_WEAVE, KM_BARK,
-       KM_STEPCHORD };   /* KM_IDLE: does nothing */   /* what a held key does */
+       KM_STEPCHORD, KM_FILL };   /* KM_IDLE: does nothing */   /* what a held key does */
 
 /* the input's and the screen's state */
 static struct {
@@ -262,6 +262,7 @@ static struct {
     uint16_t preset_i, pick_preset;               /* (more than 255 presets and user slots) */
     uint8_t pick_engine, pick_slot, pick_fx, pick_weave, pick_save;   /* (pick_save: SAVE TO's slot) */
     uint8_t gen_set, gen_kind, gen_hits, gen_rot, gen_mode, gen_amt, gen_seed, gen_x, gen_y, gen_fill;   /* Generate */
+    uint8_t pick_dtype;                              /* DRUM SOUND's type (HPT_*) */
     uint8_t pick_dsound;                             /* a kit key's DRUM SOUND: a Hortator preset (HPRESET) */
     uint8_t pick_kit, pick_kslot;                    /* a kit track's KIT (0..3 factory, 4.. user) and SAVE KIT */
     uint8_t pick_bt;                                 /* Bluetooth audio's FORGET: the remembered device */
@@ -290,7 +291,7 @@ enum { A_CLEAR_NOTES, A_CLEAR_LOCKS, A_CLEAR_BOTH, A_COPY_PAT, A_PASTE_PAT, A_RO
        A_KIT, A_SAVE_KIT, A_MIDI_CC, A_USB_HOST, A_BT_MIDI, A_BT_AUDIO, A_BT_ADEV, A_BT_DEVICE, A_BT_DEV, A_BT_LOOK,
        A_BT_FORGET, A_BT_DISCONNECT, A_CLEAR, A_ROTATE, A_PASTE, A_COPY_EMPTY, A_CLEAR_BAR,
        A_COPY_SOUND, A_PASTE_SOUND, A_COPY_KEY, A_PASTE_KEY, A_COPY_SCENE, A_PASTE_SCENE, A_DUP_SLOT, A_KIT_FILTER,
-       A_SHIFT, A_LARGE_TYPE, A_CC_IN, A_FX_WIDTH, A_SCALE_LOCK, A_DRUM_SOUND, NACTIONS };
+       A_SHIFT, A_LARGE_TYPE, A_CC_IN, A_FX_WIDTH, A_SCALE_LOCK, A_DRUM_SOUND, A_DRUM_TYPE, NACTIONS };
 static const char *const ACTION_NAME[NACTIONS] = {
     "CLEAR NOTES", "CLEAR LOCKS", "CLEAR NOTES AND LOCKS", "COPY PATTERN", "PASTE PATTERN", "ROTATE FORWARD",
     "ROTATE BACK", "DUPLICATE BAR", "ENGINE", "PRESET", "SCRAMBLE", "SAVE AS PRESET", "RESET SOUND", "FOLLOWS CONDUCTOR",
@@ -302,7 +303,7 @@ static const char *const ACTION_NAME[NACTIONS] = {
     "USB PORT", "BT MIDI", "BT AUDIO", "AUDIO DEVICE", "MIDI DEVICE", "DEVICE", "LOOK AGAIN", "FORGET", "DISCONNECT",
     "CLEAR", "ROTATE", "PASTE", "COPY TO EMPTY", "CLEAR BAR", "COPY SOUND", "PASTE SOUND", "COPY DRUM", "PASTE DRUM",
     "COPY SCENE", "PASTE SCENE", "DUPLICATE SLOT", "KIT FILTER", "SHIFT NOTES", "LARGE TYPE", "CC IN", "PING WIDTH", "SCALE LOCK",
-    "DRUM SOUND"};
+    "DRUM SOUND", "SOUND TYPE"};
 static const char *const CLEAR_WHAT[3] = {"notes", "locks", "notes and locks"};
 /* a pick ALGORITHM sets at once (a setting: SEL only leaves the list), as against a choice SEL then carries out */
 static int pick_sets(int a)
@@ -312,6 +313,7 @@ static int pick_sets(int a)
     case A_FX_HP: case A_FX_LP: case A_FX_SEND: case A_PUMP_BY: case A_PUMP_REL: case A_PUMP_ACC: case A_LEVEL:
     case A_SCENE_AT: case A_AUTOSAVE: case A_MIDI_OUT: case A_LOOP_FREE: case A_CC_OUT: case A_SCENES_OUT: case A_MIDI_CC:
     case A_USB_HOST: case A_KIT_FILTER: case A_CC_IN: case A_FX_WIDTH: case A_SCALE_LOCK:
+    case A_DRUM_SOUND: case A_DRUM_TYPE:             /* (a key's sound: on the key, and heard, as it is picked) */
         return 1;
     default:
         return 0;
@@ -668,6 +670,65 @@ static int rec_settings(void)
 {
     return (ui.btn >> B_REC & 1u) && !home_held() && (!playing() || steps_page(ui.page));
 }
+/* a model's short name: on the kit's pads (pic_drumline) and the kit grid's lanes */
+        static const char *const PAD[] = {"kick", "snare", "hat", "clap", "shakr", "tamb", "strng", "cong", "tom", "fm",
+                                             "smpl", "xkick", "xsnr", "xhat", "xclap", "xtom", "xrim", "xfm",
+                                             "xnois", "clang", "sophi", "9kick", "9snr", "9tom", "9rim", "9clap",
+                                             "9hat", "9open", "9ride", "9crsh",
+#define HP(id, name, pad, pad4, trig, rend, n) pad,
+                                             HORT_MODELS(HP)};
+        static const char *const PAD4[] = {"kick", "snr", "hat", "clap", "shk", "tmb", "strg", "cga", "tom", "fm",
+                                              "smp", "xkck", "xsnr", "xhat", "xclp", "xtom", "xrim", "xfm",
+                                              "xnoi", "clng", "soph", "9kck", "9snr", "9tom", "9rim", "9clp",
+                                              "9hat", "9opn", "9rid", "9crs",
+#define HP4(id, name, pad, pad4, trig, rend, n) pad4,
+                                              HORT_MODELS(HP4)};   /* (large type: four letters at most) */
+        _Static_assert(sizeof PAD / sizeof PAD[0] == NDM && sizeof PAD4 / sizeof PAD4[0] == NDM, "a pad name for each model");
+
+/* a kit key's name: its model's short name (four letters at most where four is set). Where every key of the kit
+ * carries the same mark of its family (the TRX kit's "trx", the 909's "9": a common end of two letters or more, or
+ * a common start), the mark is left off: "bd", "sd", "kick". A second key of the same name is numbered. The text is
+ * in one of four turns of a buffer: use it at once */
+static const char *key_nm_par(const uint8_t *par, int key, int four)
+{
+    static char buf[4][8];
+    static uint8_t at;
+    const char *const *T = four ? PAD4 : PAD, *nm[DL_NSOUND];
+    int ln[DL_NSOUND], cp = 8, cs = 8, i, j, dup = 0, n;
+    char *o = buf[at++ & 3u];
+    key = (key % DL_NSOUND + DL_NSOUND) % DL_NSOUND;
+    for (i = 0; i < DL_NSOUND; i++) {
+        nm[i] = T[par[TP_DRUM(i, DP_MODEL)] % NDM];
+        ln[i] = (int)s_len(nm[i]);
+    }
+    for (i = 1; i < DL_NSOUND; i++) {
+        for (j = 0; j < cp && nm[i][j] && nm[i][j] == nm[0][j]; j++) {}
+        cp = j;
+        for (j = 0; j < cs && j < ln[i] && j < ln[0] && nm[i][ln[i] - 1 - j] == nm[0][ln[0] - 1 - j]; j++) {}
+        cs = j;
+    }
+    if (cs < 2)
+        cs = 0;
+    else
+        cp = 0;
+    for (i = 0; i < DL_NSOUND; i++)
+        if (ln[i] - cp - cs < 2)                     /* (nothing left of a name: the kit's keys are one model) */
+            cp = cs = 0;
+    n = ln[key] - cp - cs;
+    for (i = 0; i < n && i < 6; i++)
+        o[i] = nm[key][cp + i];
+    for (j = 0; j < key; j++)
+        dup += nm[j] == nm[key];
+    if (dup && four && i > 3)                        /* (four letters in all: "tmt2") */
+        i = 3;
+    if (dup && i < 7)
+        o[i++] = (char)('1' + (dup > 8 ? 8 : dup));
+    o[i] = 0;
+    return o;
+}
+static int inst_trk(void);
+#define KEYNM(k) key_nm_par(proj.trk[inst_trk()].par, (k), 0)   /* a key of the kit shown */
+
 static int kit_slot(int t)                           /* a kit track's place among the kits (scene_t kmute), -1 none */
 {
     int k = 0;
@@ -675,7 +736,7 @@ static int kit_slot(int t)                           /* a kit track's place amon
         return -1;
     for (int i = 0; i < t; i++)
         k += is_drum(i);
-    return k < NKITM ? k : -1;
+    return k < NKITL ? k : -1;
 }
 static int pl_type(int t) { return is_aux(t) || is_drum(t) ? PL_OFF : proj.trk[t].par[TP_PLAYER] % NPL; }   /* (a kit has no player) */
 #define CTYPE_NAME(par) (tp_info_par(TP_CTYPE, par)->names[(par)[TP_CTYPE] % NCT])   /* the character's type */
@@ -1299,6 +1360,8 @@ static void cond_text(int c, char *t)
         s_cat(t, "always");
     else if (c < COND_AB)
         s_cat(num_s((uint32_t)c, t), "%");
+    else if (c >= COND_FILL)
+        s_cat(t, c == COND_FILL ? "fill" : "no fill");
     else {
         int a, b;
         cond_ab(c - COND_AB, &a, &b);
@@ -2104,14 +2167,14 @@ static void page_tag(char *t)
             int lp = ui.lockpg - 1;
             e = num_s((uint32_t)step_shown(ui.held_first) + 1u, s_cat(t + s_len(t), ">step "));
             if (is_drum(sel_trk()) && (lp == P_ENGINE || lp == P_PLAY || lp == P_ENV || lp == P_FILTER))
-                e = s_cat(s_cat(e, ">"), DL_SOUND_NAME[ui.dsound % DL_NSOUND]);   /* the key the locks reach */
+                e = s_cat(s_cat(e, ">"), KEYNM(ui.dsound % DL_NSOUND));   /* the key the locks reach */
             s_cat(s_cat(e, ">"), page_name_of(lp, sel_trk()));
         } else if (ui.held & (ui.held - 1u))     /* several held: how many (the knobs show the first's values) */
             s_cat(num_s((uint32_t)__builtin_popcount(ui.held), s_cat(t + s_len(t), ">")), " steps");
         else if (ui.held) {
             e = num_s((uint32_t)step_shown(ui.held_first) + 1u, s_cat(t + s_len(t), ">step "));
             if (hit_edits(sel_trk(), step_shown(ui.held_first)))   /* a kit: the sound its knobs reach */
-                s_cat(s_cat(e, ">"), DL_SOUND_NAME[ui.dsound % DL_NSOUND]);
+                s_cat(s_cat(e, ">"), KEYNM(ui.dsound % DL_NSOUND));
         }
         break;
     case P_ENGINE: case P_PLAY: case P_PLAY2: case P_SUB: case P_ENV: case P_FILTER: case P_ENV2: case P_KITF: case P_LFO:
@@ -2119,7 +2182,7 @@ static void page_tag(char *t)
         track_crumb(t);
         if (is_drum(sel_trk()))                      /* the key the knobs edit (the kit's own pages: the whole kit) */
             s_cat(s_cat(t + s_len(t), ">"), ui.page == P_ENV2 || ui.page == P_KITF ? "all keys"
-                                             : DL_SOUND_NAME[ui.dsound % DL_NSOUND]);
+                                             : KEYNM(ui.dsound % DL_NSOUND));
         break;
     case P_SENDS:
         s_cat(s_cat(t, TRACK_NAME[inst_trk()]), ">sends");
@@ -2288,7 +2351,7 @@ static void page_footer(char *t)
         return;
     }
     if (home_held()) {
-        s_cat(t, "REC undo|PLAY redo|KNOBS fine");
+        s_cat(t, "REC undo|PLAY redo|KEYS mute|WHITE 16 fill");
         return;
     }
     switch (ui.page) {
@@ -2994,7 +3057,6 @@ static void list_home(int keep)
     proj_slot_text(ui.pick_save % NPROJ, save_t);
     list_add(ACTION_NAME[A_SAVE_TO], save_t, LK_PICK, A_SAVE_TO);
     list_add(ACTION_NAME[A_NEW_PROJ], 0, LK_ACTION, A_NEW_PROJ);
-    list_add(ACTION_NAME[A_RANDOM_SOUNDS], 0, LK_ACTION, A_RANDOM_SOUNDS);
     list_add(ACTION_NAME[A_PANIC], 0, LK_ACTION, A_PANIC);
 }
 /* EDIT: the sound's actions (EDIT only: the other buttons' lists are their knobs) */
@@ -3014,16 +3076,19 @@ static void list_sound(int trk)
         list_head("key");
         list_add(ACTION_NAME[A_PLAYMODE], PM_NAME[proj.trk[trk].par[TP_DRUM(ui.dsound % DL_NSOUND, DP_MODE)] % NPM],
                  LK_PICK, A_PLAYMODE);
-        list_add(ACTION_NAME[A_COPY_KEY], DL_SOUND_NAME[ui.dsound % DL_NSOUND], LK_ACTION, A_COPY_KEY);
+        list_add(ACTION_NAME[A_COPY_KEY], KEYNM(ui.dsound % DL_NSOUND), LK_ACTION, A_COPY_KEY);
         if (key_clip && key_clip - 1 < NTRK && is_drum(key_clip - 1) &&
             (key_clip - 1 != trk || key_clip_k != ui.dsound % DL_NSOUND)) {
             char *e = s_cat(key_t, "from ");
             if (key_clip - 1 != trk)
                 e = s_cat(num_s((uint32_t)key_clip, s_cat(e, "T")), " ");
-            s_cat(e, DL_SOUND_NAME[key_clip_k % DL_NSOUND]);
+            s_cat(e, KEYNM(key_clip_k % DL_NSOUND));
             list_add(ACTION_NAME[A_PASTE_KEY], key_t, LK_ACTION, A_PASTE_KEY);
         }
-        dsound_label(ui.pick_dsound, snd_t);              /* the key's sound: one of Hortator's presets */
+        list_add(ACTION_NAME[A_DRUM_TYPE], HPT_NAME[ui.pick_dtype % NHPT], LK_PICK, A_DRUM_TYPE);   /* the key's sound:
+                                                      * one of Hortator's presets, of a type; each is on the key and
+                                                      * heard as ALGORITHM picks it */
+        dsound_label(ui.pick_dsound, snd_t);
         list_add(ACTION_NAME[A_DRUM_SOUND], snd_t, LK_PICK, A_DRUM_SOUND);
         list_head("kit");
         kit_label(ui.pick_kit % NKITS, kit_t);
@@ -3138,7 +3203,7 @@ static void list_build(void)
         if (is_drum(trk)) {                           /* each sound on the step, by key */
             for (int i = 1, r = 0; i <= NDRUM; i++)
                 if (kit_has(st, i)) {
-                    s_cat(s_cat(rm[r], "REMOVE "), DL_SOUND_NAME[i - 1]);
+                    s_cat(s_cat(rm[r], "REMOVE "), KEYNM(i - 1));
                     list_add(rm[r++], 0, LK_ACTION, A_REMOVE_NOTE);
                 }
             list_clip_step();
@@ -3147,7 +3212,7 @@ static void list_build(void)
         for (int i = 0; i < SN && st->note[i]; i++) {
             char *e = s_cat(rm[i], "REMOVE ");
             if (is_drum(trk))
-                s_cat(e, DL_SOUND_NAME[(st->note[i] - 1) % DL_NSOUND]);
+                s_cat(e, KEYNM((st->note[i] - 1) % DL_NSOUND));
             else if (trk == AUX_PUNCH)
                 s_cat(e, PX_VALID(st->note[i] - 1) ? PUNCH_NAME[(st->note[i] - 1) & 15] : "fx");
             else if (pl_type(trk) == PL_RAND)
@@ -3428,7 +3493,7 @@ static void draw_arrange(void)
                                           (uint32_t)sel_trk() << 20 | (uint32_t)seq.cue_end << 24 |
                                           (uint32_t)ui.scene_pg << 25);
     h = hash_u(h, (uint32_t)(left + 1));
-    for (int k = 0; k < NKITM; k++)
+    for (int k = 0; k < NKITL; k++)
         h = hash_u(h, seq.kmute[k]);
     a_last = now;
     for (int t = 0; t < NTRK; t++) {             /* each track's meter: what it plays now (Mix's fall; the header's
@@ -3697,7 +3762,7 @@ static void steps_head(int trk, char *nm, char *t)
         if (!nm[0])
             s_cat(nm, EG_NAME[proj.trk[trk].par[TP_ENGINE] % NENGINE]);
         if (is_drum(trk)) {
-            s_cat(t, DL_SOUND_NAME[ui.dsound % DL_NSOUND]);
+            s_cat(t, KEYNM(ui.dsound % DL_NSOUND));
             return;
         }
     } else if (trk == AUX_PUNCH) {
@@ -3716,21 +3781,6 @@ static void steps_head(int trk, char *nm, char *t)
         e = note_name(ui.rem[i], e);
     }
 }
-/* a model's short name: on the kit's pads (pic_drumline) and the kit grid's lanes */
-        static const char *const PAD[] = {"kick", "snare", "hat", "clap", "shakr", "tamb", "strng", "cong", "tom", "fm",
-                                             "smpl", "xkick", "xsnr", "xhat", "xclap", "xtom", "xrim", "xfm",
-                                             "xnois", "clang", "sophi", "9kick", "9snr", "9tom", "9rim", "9clap",
-                                             "9hat", "9open", "9ride", "9crsh",
-#define HP(id, name, pad, pad4, trig, rend, n) pad,
-                                             HORT_MODELS(HP)};
-        static const char *const PAD4[] = {"kick", "snr", "hat", "clap", "shk", "tmb", "strg", "cga", "tom", "fm",
-                                              "smp", "xkck", "xsnr", "xhat", "xclp", "xtom", "xrim", "xfm",
-                                              "xnoi", "clng", "soph", "9kck", "9snr", "9tom", "9rim", "9clp",
-                                              "9hat", "9opn", "9rid", "9crs",
-#define HP4(id, name, pad, pad4, trig, rend, n) pad4,
-                                              HORT_MODELS(HP4)};   /* (large type: four letters at most) */
-        _Static_assert(sizeof PAD / sizeof PAD[0] == NDM && sizeof PAD4 / sizeof PAD4[0] == NDM, "a pad name for each model");
-
 /* WARP-8: a kit track's Steps page is a grid, every key a lane of the bar's sixteen steps (as Hortator's and X0X's
  * main pages show every drum): the lane the white keys write (ui.dsound, picked by a black key) in the track's ink,
  * the others dim; the playhead's column; a held step framed; a muted key faint. On the picked lane a step with a
@@ -3752,7 +3802,7 @@ static void kit_grid(int trk, int pt, int ph, const tpat_t *tp)
         int sel = b == ui.dsound % DL_NSOUND, muted = km >> b & 1u;
         char nm[6];                                  /* the model's four letters, in capitals: no descender to meet
                                                       * the lane under it */
-        s_cat(nm, PAD4[par[TP_DRUM(b, DP_MODEL)] % NDM]);
+        s_cat(nm, key_nm_par(par, b, 1));
         for (char *q = nm; *q; q++)
             if (*q >= 'a' && *q <= 'z')
                 *q = (char)(*q - 32);
@@ -3920,7 +3970,7 @@ static void draw_steps_as(void)
                     j++;
                 }
             if (on) {
-                s_cat(t, DL_SOUND_NAME[ui.dsound % DL_NSOUND]);
+                s_cat(t, KEYNM(ui.dsound % DL_NSOUND));
                 t[3] = 0;
                 text_c(x + ST_MID, y + ST_L1, st_font(t), t, fg);
             }
@@ -4503,7 +4553,7 @@ static void pic_drumline(int32_t x0, int32_t y0, int32_t w, int32_t h, const uin
     (void)f;
     for (int k = 0; k < DL_NSOUND; k++) {
         int32_t x = x0 + (k % 6) * pw + 2, y = y0 + (k / 6) * ph + 2, hit = eng_drum_hit[k];
-        const char *nm = (LARGE ? PAD4 : PAD)[p[TP_DRUM(k, DP_MODEL)] % NDM];
+        const char *nm = key_nm_par(p, k, 1);        /* (four letters: a second key of a name has a number after) */
         char t[4];
         cv_round(x, y, pw - 4, ph - 4, 4, hit > 40 ? K_NOW : k == ui.dsound ? K_PANEL2 : K_PANEL);
         if (k == ui.dsound)
@@ -5154,7 +5204,7 @@ static void draw_key_env(void)
         }
     for (int i = 0; i < n; i++)
         pen_to(&pn, px[i], py[i], K_NOW);
-    s_cat(s_cat(t, DL_SOUND_NAME[key]), open ? "'s envelope, decay off: its own length" : "'s envelope");
+    s_cat(s_cat(t, KEYNM(key)), open ? "'s envelope, decay off: its own length" : "'s envelope");
     text_fit(16, LY(16 + 84 + 3, MAIN_H - 15), F_CAP, t, 208, K_DIM);
     cv_blit(0, MAIN_Y);
 }
@@ -5196,7 +5246,7 @@ static void draw_key_filter(void)
     cv_rect(x0, y0 + hh, w, 1, K_LINE);
     if (ft == DF_OFF) {
         cv_rect(x0, y0 + 22, w, 2, K_DIM);
-        s_cat(s_cat(t, DL_SOUND_NAME[key]), ": no filter, PRESET picks one");
+        s_cat(s_cat(t, KEYNM(key)), ": no filter, PRESET picks one");
         text_fit(x0, y0 + hh + 3, LY(&FONT_XS, F_CAP), t, w, K_DIM);
         cv_blit(0, MAIN_Y);
         return;
@@ -5225,7 +5275,7 @@ static void draw_key_filter(void)
     }
     cv_rect(fc, y0, 1, hh, K_FAINT);
     {
-        char *e = s_cat(s_cat(s_cat(t, DL_SOUND_NAME[key]), ": "), tp_info_par(TP_DRUM(key, DP_FTYPE), proj.trk[trk].par)->names[ft]);
+        char *e = s_cat(s_cat(s_cat(t, KEYNM(key)), ": "), tp_info_par(TP_DRUM(key, DP_FTYPE), proj.trk[trk].par)->names[ft]);
         if (p[DP_DRIVE])
             e = s_cat(e, ", driven");
         if (p[DP_FENV] != 64)
@@ -5442,7 +5492,7 @@ static void draw_sends(void)                         /* the instrument's two sen
                       (uint32_t)(drum ? key + 1 : 0) << 16);
     if (!begin_main(h))
         return;
-    s_cat(s_cat(t, drum ? DL_SOUND_NAME[key] : TRACK_NAME[trk]), " sends to");
+    s_cat(s_cat(t, drum ? KEYNM(key) : TRACK_NAME[trk]), " sends to");
     cv_text(12, 4, &FONT_B, t, K_TEXT);
     for (int i = 0; i < 2; i++) {
         int32_t y = 40 + i * 32, v = sv[i] * 132 / 127;
@@ -5947,7 +5997,7 @@ static void draw_glfo(void)
         {                                         /* (on a kit: the sound it moves) */
             int ks = g[TP_P1];
             char kt[24];
-            s_cat(s_cat(kt, "kits: "), ks >= 1 && ks <= NDRUM ? DL_SOUND_NAME[ks - 1] : "every sound");
+            s_cat(s_cat(kt, "kits: "), ks >= 1 && ks <= NDRUM ? KEYNM(ks - 1) : "every sound");
             text_r(224, 72, &FONT_XS, kt, K_DIM);
         }
     }

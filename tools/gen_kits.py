@@ -252,7 +252,7 @@ sys.path.insert(0, __import__("os").path.dirname(__file__))
 import gen_hort_models as _hm  # noqa: E402
 import gen_hort_presets as _hp  # noqa: E402
 DM_HORT0 = 30
-_HP = {n: dict(model=DM_HORT0 + m, knobs=kn) for n, m, kn in _hp.presets()}
+_HP = {n: dict(model=DM_HORT0 + m, knobs=kn) for n, m, kn in _hp.presets()[0]}
 
 
 def hp(name, **key):                                                   # a Hortator preset on a key

@@ -158,6 +158,7 @@ static void apply_aux(int trk)
 }
 static void undo_keep(void);
 static void gen_write(void);                      /* WARP-8's generators, below */
+static void act_drum_sound(int i);
 static void gen_knob(int k, int32_t e);
 static void lane_knob(int k, int32_t e);
 static void undo_sound(int trk);
@@ -278,15 +279,14 @@ static void kit_sound_mute(int trk, int snd)     /* kit track trk's sound muted 
 {
     int k = kit_slot(trk);
     uint16_t m;
-    if (k < 0) {
-        say_no("NO SOUND MUTES", "the first four kits only");
+    if (k < 0)
         return;
-    }
     m = (uint16_t)(seq.kmute[k] ^ (1u << snd));
     seq.kmute[k] = m;
-    pats.scene[cur_scene()].kmute[k] = m;
+    if (k < NKITM)                               /* (a scene keeps the first four kits': pattern.h NKITL) */
+        pats.scene[cur_scene()].kmute[k] = m;
     mark_dirty();
-    say(m >> snd & 1u ? "MUTED" : "UNMUTED", DL_SOUND_NAME[snd]);
+    say(m >> snd & 1u ? "MUTED" : "UNMUTED", KEYNM(snd));
 }
 static void solo_end(void);
 static void set_mute(int trk, int on)
@@ -921,15 +921,15 @@ static void step_knob(int k, int32_t e)          /* k 4: the nudge (OCT-/OCT+) *
                 if (mine)
                     hit_get(trk, cur_pat(trk), sh, ui.dsound % NDRUM, &h);
                 c = mine ? h.cond : st->cond;
-                c = c < COND_AB ? c + (int)e : COND_AB + clampi(c - COND_AB + (int)e, -1, COND_NAB);
+                c = c < COND_AB ? c + (int)e : COND_AB + clampi(c - COND_AB + (int)e, -1, COND_NAB + 2);
                 if (c < 0)
                     c = 0;
                 if (c >= 100 && c < COND_AB)
                     c = COND_AB;
                 if (c == COND_AB - 1 && e < 0)
                     c = 99;
-                if (c >= COND_AB + COND_NAB)
-                    c = COND_AB + COND_NAB - 1;
+                if (c >= COND_END)
+                    c = COND_END - 1;
                 if (!mine)
                     st->cond = (uint8_t)c;
                 else if (r == HIT_OK) {
@@ -1347,7 +1347,7 @@ static void keyboard_down(int k)
         ui.kmode[k] = KM_IDLE;                   /* playing: a black key on a kit's page picks the key it edits,
                                                   * without a preview over the beat (white keys still play it) */
         ui.dsound = (uint8_t)(key_sound(k) - 1);
-        say("KEY", DL_SOUND_NAME[ui.dsound]);
+        say("KEY", KEYNM(ui.dsound));
         return;
     }
     {
@@ -1361,7 +1361,7 @@ static void keyboard_down(int k)
             if ((steps_page(ui.page) || b >= 0) && ui.dsound != note - 1) {
                 ui.dsound = (uint8_t)(note - 1);
                 if (!steps_page(ui.page) || !playing())
-                    say("KEY", DL_SOUND_NAME[ui.dsound]);
+                    say("KEY", KEYNM(ui.dsound));
             }
         } else if (!is_aux(sel_trk())) {
             chord_remember(note);
@@ -1440,11 +1440,24 @@ static void key_down(int k)
         keyboard_down(k);
         return;
     }
-    if (home_held())                             /* (HOME shifts the knobs and buttons, not the keys) */
+    if (home_held()) {                           /* WARP-8: HOME held, the keys mute: a black key its track (1-8), a
+                                                  * white key the sound of the kit shown (1-11); the last white key
+                                                  * is a fill while it is held (steps of chance "fill" play) */
+        ui.btn_used |= 1u << B_HOME;
+        if (b >= 0 && b < NTRK)
+            set_mute(b, !(seq.mute >> b & 1u));
+        else if (w >= 0 && w < NDRUM && is_drum(trk))
+            kit_sound_mute(trk, w);
+        else if (w == 15) {
+            seq.fill = 1;
+            ui.kmode[k] = KM_FILL;
+            say("FILL", "held");
+        }
         return;
+    }
     if (p == P_GLFO && w >= 0 && w < NDRUM + 1) {   /* the shared LFO on a kit: white keys 1-11 its sound, 12 every one */
         set_tp(AUX_BRAIN, TP_P1, w == NDRUM ? 0 : w + 1);
-        say("KIT SOUND", w == NDRUM ? "all" : DL_SOUND_NAME[w]);
+        say("KIT SOUND", w == NDRUM ? "all" : KEYNM(w));
         return;
     }
     if (p == P_GLFO && b >= 0 && b < NTRK) {     /* the shared LFO: black keys 1-8 the tracks it moves */
@@ -1600,7 +1613,7 @@ static void key_down(int k)
                 }
             ui.kmode[k] = KM_STEPSOUND;
             ui.held_used = 1;
-            say(DL_SOUND_NAME[b], ui.held & (ui.held - 1u) ? (on ? "on the steps" : "off the steps")
+            say(KEYNM(b), ui.held & (ui.held - 1u) ? (on ? "on the steps" : "off the steps")
                                                               : on ? "on the step" : "off the step");
             mark_dirty();
             return;
@@ -1778,6 +1791,9 @@ static void key_up(int k)
         chord_del(ui.knote[k]);
         if (ui.rec_armed && !playing())
             step_rec_key_up();
+        break;
+    case KM_FILL:
+        seq.fill = 0;
         break;
     case KM_SOUND:
         engine_key(trk, ui.knote[k], 0, 0);
@@ -2369,10 +2385,10 @@ static void presets(int32_t e)
             while (!(m >> n & 1u));
             ui.dsound = (uint8_t)n;
             ui.held_used = 1;
-            say("SOUND", DL_SOUND_NAME[ui.dsound]);
+            say("SOUND", KEYNM(ui.dsound));
         } else if (is_drum(trk)) {
             ui.dsound = (uint8_t)((ui.dsound + d + DL_NSOUND) % DL_NSOUND);
-            say("SOUND", DL_SOUND_NAME[ui.dsound]);
+            say("SOUND", KEYNM(ui.dsound));
         } else if ((ui.btn >> B_SEQ & 1u) && !is_aux(trk))   /* SEQ held (the keys a keyboard): the track's sound */
             preset_step(trk, d);
         else if (is_seqt(trk))
@@ -2413,7 +2429,7 @@ static void presets(int32_t e)
         else if (is_drum(trk) && (ui.page == P_ENGINE || ui.page == P_PLAY || ui.page == P_PLAY2 || ui.page == P_ENV ||
                                   ui.page == P_SENDS)) {
             ui.dsound = (uint8_t)((ui.dsound + d + DL_NSOUND) % DL_NSOUND);
-            say("KEY", DL_SOUND_NAME[ui.dsound]);
+            say("KEY", KEYNM(ui.dsound));
         } else if (!is_aux(trk) && ui.page >= P_ENGINE && ui.page <= P_PLAYERS3)
             preset_step(trk, d);
         (void)t;
@@ -2568,7 +2584,25 @@ static void list_change_do(int32_t e)
         case A_PRESET: ui.pick_preset = (uint16_t)((ui.pick_preset + d + NPRESETS) % (NPRESETS ? NPRESETS : 1)); break;
         case A_SAVE_PRESET: ui.pick_slot = (uint8_t)((ui.pick_slot + d + NUSER_PRESETS) % NUSER_PRESETS); break;
         case A_KIT: ui.pick_kit = (uint8_t)((ui.pick_kit + d + NKITS) % NKITS); break;
-        case A_DRUM_SOUND: ui.pick_dsound = (uint8_t)((ui.pick_dsound + d + NHPRESET) % NHPRESET); break;
+        case A_DRUM_TYPE: case A_DRUM_SOUND: {   /* a type's first sound, or the next of the type: put on the key
+                                                  * shown and played */
+            int ty = ui.pick_dtype % NHPT, lo, n;
+            if (lst.row[lst.sel].id == A_DRUM_TYPE) {
+                ty = (ty + d + NHPT) % NHPT;
+                ui.pick_dtype = (uint8_t)ty;
+                ui.pick_dsound = HPT_START[ty];
+            } else {
+                lo = HPT_START[ty];
+                n = HPT_START[ty + 1] - lo;
+                ui.pick_dsound = (uint8_t)(lo + ((ui.pick_dsound - lo + d) % n + n) % n);
+            }
+            if (is_drum(sel_trk())) {
+                act_drum_sound(ui.pick_dsound % NHPRESET);
+                engine_key(sel_trk(), ui.dsound % DL_NSOUND + 1, 1, 127);
+                engine_key(sel_trk(), ui.dsound % DL_NSOUND + 1, 0, 0);
+            }
+            break;
+        }
         case A_SAVE_KIT: ui.pick_kslot = (uint8_t)((ui.pick_kslot + d + NUSER_KITS) % NUSER_KITS); break;
         case A_LOAD_PROJ: ui.pick_slot = (uint8_t)((ui.pick_slot + d + NPROJ) % NPROJ); break;
         case A_SAVE_TO: ui.pick_save = (uint8_t)((ui.pick_save + d + NPROJ) % NPROJ); break;
@@ -3006,7 +3040,7 @@ static void act_paste_key(void)
     memcpy(par + TP_DRUMX(k, 0), proj.trk[src].par + TP_DRUMX(sk, 0), DPX_N);
     engine_set_all(trk);
     mark_dirty();
-    say("PASTED", DL_SOUND_NAME[sk]);
+    say("PASTED", KEYNM(sk));
 }
 /* ---- WARP-8's generators (pages.c gen_result, lane_*): each write is the playing pattern of the kit shown, kept
  * for undo; the other keys' steps and the steps' tricks, chances and locks stay ---- */
@@ -3511,7 +3545,7 @@ static void act_remove_note(int row)             /* a step held: the row's note 
         step_fresh_if_empty(st);
         ui.held_used = 1;
         mark_dirty();
-        say("REMOVED", DL_SOUND_NAME[snd - 1]);
+        say("REMOVED", KEYNM(snd - 1));
         return;
     }
     if (row < 0 || row >= SN || !st->note[row])
@@ -3730,7 +3764,7 @@ static void action_run(int a)
     case A_COPY_KEY:
         key_clip = (uint8_t)(sel_trk() + 1);
         key_clip_k = (uint8_t)(ui.dsound % DL_NSOUND);
-        say("COPIED", DL_SOUND_NAME[key_clip_k]);
+        say("COPIED", KEYNM(key_clip_k));
         break;
     case A_PASTE_KEY: act_paste_key(); break;
     case A_COPY_SCENE: {
@@ -3792,7 +3826,7 @@ static void action_run(int a)
     case A_SCRAMBLE: act_scramble(); say("SCRAMBLED", 0); break;
     case A_SAVE_PRESET: act_save_preset(ui.pick_slot % NUSER_PRESETS); return;
     case A_KIT: act_kit(ui.pick_kit % NKITS); break;
-    case A_DRUM_SOUND: act_drum_sound(ui.pick_dsound % NHPRESET); break;
+    case A_DRUM_SOUND: case A_DRUM_TYPE: break;  /* (picked: already on the key) */
     case A_SAVE_KIT: act_save_kit(ui.pick_kslot % NUSER_KITS); return;
     case A_INIT:
         undo_sound(sel_trk());

@@ -904,7 +904,7 @@ static int kit_slot(const seq_t *s, int t)
     int k = 0;
     for (int i = 0; i < t; i++)
         k += is_drum(s, i);
-    return k < NKITM ? k : -1;
+    return k < NKITL ? k : -1;
 }
 static int kit_muted(const seq_t *s, int t, int sound)
 {
@@ -1138,7 +1138,8 @@ static int cond_plays(seq_t *s, int t, int c)
         cond_ab(c - COND_AB, &a, &b);
         if ((int)(tr->pass % (uint32_t)b) != a - 1)
             return 0;
-    }
+    } else if (c == COND_FILL || c == COND_NFILL)
+        return (s->fill != 0) == (c == COND_FILL);
     return 1;
 }
 

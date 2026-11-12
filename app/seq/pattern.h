@@ -18,6 +18,8 @@ enum { AUX_BRAIN = NTRK, AUX_PUNCH, AUX_FX1, AUX_FX2, AUX_WEAVE, NALLTRK };   /*
 #define NBAR 4
 #define SN 4                          /* notes a step may hold */
 #define NKITM 4                       /* kit tracks a scene keeps sound mutes for (the first four kits) */
+#define NKITL 8                       /* kit tracks whose sounds mute (WARP-8: every track a kit); past NKITM a
+                                       * mute is the moment's, no scene's */
 #define NSCENE 32                     /* two pages of the 16 white keys (OCT on Arrange and Song) */
 #define NSONG 64                      /* scene slots in the song */
 #define SONG_BARS 64                  /* the most bars a song slot plays */
@@ -60,6 +62,9 @@ extern const uint8_t SC_DEFAULT[NSC];      /* pulse 3 (= 4), hold 3, multiply 1,
  * 1:2 2:2 1:3 2:3 3:3 1:4 ... 8:8: on the A-th of every B passes of the pattern) */
 #define COND_AB 100
 #define COND_NAB 35
+#define COND_FILL (COND_AB + COND_NAB)   /* WARP-8: only while a fill is held (seq_t.fill) */
+#define COND_NFILL (COND_FILL + 1)       /* and only while none is */
+#define COND_END (COND_FILL + 2)
 
 typedef struct {
     uint8_t note[SN];                 /* MIDI notes, 0 = none (a kit track: its sounds as bits, seq.h kit_*) */
