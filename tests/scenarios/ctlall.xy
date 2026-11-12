@@ -23,13 +23,18 @@ expect par1.d1.k2 48
 expect par1.d2.k2 45
 # the kit's own knobs (Character) are not the drums': EDIT held changes nothing else there
 shot ctlall.png
-# HOME + REC: the hold's turn taken back (the single knob's first, then every drum's)
+# HOME + REC: the sound's turns taken back (those made in one moment are one undo)
 press HOME
 tap REC
 release HOME
 wait 40
-expect par1.d1.k2 47
-# the drum's list: RANDOM SOUND puts one of its type's sounds on it
+expect par1.d1.k2 42
+expect par1.d2.k2 40
+# the drum's list: RANDOM SOUND puts one of its type's sounds on the drum (a Hortator model: 30 and up)
 tap SEL
 wait 40
-said list
+row RANDOM SOUND
+tap SEL
+wait 40
+said DRUM SOUND
+expect par1.d1.model >29
