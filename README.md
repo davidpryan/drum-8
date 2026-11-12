@@ -18,19 +18,28 @@ What is different from LOOM-8:
 - **DRUM SOUND** in a kit key's SELECT list: 143 of Hortator's factory presets by type (SOUND TYPE), each put on the
   key shown and played as ALGORITHM picks it. On a kit's pads the PRESETS knob steps through kits.
 - **Drums named by their models**, the kit's own mark left off where every key carries it (the TRX kit: bd, sd, ch).
-- **GLO held, the keys mute**, from any page: a black key a drum of the kit, the first three white keys the kit, the
-  sample track and the slice track; white 15 clears every mute; the last white key is a fill while held, for steps
-  whose chance is "fill". Knob 1 with GLO held: mutes at once, or at the next bar line.
+- **One rule for the keys.** With the kit selected a black key is a drum and a white key is a step of the picked
+  drum, on every page; holding a step, a drum or a button gives its knobs and keys. `docs/WARP-8.md` is the manual
+  for all of it.
+- **GLO held, the keys mute**, from any page: a black key a drum (held on: that drum alone), the first three white
+  keys the kit, the sample track and the slice track; white 15 clears every mute; the last white key is a fill while
+  held. Knob 1 with GLO held: mutes at once, or at the next bar line.
+- **HOME held, the white keys are the scenes**, from any page of the kit. **FX held, the keys are the throws.** Each
+  held button draws its keys on the screen.
 - **Six more factory kits** made of those presets: TRX, EFM, 808, 909, Modern, Hard.
-- **One kit, eleven drums, no menus.** HOME on a kit is the whole pattern, a row a drum, with the tempo, every drum's
-  length, the swing and the kit on its knobs. ALGORITHM picks the drum on HOME, SEQ and EDIT; PRESETS is the kit on
-  HOME, the pattern on SEQ, the drum's next sound on EDIT. HOME held, ALGORITHM is the track. A lane held on the grid,
-  knob 4 is that drum's own length.
-- **A kit's Steps page is a grid** of its eleven keys, each a lane of sixteen steps: a black key picks the lane, the
-  white keys write it.
-- **Generators**: a lane held on the grid has its hits, rotation, variation and clearing on the knobs; the Generate
-  page (SEQ's third on a kit) previews Euclid, mutate and Grids on the grid and SEL writes them. `docs/GRIDS-PERFORM.md`
-  is a plan for Grids played live.
+- **One kit, eleven drums, no menus.** HOME on the kit is the whole pattern, a row a drum, and its white keys write
+  the picked drum's steps; its knobs are the tempo, every drum's length, the swing and the kit. ALGORITHM picks the
+  drum; PRESETS is the kit on HOME, the pattern on SEQ, the drum's next sound on EDIT. HOME held, ALGORITHM is the
+  track.
+- **Steps is the picked drum's lane**: a bar each step's velocity, its chance, ratchets and locks marked, the other
+  drums thin beneath. Its knobs are the drum's own four, as EDIT's first page (`docs/MACROS.md`).
+- **A held step**: velocity, chance, ratchets and nudge on the knobs; SELECT for its length and pitch. On the sound
+  pages a held step locks the page's knobs. A drum held on HOME or Steps: its hits, rotation, variation and its own
+  length.
+- **EDIT held**, a knob turns that knob on all eleven drums. **RANDOM SOUND** in a drum's list.
+- **Generators**: the Generate page (SEQ's third on the kit) previews Euclid, mutate and Grids and SEL writes them.
+  **GRIDS is also a throw**: FX held and the fifteenth white key, the kick, snare and hat play from the drum map with
+  X, Y and FILL on the knobs, and SEL keeps what plays.
 - **Voices**: eight Hortator hits at once, eight of LOOM-8's 909 models, two strings, twelve sample or slice voices.
 - **Its own identity**: the package is `warp.fwsc`, identity `FM-1_18`, USB name `WARP-8 FM-1`, and its projects carry
   their own tag, so it starts fresh on an FM-1 that had LOOM-8 (LOOM-8's projects are not read; a LOOM-8 backup's

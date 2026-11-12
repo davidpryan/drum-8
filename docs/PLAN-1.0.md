@@ -1,6 +1,7 @@
 # Plan: WARP-8 as a drum machine with one grammar
 
-Status: a plan, written 2026-11-11 from the concept report (https://claude.ai/artifact/7feFvqs3u71XkB77NMY2iQ) after a
+Status: **phases 0 to 9 and the manual are built** on branch `grammar` (2026-11-11, simulator only; section 8 says
+what was built and where it departs from the plan). Written 2026-11-11 from the concept report (https://claude.ai/artifact/7feFvqs3u71XkB77NMY2iQ) after a
 pass over the UI against the code at `5d92bf5` (release 0.5). Nothing here is built. Where the concept and this file
 differ, this file is right: section 2 lists what the pass changed and why.
 
@@ -306,10 +307,18 @@ Phases 1 to 6, 8 and 9 need none of the open ones answered except D4 (phase 5) a
 | 0.4 (from notes) | 574,560 | 7,004 | not recorded | 76 | |
 | Phase 0 (0.5, `5d92bf5`) | 574,680 | 6,884 | 17,292 (pool 326,772 of 344,064); .data+.bss 94,740 of 98,304 | 71 of 71 | pass, normal and large type |
 | Phase 1 | 575,316 | 6,248 | 17,292; .data+.bss 94,748 | 72 of 72 | pass, normal and large type |
-| Phase 2 | | | | | |
-| Phase 3 | | | | | |
-| Phase 4 | | | | | |
-| Phase 5 | | | | | |
+| Phase 2 | not measured | | | 55 scenarios | |
+| Phase 3 | 576,384 | 5,180 | 17,292 | 55 scenarios | |
+| Reclaim (R) | 573,136 | 8,428 | 17,292 | 55 scenarios | |
+| Phase 4 | 574,784 | 6,780 | 17,292 | 56 scenarios | |
+| Phase 5 | not measured | | | 57 scenarios | |
+| Phase 6 | not measured | | | 58 scenarios | |
+| Phase 7 | 577,088 | 4,476 | 17,292 | 59 scenarios | |
+| Phase 8 | 577,664 | 3,900 | 17,292 | 60 scenarios | |
+| Phase 9 | 577,840 | 3,724 | 17,292; .data+.bss 94,724 | FINALROW | |
+
+"Scenarios" rows were checked with every `tests/scenarios/*.xy` in the simulator; the full suite (unit tests,
+update path, layout sweeps, browser build) ran after phases 0, 1 and 9.
 
 ---
 
@@ -320,3 +329,36 @@ Phases 1 to 6, 8 and 9 need none of the open ones answered except D4 (phase 5) a
 2. A heavy kit playing: any dropouts? (`tools/hw_bench.py`, `tools/measure_load.sh`.)
 3. Hold GLO or FX with one hand and reach the keys with the other: comfortable?
 4. Is 200 ms right for a layer map, and 700 ms for a step's tap?
+
+---
+
+## 8. What was built (2026-11-11), and where it departs from this plan
+
+Built, each with a scenario: phase 1 `glomutes.xy`; 2 `homesteps.xy`; 3 `stepsanywhere.xy`; 4 `layers.xy`;
+5 `macros.xy`; 6 `lane.xy`; 7 `ratchet.xy`; 8 `grids.xy`; 9 `ctlall.xy`. The manual is `docs/WARP-8.md`.
+
+Departures:
+
+- **Phase R** did not delete pages. It taught the build what 0.5 already guarantees (one kit, on track 1; three
+  instrument tracks; sample and slice the only engines), so the compiler drops the rest: `is_drum`, `is_midi`,
+  `is_acid`, `sel_trk` in `pages.c`, `is_drum` in `seq.c`, `EG_LIVE` where the engine is read. 3.2 KB. A track or
+  engine outside those now behaves as the kit or as a sample track; `solo.xy` was rewritten for the reachable tracks.
+- **Phase 3:** a drum held is its lane on the pages where a step's knobs are its trig (HOME, Steps, the effects, Mix,
+  ARP), not on the sound pages. There, holding a drum's key while turning a knob is how a sound is shaped, and the
+  lane's HITS knob would rewrite the pattern under the hand.
+- **Phase 4:** FX held is not a drawn map of its own: the page becomes Throws for as long as FX is held, which
+  already draws its keys. GLO and HOME have `draw_layer`.
+- **Phase 5:** no knob was reordered. 65 of the 73 models already have pitch on knob 1 and length on knob 2
+  (`docs/MACROS.md` lists the eight that differ, for David). Steps' knobs became the drum's four; the steps' scale
+  went to Bar's knob 3 (the kit's swing is HOME's), not to a list row.
+- **Phase 7:** the old knobs were kept one SELECT turn away while a step is held (length and pitch in semitones),
+  since a TUNE lock is not the same thing as the step's pitch.
+- **Phase 8:** steps 1 and 2 of `GRIDS-PERFORM.md` and "keep". GRIDS is a key of the Throws page (the fifteenth white
+  key, the first one free), not a `PX_*` bit: every key of the two octaves has a throw. So it is not recorded on the
+  THROW track. Not built: the hollow cells over the grid, chaos, accents, the thirty-second notes, saving a latched
+  GRIDS. The sequencer reads the map through `seq_t.grids_fn`, set by the UI, because the map's table lives in the
+  UI's unit.
+- **Phase 9:** as planned. The undo joins turns made within a moment into one step back, as elsewhere.
+- **Phase 10** was not started: each item needs its note agreed first. About 3.7 KB of flash is left for it.
+- **Help cards** for GLO are gone (its map replaces them); FX, EDIT and the others keep theirs. Their text was not
+  rewritten.
