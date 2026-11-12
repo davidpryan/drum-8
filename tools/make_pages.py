@@ -189,7 +189,7 @@ Installing is at your own risk. It starts with fresh projects: back up @@LOOM@@ 
   <li><b>Held buttons, from any page</b>, each drawing its keys: GLO for the mutes, solo and a fill (at once or at the bar line), FX for the throws. EDIT held, a knob turns every drum's.</li>
   <li><b>A Scenes page</b> beside HOME: every track's pattern in the scene on a knob of its own, the tracks' mutes on the black keys, the kit's drums and their mutes, the scenes on the white keys.</li>
   <li><b>ALL</b> on an effect's Mix strip: every track into FX I or FX II.</li>
-  <li><b>An FX sequence</b>, a fifth sequence beside the kit, the sample track, the slice track and the throws: its steps hold amounts for the two effects, in eleven lanes, and can ramp from one to the next.</li>
+  <li><b>An FX sequence</b>, a fifth sequence beside the kit, the sample track, the slice track and the throws: its steps hold amounts for the two effects, in eleven lanes, and can ramp from one to the next. It looks and plays as the throws' sequence does.</li>
   <li><b>Twenty-four throws</b>: @@LOOM@@'s twelve, and twelve more in the second octave: thin, roll, buzz, soft, hard, rise, drop, down, a low-pass, delay and reverb throws, a crusher.</li>
   <li>@@LOOM@@'s <b>sequencer</b>: eight patterns of up to 64 steps, tricks and parameter locks on any step, weave, throws, scenes and a song.</li>
   <li>Two <b>send effects</b>, a mixer with EQ and a compressor on the master.</li>
