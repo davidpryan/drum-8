@@ -315,7 +315,8 @@ Phases 1 to 6, 8 and 9 need none of the open ones answered except D4 (phase 5) a
 | Phase 6 | not measured | | | 58 scenarios | |
 | Phase 7 | 577,088 | 4,476 | 17,292 | 59 scenarios | |
 | Phase 8 | 577,664 | 3,900 | 17,292 | 60 scenarios | |
-| Phase 9 | 577,840 | 3,724 | 17,292; .data+.bss 94,724 | FINALROW | |
+| Phase 9 | 577,840 | 3,724 | 17,292; .data+.bss 94,724 | 61 scenarios | |
+| Final (`seq.c` restored) | 577,504 | 4,060 | 17,292; .data+.bss 94,724 | FINALROW | |
 
 "Scenarios" rows were checked with every `tests/scenarios/*.xy` in the simulator; the full suite (unit tests,
 update path, layout sweeps, browser build) ran after phases 0, 1 and 9.
@@ -341,7 +342,8 @@ Departures:
 
 - **Phase R** did not delete pages. It taught the build what 0.5 already guarantees (one kit, on track 1; three
   instrument tracks; sample and slice the only engines), so the compiler drops the rest: `is_drum`, `is_midi`,
-  `is_acid`, `sel_trk` in `pages.c`, `is_drum` in `seq.c`, `EG_LIVE` where the engine is read. 3.2 KB. A track or
+  `is_acid`, `sel_trk` in `pages.c`, `EG_LIVE` where the engine is read. 3.2 KB. (The same in `seq.c` broke the
+  sequencer's own unit test, which runs synth tracks, and was taken back; the image came out smaller without it.) A track or
   engine outside those now behaves as the kit or as a sample track; `solo.xy` was rewritten for the reachable tracks.
 - **Phase 3:** a drum held is its lane on the pages where a step's knobs are its trig (HOME, Steps, the effects, Mix,
   ARP), not on the sound pages. There, holding a drum's key while turning a knob is how a sound is shaped, and the
@@ -359,6 +361,6 @@ Departures:
   GRIDS. The sequencer reads the map through `seq_t.grids_fn`, set by the UI, because the map's table lives in the
   UI's unit.
 - **Phase 9:** as planned. The undo joins turns made within a moment into one step back, as elsewhere.
-- **Phase 10** was not started: each item needs its note agreed first. About 3.7 KB of flash is left for it.
+- **Phase 10** was not started: each item needs its note agreed first. About 4 KB of flash is left for it.
 - **Help cards** for GLO are gone (its map replaces them); FX, EDIT and the others keep theirs. Their text was not
   rewritten.
