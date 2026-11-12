@@ -305,7 +305,7 @@ Phases 1 to 6, 8 and 9 need none of the open ones answered except D4 (phase 5) a
 |---|---|---|---|---|---|
 | 0.4 (from notes) | 574,560 | 7,004 | not recorded | 76 | |
 | Phase 0 (0.5, `5d92bf5`) | 574,680 | 6,884 | 17,292 (pool 326,772 of 344,064); .data+.bss 94,740 of 98,304 | 71 of 71 | pass, normal and large type |
-| Phase 1 | | | | | |
+| Phase 1 | 575,316 | 6,248 | 17,292; .data+.bss 94,748 | 72 of 72 | pass, normal and large type |
 | Phase 2 | | | | | |
 | Phase 3 | | | | | |
 | Phase 4 | | | | | |

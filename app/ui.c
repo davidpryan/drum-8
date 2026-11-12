@@ -277,12 +277,23 @@ static int kit_mute_hold(void)
             return i;
     return -1;
 }
+/* WARP-8: GLO held, KNOB 1: a mute waits for the bar line while the sequencer plays (seq.c applies kmute_cue and
+ * mute_cue there). The scene takes the mute at the press, so a save or a scene's recall has what was asked for */
+static int mutes_wait(void) { return (proj.rsv[3] & MUTES_AT_BAR) && seq.playing; }
 static void kit_sound_mute(int trk, int snd)     /* kit track trk's sound muted or back in the scene playing */
 {
     int k = kit_slot(trk);
     uint16_t m;
     if (k < 0)
         return;
+    if (k == 0 && mutes_wait()) {
+        seq.kmute_cue = (uint16_t)(seq.kmute_cue ^ (1u << snd));
+        m = (uint16_t)(seq.kmute[0] ^ seq.kmute_cue);
+        pats.scene[cur_scene()].kmute[0] = m;
+        mark_dirty();
+        say(m >> snd & 1u ? "MUTES AT THE BAR" : "BACK AT THE BAR", KEYNM(snd));
+        return;
+    }
     m = (uint16_t)(seq.kmute[k] ^ (1u << snd));
     seq.kmute[k] = m;
     if (k < NKITM)                               /* (a scene keeps the first four kits': pattern.h NKITL) */
@@ -306,6 +317,31 @@ static void set_mute(int trk, int on)
     seq.mute = m;
     pats.scene[cur_scene()].mute = m;
     mark_dirty();
+}
+static void track_mute_key(int t)                /* WARP-8, GLO held: a track's white key */
+{
+    if (mutes_wait()) {
+        uint16_t m;
+        seq.mute_cue = (uint16_t)(seq.mute_cue ^ (1u << t));
+        m = (uint16_t)(seq.mute ^ seq.mute_cue);
+        pats.scene[cur_scene()].mute = m;
+        mark_dirty();
+        say(m >> t & 1u ? "MUTES AT THE BAR" : "BACK AT THE BAR", TRACK_NAME[t]);
+        return;
+    }
+    set_mute(t, !(seq.mute >> t & 1u));
+    say(seq.mute >> t & 1u ? "MUTED" : "UNMUTED", TRACK_NAME[t]);
+}
+static void mutes_clear(void)                    /* WARP-8, GLO held, white 15: every drum and track back, at once */
+{
+    seq.kmute_cue = 0;
+    seq.mute_cue = 0;
+    for (int t = 0; t < 3; t++)
+        set_mute(t, 0);
+    seq.kmute[0] = 0;
+    pats.scene[cur_scene()].kmute[0] = 0;
+    mark_dirty();
+    say("MUTES", "cleared");
 }
 /* a preset is the sound (its sends too); the track's level and pan stay its own */
 static void load_preset(int trk, const preset_t *pr)
@@ -1444,16 +1480,17 @@ static void key_down(int k)
         keyboard_down(k);
         return;
     }
-    if (home_held()) {                           /* WARP-8: HOME held, the keys mute: a black key a drum of the kit, the
+    if (glo_held()) {                            /* WARP-8: GLO held, the keys mute: a black key a drum of the kit, the
                                                   * first three white keys the kit, the sample track, the slice track;
-                                                  * the last white key is a fill while it is held */
-        ui.btn_used |= 1u << B_HOME;
+                                                  * white 15 clears them all; the last white key is a fill while held
+                                                  * (KNOB 1: at once or at the bar, mutes_wait) */
         if (b >= 0 && b < NDRUM)
             kit_sound_mute(0, b);
-        else if (w >= 0 && w < 3) {
-            set_mute(w, !(seq.mute >> w & 1u));
-            say(seq.mute >> w & 1u ? "MUTED" : "UNMUTED", TRACK_NAME[w]);
-        } else if (w == 15) {
+        else if (w >= 0 && w < 3)
+            track_mute_key(w);
+        else if (w == 14)
+            mutes_clear();
+        else if (w == 15) {
             seq.fill = 1;
             ui.kmode[k] = KM_FILL;
             say("FILL", "held");
@@ -1507,8 +1544,13 @@ static void key_down(int k)
                 }
             }
             scene_key(k, ui.scene_pg * 16 + w, proj.rsv[2] & SCENES_AT_END ? SCENE_END : SCENE_BAR);
-        } else if (b >= 0 && b < NDRUM && p == P_ARRANGE && kit_ui()) {   /* WARP-8, HOME on a kit: the drum's mute */
-            kit_sound_mute(trk, b);
+        } else if (b >= 0 && b < NDRUM && p == P_ARRANGE && kit_ui()) {   /* WARP-8, HOME on a kit: the drum picked
+                                                  * (heard when stopped), as on Steps; its mute is GLO held */
+            ui.kmode[k] = playing() ? KM_IDLE : KM_SOUND;
+            ui.dsound = (uint8_t)b;
+            ui.knote[k] = (uint8_t)(b + 1);
+            if (!playing())
+                engine_key(trk, b + 1, 1, 127);
         } else if (b >= 0 && b < NSEQT) {
             ui.kmode[k] = KM_MUTE;
             ui.knote[k] = (uint8_t)b;
@@ -1990,6 +2032,12 @@ static void holds(void)
         }
     if (home_held() && now - ui.btn_t[B_HOME] >= CARD_MS)
         ui.btn_used |= 1u << B_HOME;
+    if (!seq.playing && (seq.kmute_cue || seq.mute_cue)) {   /* stopped with mutes waiting for a bar: now */
+        seq.kmute[0] ^= seq.kmute_cue;
+        seq.mute ^= seq.mute_cue;
+        seq.kmute_cue = 0;
+        seq.mute_cue = 0;
+    }
     if (ui.solo && seq.mute != (uint16_t)(((1u << NSEQT) - 1u) & ~ui.solo)) {   /* a scene changed the mutes under a
                                                                               * solo: its mutes to go back to, the solo kept */
         ui.solo_mute = seq.mute;
@@ -2336,6 +2384,14 @@ static void knob_do(int k, int32_t e)
         ui.btn_used |= 1u << B_HOME;
     if ((ui.btn >> B_SEL & 1u) && !lst.open && !ui.ask) {   /* SEL held: the knob's automation cleared */
         knob_clear(k);
+        return;
+    }
+    if (glo_held() && !lst.open) {               /* WARP-8: GLO held, KNOB 1: mutes at once or at the bar */
+        if (k == 0) {
+            proj.rsv[3] = (uint8_t)(e > 0 ? proj.rsv[3] | MUTES_AT_BAR : proj.rsv[3] & ~MUTES_AT_BAR);
+            mark_dirty();
+            say("MUTES", e > 0 ? "at the bar" : "at once");
+        }
         return;
     }
     if (rec_settings()) {
@@ -4234,7 +4290,33 @@ static void leds(void)
         if (ui.page >= PAGE_BTN[i].first && ui.page < PAGE_BTN[i].first + PAGE_BTN[i].n)
             b |= 1u << PAGE_BTN[i].btn;
     if (proj.lights) {
-        if ((steps_page(ui.page) || kit_edit_steps()) && is_seqt(trk)) {   /* (a kit's EDIT pages: its steps too) */
+        if (glo_held() && !lst.open) {           /* WARP-8, GLO held: the drums and tracks sounding lit, the muted
+                                                  * dim, one waiting for the bar blinking; clear dim, the fill mid */
+            int blink = (seq.step_tick & 3u) < 2u;
+            for (i = 0; i < NDRUM; i++) {
+                uint32_t m = 1u << BLACK_K[i];
+                if (seq.kmute_cue >> i & 1u)
+                    k |= blink ? m : 0;
+                else if (seq.kmute[0] >> i & 1u)
+                    dim |= m;
+                else
+                    k |= m;
+            }
+            for (i = 0; i < 3; i++) {
+                uint32_t m = 1u << WHITE_K[i];
+                if (seq.mute_cue >> i & 1u)
+                    k |= blink ? m : 0;
+                else if (seq.mute >> i & 1u)
+                    dim |= m;
+                else
+                    k |= m;
+            }
+            dim |= 1u << WHITE_K[14];
+            if (seq.fill)
+                k |= 1u << WHITE_K[15];
+            else
+                mid |= 1u << WHITE_K[15];
+        } else if ((steps_page(ui.page) || kit_edit_steps()) && is_seqt(trk)) {   /* (a kit's EDIT pages: its steps too) */
             const tpat_t *tp = tpat(trk);
             int ph = eng_step[trk];
             for (i = 0; i < 16; i++) {

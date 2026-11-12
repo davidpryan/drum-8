@@ -18,8 +18,9 @@ What is different from LOOM-8:
 - **DRUM SOUND** in a kit key's SELECT list: 143 of Hortator's factory presets by type (SOUND TYPE), each put on the
   key shown and played as ALGORITHM picks it. On a kit's pads the PRESETS knob steps through kits.
 - **Drums named by their models**, the kit's own mark left off where every key carries it (the TRX kit: bd, sd, ch).
-- **HOME held, the keys mute**: a black key its track, a white key a drum of the kit shown; the last white key is a
-  fill, for steps whose chance is "fill".
+- **GLO held, the keys mute**, from any page: a black key a drum of the kit, the first three white keys the kit, the
+  sample track and the slice track; white 15 clears every mute; the last white key is a fill while held, for steps
+  whose chance is "fill". Knob 1 with GLO held: mutes at once, or at the next bar line.
 - **Six more factory kits** made of those presets: TRX, EFM, 808, 909, Modern, Hard.
 - **One kit, eleven drums, no menus.** HOME on a kit is the whole pattern, a row a drum, with the tempo, every drum's
   length, the swing and the kit on its knobs. ALGORITHM picks the drum on HOME, SEQ and EDIT; PRESETS is the kit on

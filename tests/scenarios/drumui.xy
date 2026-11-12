@@ -1,26 +1,26 @@
-# WARP-8: HOME held, the keys mute: a black key a drum of the kit (from any track), the first three white keys the
+# WARP-8: GLO held, the keys mute: a black key a drum of the kit (from any track), the first three white keys the
 # kit, the sample track, the slice track; the last white key held is a fill, and a step's chance can be "fill"
 wait 300
 listen
 expect trk 1
-press HOME
+press GLO
 tapkey b2
-release HOME
+release GLO
 wait 40
 expect kmute 4
-press HOME
+press GLO
 tapkey b2
-release HOME
+release GLO
 wait 40
 expect kmute 0
-press HOME
+press GLO
 tapkey w1
-release HOME
+release GLO
 wait 40
 expect mute 2
-press HOME
+press GLO
 tapkey w1
-release HOME
+release GLO
 wait 40
 expect mute 0
 # from the sample track too: the kit's fourth drum
@@ -29,14 +29,14 @@ turn ALGO 1
 release HOME
 wait 40
 expect trk 2
-press HOME
+press GLO
 tapkey b3
-release HOME
+release GLO
 wait 40
 expect kmute 8
-press HOME
+press GLO
 tapkey b3
-release HOME
+release GLO
 press HOME
 turn ALGO -1
 release HOME
@@ -60,10 +60,10 @@ tap PLAY
 wait 1500
 tap PLAY
 expect drumhits 2
-press HOME
+press GLO
 key w15 down
 wait 40
-release HOME
+release GLO
 said FILL
 tap PLAY
 wait 1500

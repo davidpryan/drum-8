@@ -1,0 +1,59 @@
+# WARP-8: GLO held, the keys mute from any page and its release opens no page: black keys the drums, white 1-3 the
+# tracks, white 15 clears them all. KNOB 1 with GLO held: a mute waits for the bar line while it plays
+wait 300
+listen
+expect trk 1
+expect page Steps
+press GLO
+tapkey b0
+tapkey b4
+tapkey w2
+release GLO
+wait 40
+expect page Steps
+expect kmute 17
+expect mute 4
+press GLO
+tapkey w14
+release GLO
+wait 40
+said MUTES
+expect kmute 0
+expect mute 0
+expect page Steps
+# at the bar: asked while it plays, nothing until the bar line; then the mute
+press GLO
+turn K1 1
+release GLO
+wait 40
+said MUTES
+expect page Steps
+tap PLAY
+wait 300
+press GLO
+tapkey b1
+tapkey w1
+release GLO
+wait 40
+expect kmute 0
+expect mute 0
+wait 2200
+expect kmute 2
+expect mute 2
+# and back, waiting again; a stop takes what still waits
+press GLO
+tapkey b1
+release GLO
+wait 40
+expect kmute 2
+tap PLAY
+wait 100
+expect kmute 0
+# at once again
+press GLO
+turn K1 -1
+tapkey b2
+release GLO
+wait 40
+expect kmute 4
+expect page Steps

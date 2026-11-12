@@ -1,4 +1,4 @@
-# WARP-8's flow on a kit. HOME: a row a drum; ALGORITHM picks the drum, a black key mutes one, knob 4 and PRESETS the
+# WARP-8's flow on a kit. HOME: a row a drum; ALGORITHM picks the drum (GLO held, a black key mutes one), knob 4 and PRESETS the
 # kit, knob 2 every drum's length, knob 1 the tempo. SEQ: PRESETS the pattern; a lane held, knob 4 its own length.
 # HOME held, ALGORITHM is the track
 wait 300
@@ -10,10 +10,15 @@ expect page Arrange
 turn ALGO 2
 wait 40
 said DRUM
+press GLO
 tapkey b3
+release GLO
 wait 40
 expect kmute 8
+expect page Arrange
+press GLO
 tapkey b3
+release GLO
 wait 40
 expect kmute 0
 # the kit: knob 4, then PRESETS (Loom, Nylon, Elastane); the first drum's model follows

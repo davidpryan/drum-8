@@ -60,6 +60,7 @@ static const theme_t *theme = &THEMES[THEME_BW];
 #define CC_OUT_OFF 16u                                /* proj.rsv[2]: no MIDI CCs out (midicc.c; on by default) */
 #define SCENES_OUT 32u                                 /* proj.rsv[2]: a scene change's Program Change out (midicc.c;
                                                         * off by default, old and new projects alike) */
+#define MUTES_AT_BAR 4u                               /* proj.rsv[3]: WARP-8, GLO held: a mute waits for the bar line */
 #define SCALE_LOCK 2u                                 /* proj.rsv[3]: the keys and MIDI in snap to the conductor's key and
                                                         * scale on a synth track (ui.c lock_note, engine.c eng_lock) */
 #define CC_IN_ENDLESS 1u                               /* proj.rsv[3]: CCs in from endless encoders, each a turn
@@ -669,6 +670,7 @@ static step_t *chord_step(int t, int i)              /* chord mode's held cell i
     return &pats.pat[is_seqt(t) ? t : 0][ui.chord_pat % NPATT].st[(ui.chord_bar * 16 + i) % NSTEP];
 }
 static int home_held(void) { return ui.btn >> B_HOME & 1u; }
+static int glo_held(void) { return ui.btn >> B_GLO & 1u; }   /* WARP-8: GLO held, the keys mute (ui.c key_down) */
 /* REC held: its knobs are the record settings while stopped and on Steps and Bar; on a sound page while playing,
  * the page's own, recorded as they turn (a punch-in of motion, as the keys punch in notes) */
 static int rec_settings(void)
@@ -2368,14 +2370,18 @@ static void page_footer(char *t)
         s_cat(t, is_drum(sel_trk()) && !LARGE ? "BLACK lane|WHITE its steps|PLAY play" : "WHITE steps|PLAY play|hold a button: help");
         return;
     }
+    if (glo_held()) {
+        s_cat(t, "BLACK mute|WHITE 1-3 track|15 clear|16 fill");
+        return;
+    }
     if (home_held()) {
-        s_cat(t, "REC undo|PLAY redo|KEYS mute|WHITE 16 fill");
+        s_cat(t, "REC undo|PLAY redo|ALGO track");
         return;
     }
     switch (ui.page) {
     case P_ARRANGE:
         if (kit_ui()) {
-            s_cat(t, "ALGO drum|PRESET kit|BLACK mute|WHITE scene");
+            s_cat(t, "ALGO drum|PRESET kit|BLACK drum|WHITE scene");
             break;
         }
         for (int i = 0; i < NKEYS; i++)             /* a kit's black key held: its sounds' mutes on the white keys */
@@ -2496,6 +2502,10 @@ static void enc_line(char *t)
     *t = 0;
     if (ui.ask || (lst.open && lst.n) || ui.card)
         return;
+    if (glo_held()) {
+        s_cat(t, proj.rsv[3] & MUTES_AT_BAR ? "KNOB 1 mutes: at the bar" : "KNOB 1 mutes: at once");
+        return;
+    }
     if (home_held()) {
         s_cat(t, "SELECT tempo|PRESET scene|KNOBS fine");
         return;

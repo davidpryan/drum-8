@@ -1388,6 +1388,8 @@ static void scene_read(seq_t *s, int k, uint8_t *next)
     s->mute = sc->mute;
     for (t = 0; t < NKITM; t++)
         s->kmute[t] = sc->kmute[t];
+    s->kmute_cue = 0;                     /* (mutes waiting for the bar: the scene's own instead) */
+    s->mute_cue = 0;
     s->brain_key = (uint8_t)(sc->brain_key % 12);
     s->brain_scale = sc->brain_scale < NBS ? sc->brain_scale : BS_MAJOR;
     s->brain_deg = sc->brain_deg;
@@ -3296,6 +3298,13 @@ static void six_tick(seq_t *s, const seq_sink_t *o)
         int top = s->bar_six == 0 && !s->bar_fresh;           /* track 1's span came round */
         int line = s->step_tick && !(s->step_tick & 15u);     /* a bar line (16 sixteenths) */
         uint32_t ch = 0;
+        if (line && (s->kmute_cue || s->mute_cue)) {          /* WARP-8: the mutes that waited for the bar (before a
+                                                               * scene cued here reads its own) */
+            s->kmute[0] ^= s->kmute_cue;
+            s->mute ^= s->mute_cue;
+            s->kmute_cue = 0;
+            s->mute_cue = 0;
+        }
         if (song_plays(s) ? line && !s->bar_fresh : top)      /* the bar: cues, the song (its slots count bars
                                                                * of 16 sixteenths, whatever track 1's length) */
             ch = bar_end(s, 0, o);
