@@ -11,7 +11,7 @@ tapkey b1
 wait 40
 key w0 down
 wait 40
-turn K3 50
+turn K2 50
 wait 20
 expect kcond1.1.1.2 50
 expect kcond1.1.1.1 0
@@ -32,7 +32,7 @@ key w0 down
 wait 40
 turn PRESET 1
 wait 20
-turn K3 100
+turn K2 100
 wait 20
 shot hit_hat.png
 key w0 up
@@ -56,7 +56,7 @@ tapkey b0
 wait 40
 key w8 down
 wait 40
-turn K3 25
+turn K2 25
 wait 20
 key w8 up
 wait 20

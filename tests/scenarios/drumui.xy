@@ -50,8 +50,8 @@ tapkey w0
 tapkey w8
 key w8 down
 wait 400
-turn K3 200
-turn K3 -1
+turn K2 200
+turn K2 -1
 wait 40
 key w8 up
 wait 40

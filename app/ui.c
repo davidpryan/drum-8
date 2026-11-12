@@ -937,14 +937,60 @@ static void kit_vel(int trk, int s, int e)
     }
     pats.lane[ln].val[s] = (uint8_t)v;
 }
+/* WARP-8: a held kit step's ratchets, 1 to 9 then random: a multiply trick in the hit's first trick's place if it is
+ * free or already one, else its second's; back at 1 the trick goes. Both taken by other tricks: nothing, and said */
+static int step_ratchet(int trk, int sh, int d)
+{
+    step_t *st = &tpat(trk)->st[sh];
+    int mine = hit_edits(trk, sh), second, n, r = HIT_OK;
+    hit_t h;
+    if (is_drum(trk) && !mine && !step_empty(st))
+        return HIT_OK;
+    if (mine)
+        hit_get(trk, cur_pat(trk), sh, ui.dsound % NDRUM, &h);
+    else
+        hit_of_step(st, &h);
+    second = h.comp2 == SC_MULTIPLY || (h.comp && h.comp != SC_MULTIPLY);
+    if (second && h.comp2 && h.comp2 != SC_MULTIPLY) {
+        say_no("NO TRICK FREE", "ARP: its tricks");
+        return HIT_OK;
+    }
+    n = clampi(((second ? h.comp2 : h.comp) == SC_MULTIPLY ? (second ? h.cval2 : h.cval) + 1 : 1) + d, 1, 10);
+    if (second) {
+        h.comp2 = (uint8_t)(n > 1 ? SC_MULTIPLY : SC_NONE);
+        h.cval2 = (uint8_t)(n > 1 ? n - 1 : 0);
+    } else {
+        h.comp = (uint8_t)(n > 1 ? SC_MULTIPLY : SC_NONE);
+        h.cval = (uint8_t)(n > 1 ? n - 1 : 0);
+    }
+    if (mine)
+        r = hit_put(trk, cur_pat(trk), sh, ui.dsound % NDRUM, &h);
+    else {
+        st->comp = SC_NONE;
+        st->comp2 = SC_NONE;
+        st->cval = h.cval;
+        st->cval2 = h.cval2;
+        st->comp = h.comp;
+        st->comp2 = h.comp2;
+    }
+    return r;
+}
 static void step_knob(int k, int32_t e)          /* k 4: the nudge (OCT-/OCT+) */
 {
-    int trk = sel_trk(), r = HIT_OK;
+    int trk = sel_trk(), r = HIT_OK, rat = 0;
     undo_keep();
+    if (k < 4 && step_kit4()) {                  /* WARP-8, the kit: velocity, chance, ratchets, nudge */
+        rat = k == 2;
+        k = k == 1 ? 2 : k == 3 ? 4 : k;
+    }
     for (int i = 0; i < 16; i++)
         if (ui.held >> i & 1u) {
             step_t *st = &tpat(trk)->st[step_shown(i)];
-            if (k == 0 && is_drum(trk))
+            if (rat) {
+                int q = step_ratchet(trk, step_shown(i), e > 0 ? 1 : -1);
+                if (r == HIT_OK)
+                    r = q;
+            } else if (k == 0 && is_drum(trk))
                 kit_vel(trk, step_shown(i), (int)e);
             else if (k == 0)
                 st->vel = (uint8_t)clampi(st->vel + e, 1, 127);
@@ -980,8 +1026,8 @@ static void step_knob(int k, int32_t e)          /* k 4: the nudge (OCT-/OCT+) *
                 st->nudge = (int8_t)clampi(st->nudge + e, -12, 12);
         }
     ui.held_used = 1;
-    if (k < 4)
-        touch(k);
+    if (k < 4 || step_kit4())
+        touch(rat ? 2 : k == 4 ? 3 : k == 2 && step_kit4() ? 1 : k);
     hit_said(r);
     mark_dirty();
 }
@@ -1822,7 +1868,7 @@ static void key_up(int k)
             step_toggle(w);                      /* a tap; a longer hold only looked at the step */
         ui.held &= (uint16_t)~(1u << w);
         if (!ui.held)                            /* (chord mode stays on past the step's own release) */
-            ui.lockpg = ui.trickpg = 0;
+            ui.lockpg = ui.trickpg = step_alt = 0;
         else
             for (int i = 0; i < 16; i++)
                 if (ui.held >> i & 1u) {
@@ -4302,6 +4348,13 @@ static void input(void)
         }
         pg = ((pg + (e > 0 ? 1 : -1)) % n + n) % n;
         ui.lockpg = (uint8_t)(f + pg + 1);
+        e = 0;
+    }
+    if (e && ui.held && !ui.trickpg && !home_held() && trig_page(ui.page) && kit_ui()) {   /* WARP-8: a kit step
+                                                  * held: its other knobs (length and pitch), and back */
+        step_alt = (uint8_t)!step_alt;
+        ui.held_used = 1;
+        ui.touched = -1;
         e = 0;
     }
     if (e) {

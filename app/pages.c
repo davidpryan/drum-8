@@ -1566,11 +1566,44 @@ static void hit_sound_off(int trk, int pt, int s, int snd)   /* a sound taken of
     }
 }
 
+/* WARP-8: a held step's knobs on the kit are its velocity, chance, ratchets and nudge; SELECT turned while it is
+ * held shows the others (step_alt: velocity, length, chance, pitch, as LOOM-8 has them) */
+static uint8_t step_alt;
+static int step_kit4(void) { return kit_ui() && !step_alt; }
 static void step_knobs(knob_t *k)
 {
     const tpat_t *tp = tpat(sel_trk());
     const step_t *st = &tp->st[step_shown(ui.held_first)];
     char t[16];
+    if (step_kit4()) {
+        hit_t h;
+        int own = kit_has(st, ui.dsound % NDRUM + 1) ? step_vel(pats.lane, sel_trk(), cur_pat(sel_trk()),
+                                                              step_shown(ui.held_first), ui.dsound % NDRUM) : 0;
+        int n = 1;
+        char *e = t;
+        kn(&k[0], "VEL", own ? own : st->vel, 127);
+        hit_view(sel_trk(), step_shown(ui.held_first), &h);
+        t[0] = 0;
+        cond_text(h.cond, t);
+        kv(&k[1], "CHANCE", t, 0, 0);
+        if (h.comp == SC_MULTIPLY)
+            n = h.cval + 1;
+        else if (h.comp2 == SC_MULTIPLY)
+            n = h.cval2 + 1;
+        t[0] = 0;
+        if (n > 9)
+            s_cat(t, "random");
+        else
+            num_s((uint32_t)n, s_cat(t, "x"));
+        kv(&k[2], "RATCHET", t, n - 1, 9);
+        if (st->nudge > 0)
+            e = s_cat(e, "+");
+        else
+            *e = 0;
+        num_i(st->nudge, e);
+        kv(&k[3], "NUDGE", t, st->nudge + 12, 24);
+        return;
+    }
     if (is_drum(sel_trk())) {                         /* a kit: the velocity of the sound shown (its own, or the step's) */
         int own = kit_has(st, ui.dsound % NDRUM + 1) ? step_vel(pats.lane, sel_trk(), cur_pat(sel_trk()),
                                                               step_shown(ui.held_first), ui.dsound % NDRUM) : 0;
@@ -2438,7 +2471,7 @@ static void page_footer(char *t)
         else if (ui.len_key && (ui.held >> (ui.len_key - 1) & 1u))
             s_cat(t, "let go: length|KNOBS both steps");
         else if (ui.held && is_drum(trk))
-            s_cat(t, "BLACK sounds|ARP tricks|EDIT ENV FX LFO lock");
+            s_cat(t, kit_ui() ? "SELECT more|BLACK sounds|ARP tricks|EDIT ENV FX LFO lock" : "BLACK sounds|ARP tricks|EDIT ENV FX LFO lock");
         else if (ui.held & (ui.held - 1u))
             s_cat(t, "WHITE more steps|ARP tricks|EDIT ENV FX LFO lock|SEQ notes");
         else if (ui.held)
