@@ -38,11 +38,3 @@ steps 2 2
 expect note 2 2 1 48
 expect note 2 2 3 53
 expect trk 2
-press HOME
-turn ALGO 7
-release HOME
-expect trk 9
-tap ARP
-wait 50
-expect page Weave
-shot wv_cond.png

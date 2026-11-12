@@ -238,8 +238,9 @@ void project_device_put(void)
 
 void project_defaults(void)
 {
-    static const uint8_t ORDER[NTRK] = {EG_DRUMLINE, EG_DRUMLINE, EG_DRUMLINE, EG_DRUMLINE, EG_DRUMLINE, EG_DRUMLINE,
-                                        EG_DRUMLINE, EG_DRUMLINE};   /* (WARP-8: eight kits) */
+    static const uint8_t ORDER[NTRK] = {EG_DRUMLINE, EG_SAMPLE, EG_SLICE, EG_SAMPLE, EG_SAMPLE, EG_SAMPLE, EG_SAMPLE,
+                                        EG_SAMPLE};   /* (WARP-8: the kit, a sample track, a slice track; T4-T8 are
+                                                       * there, unreached and silent) */
     int t, k;
     uint8_t *z = (uint8_t *)&proj, keep = proj.magic == PROJ_MAGIC;   /* (a project before it: the FM-1's settings
                                                                      * carried over; at the first start, none) */
@@ -286,7 +287,8 @@ void project_defaults(void)
         if (!tr->name[0])
             set_name(tr, EG_NAME[ORDER[t]]);
         tr->par[TP_ENGINE] = ORDER[t];                    /* (a preset carries its engine; the kit keeps its own) */
-        tr->par[TP_BRAIN] = ORDER[t] != EG_DRUMLINE;                  /* the melodic tracks follow the brain from the start
+        tr->par[TP_BRAIN] = 0;                            /* (no conductor in WARP-8) */
+                         /* the melodic tracks follow the brain from the start
                                                            * (the notebook: "several tracks are routed by default") */
         tr->par[TP_CHAN] = 1;                             /* MIDI OUT on: track N's notes on channel N
                                                            * (with Setup's NOTES) */
@@ -354,6 +356,10 @@ static int settings_valid(settings_t *s)
             return 0;
         if (t < NTRK && eg_gone(p[TP_ENGINE]))            /* WARP-8: an engine that is gone plays as sample */
             p[TP_ENGINE] = EG_SAMPLE;
+        if (t == 0 && p[TP_ENGINE] != EG_DRUMLINE)        /* one kit, the first track; no kit and no MIDI track after it */
+            sound_default(p, EG_DRUMLINE);
+        if (t >= 1 && t < NTRK && (p[TP_ENGINE] == EG_DRUMLINE || p[TP_ENGINE] == EG_MIDI))
+            sound_default(p, t == 2 ? EG_SLICE : EG_SAMPLE);
         if (t >= AUX_FX1 && p[TP_ENGINE] >= NFXPICK)
             return 0;
         if (t < NTRK)

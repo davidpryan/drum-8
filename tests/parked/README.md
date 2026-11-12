@@ -17,3 +17,7 @@ engines still use, are in `synth_test.c` on a knit voice and need moving to a sa
 `migrate` and `migrate17` load stores LOOM-8 wrote in its older formats (`tests/fixtures/store_v*.bin`). WARP-8's
 projects carry their own tag (`app/app.h` PROJ_MAGIC, "WRP8"), so it starts fresh over a LOOM-8 store by design and
 these no longer apply; the format upgrades they covered are still in `app/project.c`, untested here.
+
+WARP-8 is one kit, a sample track, a slice track and the throws: LOOM-8's conductor and its weave track are not
+reached. `brain`, `harmony`, `weavetrack` and `liverec` (its chords on the conductor) test those and are parked. The
+live recording `liverec` also covers needs a scenario of its own on the kit.

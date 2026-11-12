@@ -45,7 +45,7 @@
 #define CR SY_CHUNK                   /* pan / volume / sends re-read this often */
 #define SUB 32                        /* a voice renders this many at once into a 128 B stack buffer */
 #define RESO_LEN 512                  /* a string's delay line, int16: 86 Hz at the longest */
-#define NRESO 1                       /* strings: a second string sound steals the line (WARP-8: two before) */
+#define NRESO 2                       /* strings: string sounds past two steal the older's line */
 _Static_assert((RESO_LEN & (RESO_LEN - 1)) == 0, "a string's line wraps by a mask");
 
 const char *const DM_NAME[NDM] = {"kick", "snare", "hat", "clap", "shaker", "tambourine", "string",

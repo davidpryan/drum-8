@@ -57,7 +57,7 @@ enum { DM_KICK, DM_SNARE, DM_HIHAT, DM_CLAP, DM_SHAKER, DM_TAMB, DM_RESO, DM_CON
 #define DM_IS909(m) ((m) >= DM_909KICK && (m) <= DM_909CRASH)
 #define DM_ISHORT(m) ((m) >= DM_HORT0 && (m) <= DM_HORT_END)
 #define DM_BDTRX (DM_HORT0 + HM_BDTRX)
-#define N909 4                                       /* 909 hits sounding at once, every kit together (a fifth takes
+#define N909 8                                       /* 909 hits sounding at once, every kit together (a ninth takes
                                                       * the oldest's slot) */
 extern const char *const DM9_SHAPE_N[7];             /* a 909 model's shape (its 9W9 distortion): diode .. crush */
 extern const char *const DM9_SIZE_N[3];              /* the 909 tom's size: low mid high */

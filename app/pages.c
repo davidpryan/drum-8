@@ -152,7 +152,8 @@ static const char *const BTN_LABEL[NB] = {"FX", "SEL", "ENV", "LFO", "EDIT", "GL
                                           "PLAY", "REC", "OCT-", "OCT+"};
 
 /* the tracks: 1-8, then the aux tracks (the tag's short names, the pages' long ones) */
-static const char *const TRACK_NAME[NALLTRK] = {"T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "COND", "THROW",
+static const char *const TRACK_NAME[NALLTRK] = {"KIT", "SMP", "SLC", "T4",   /* (WARP-8: one kit, a sample track, a slice
+                                                                             * track; T4-T8 are not reached) */ "T5", "T6", "T7", "T8", "COND", "THROW",
                                                 "FX I", "FX II", "WEAVE"};
 static const char *const NOTE_NAME[12] = {"C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"};
 /* the step components (SC_*: the OP-XY's 14, on the white keys with HOME and a step held), their letter on
@@ -3123,13 +3124,13 @@ static void list_sound(int trk)
             num_s((uint32_t)sc + 1u, s_cat(from_t, "from T"));
             list_add(ACTION_NAME[A_PASTE_SOUND], from_t, LK_ACTION, A_PASTE_SOUND);
         }
-        list_add(ACTION_NAME[A_ENGINE], EG_NAME[ui.pick_engine % NENGINE], LK_PICK, A_ENGINE);
+        /* (WARP-8: no ENGINE row: a track's engine is its own) */
         list_midi_out(trk);
     } else if (!is_aux(trk)) {
         list_head("sound");
         if (NPRESETS > 0)
             list_add(ACTION_NAME[A_PRESET], PRESETS[ui.pick_preset % NPRESETS].name, LK_PICK, A_PRESET);
-        list_add(ACTION_NAME[A_ENGINE], EG_NAME[ui.pick_engine % NENGINE], LK_PICK, A_ENGINE);
+        /* (WARP-8: no ENGINE row: a track's engine is its own) */
         list_add(ACTION_NAME[A_SCRAMBLE], 0, LK_ACTION, A_SCRAMBLE);
         num_s((uint32_t)ui.pick_slot % NUSER_PRESETS + 1u, s_cat(slot_t, "U"));
         list_add(ACTION_NAME[A_SAVE_PRESET], slot_t, LK_PICK, A_SAVE_PRESET);
@@ -5879,8 +5880,8 @@ static void draw_mix(void)
 {
     static float m_db[NALLTRK], m_hold[NALLTRK];
     static uint32_t m_hold_ms[NALLTRK], m_last;
-    static const char *const SHORT_NM[NALLTRK] = {"1", "2", "3", "4", "5", "6", "7", "8", "CO", "TH", "F1", "F2", "WV"};
-    static const int8_t COL[NALLTRK] = {0, 1, 2, 3, 4, 5, 6, 7, -1, -1, 8, 9, -1};   /* the strips' places (the conductor and the
+    static const char *const SHORT_NM[NALLTRK] = {"KT", "SM", "SL", "4", "5", "6", "7", "8", "CO", "TH", "F1", "F2", "WV"};
+    static const int8_t COL[NALLTRK] = {0, 1, 2, -1, -1, -1, -1, -1, -1, -1, 8, 9, -1};   /* the strips' places (the conductor and the
                                                                               * throws make no sound: none) */
     uint32_t now = plat_ms(), dt = now - m_last;
     int sel = sel_trk();

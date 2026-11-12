@@ -172,25 +172,11 @@ expect page Steps
 # the aux tracks' pages
 tap EDIT
 press HOME
-spin ALGO 6
-release HOME
-expect trk 9
-wait 40
-shot brain.png
-turn SELECT 1
-wait 40
-shot brain_routing.png
-press HOME
 spin ALGO 1
 release HOME
+expect trk 10
 wait 40
 shot punch.png
-press HOME
-spin ALGO 1
-release HOME
-expect trk 13
-wait 40
-shot weave_track.png
 press HOME
 spin ALGO 1
 release HOME

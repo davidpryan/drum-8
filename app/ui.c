@@ -1279,10 +1279,12 @@ static void track_select(int t)
  * page the tracks that play (T1-T8, the conductor, the throws, the weave) */
 static void track_step(int e)
 {
-    static const uint8_t MIXT[10] = {0, 1, 2, 3, 4, 5, 6, 7, AUX_FX1, AUX_FX2};
-    static const uint8_t SEQT[11] = {0, 1, 2, 3, 4, 5, 6, 7, AUX_BRAIN, AUX_PUNCH, AUX_WEAVE};
+    /* WARP-8: the kit, the sample track, the slice track and the throws (Mix: the three and the two effects). LOOM-8's
+     * T4-T8, its conductor and its weave track are not reached */
+    static const uint8_t MIXT[5] = {0, 1, 2, AUX_FX1, AUX_FX2};
+    static const uint8_t SEQT[4] = {0, 1, 2, AUX_PUNCH};
     const uint8_t *L = ui.page == P_MIX ? MIXT : SEQT;
-    int N = ui.page == P_MIX ? 10 : 11, cur = sel_trk(), i, d = e > 0 ? 1 : -1, n = e > 0 ? e : -e;
+    int N = ui.page == P_MIX ? 5 : 4, cur = sel_trk(), i, d = e > 0 ? 1 : -1, n = e > 0 ? e : -e;
     for (i = 0; i < N && L[i] != cur; i++)
         ;
     if (i == N) {                                /* (not in the list: from where it would sit) */
@@ -1442,15 +1444,16 @@ static void key_down(int k)
         keyboard_down(k);
         return;
     }
-    if (home_held()) {                           /* WARP-8: HOME held, the keys mute: a black key its track (1-8), a
-                                                  * white key the sound of the kit shown (1-11); the last white key
-                                                  * is a fill while it is held (steps of chance "fill" play) */
+    if (home_held()) {                           /* WARP-8: HOME held, the keys mute: a black key a drum of the kit, the
+                                                  * first three white keys the kit, the sample track, the slice track;
+                                                  * the last white key is a fill while it is held */
         ui.btn_used |= 1u << B_HOME;
-        if (b >= 0 && b < NTRK)
-            set_mute(b, !(seq.mute >> b & 1u));
-        else if (w >= 0 && w < NDRUM && is_drum(trk))
-            kit_sound_mute(trk, w);
-        else if (w == 15) {
+        if (b >= 0 && b < NDRUM)
+            kit_sound_mute(0, b);
+        else if (w >= 0 && w < 3) {
+            set_mute(w, !(seq.mute >> w & 1u));
+            say(seq.mute >> w & 1u ? "MUTED" : "UNMUTED", TRACK_NAME[w]);
+        } else if (w == 15) {
             seq.fill = 1;
             ui.kmode[k] = KM_FILL;
             say("FILL", "held");
@@ -4190,10 +4193,8 @@ static void input(void)
     if ((e = ev[EN_ALGO]) != 0) {
         if (lst.open)
             list_change(e);
-        else if (page_btn_held(B_EDIT) && !is_aux(sel_trk())) {   /* EDIT held: ALGORITHM picks the engine */
-            ui.pick_engine = (uint8_t)clampi(proj.trk[sel_trk()].par[TP_ENGINE] + (e > 0 ? 1 : -1), EG_SAMPLE, EG_MIDI);
-            if (ui.pick_engine != proj.trk[sel_trk()].par[TP_ENGINE])
-                action_run(A_ENGINE);
+        else if (0) {                             /* (WARP-8: a track's engine is its own: none to pick)
+                                                   * EDIT held, ALGORITHM picked LOOM-8's */
         } else if (home_held()) {                 /* WARP-8: HOME held: the track, from any page */
             ui.btn_used |= 1u << B_HOME;
             track_step((int)e);

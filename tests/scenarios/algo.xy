@@ -1,40 +1,41 @@
-# ALGORITHM: the tracks that play on every page (T1-T8, COND, THROW), Mix's strips on Mix (T1-T8, FX I, FX II); off Mix
-# an FX track gives way to the instrument picked last
+# WARP-8's tracks: the kit, the sample track, the slice track and the throws, with HOME held on ALGORITHM (alone it
+# picks the kit's drum); Mix's strips on Mix: the three and FX I, FX II
 wait 300
 expect trk 1
 press HOME
-turn ALGO -1
+turn ALGO 1
 release HOME
-expect trk 13
+expect trk 2
+press HOME
+turn ALGO 1
+release HOME
+expect trk 3
+press HOME
+turn ALGO 1
+release HOME
+expect trk 10
+press HOME
+turn ALGO 1
+release HOME
+expect trk 1
 press HOME
 turn ALGO -1
 release HOME
 expect trk 10
 press HOME
-turn ALGO 2
-release HOME
-expect trk 1
-tap GLO
-press HOME
-turn ALGO -1
-release HOME
-expect trk 12
-press HOME
-turn ALGO -1
-release HOME
-expect trk 11
-press HOME
-turn ALGO -1
-release HOME
-expect trk 8
-press HOME
 turn ALGO 1
 release HOME
-expect trk 11
-tap SEQ
-expect trk 8
-tap GLO
-press HOME
-turn ALGO 3
-release HOME
 expect trk 1
+tap GLO
+wait 40
+expect page Mix
+turn ALGO 3
+wait 40
+expect trk 11
+turn ALGO 1
+wait 40
+expect trk 12
+turn ALGO 1
+wait 40
+expect trk 1
+shot mix.png

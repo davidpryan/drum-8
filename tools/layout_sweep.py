@@ -40,7 +40,7 @@ L += ["turn PRESET 1", "wait 60"] * 16
 L += ["turn SELECT 1"]
 L += ["turn PRESET 1", "wait 60"] * 16
 L += ["press HOME", "spin ALGO -1", "release HOME", "expect trk 1"]                # every track and aux track, every button's pages
-for _ in range(14):
+for _ in range(4):
     visit(["EDIT", "ENV", "FX", "LFO", "ARP", "GLO", "HOME", "SEQ"])
     L += ["press HOME", "spin ALGO 1", "release HOME"]   # (WARP-8: HOME held, ALGORITHM is the track)
 open(sys.argv[1], "w").write("\n".join(L) + "\n")
