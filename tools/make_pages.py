@@ -182,9 +182,12 @@ Installing is at your own risk. It starts with fresh projects: back up @@LOOM@@ 
   <li><b>One rule for the keys</b>: a black key is a drum, a white key is a step of the picked drum, on every page of the kit. Hold a step, a drum or a button and the knobs and keys are its.</li>
   <li><b>HOME is the whole pattern</b>, a row a drum, and you write it there: the tempo, every drum's length, the swing and the kit on its knobs. ALGORITHM picks the drum on every page; PRESETS is the kit on HOME, the pattern on SEQ, the drum's next sound on EDIT.</li>
   <li><b>Steps is the picked drum alone</b>: a bar each step's velocity, its chance, ratchets and locks marked, the other drums thin beneath, and the drum's own four knobs under your hand. A drum can have a length of its own and run against the others.</li>
-  <li><b>A held step</b>: velocity, chance, ratchets and nudge on the knobs; on a sound page, the page's knobs locked to that step.</li>
+  <li><b>A held step</b>: velocity, chance, ratchets and nudge on the knobs; on a sound page, the page's knobs locked to that step. The nudge is each drum's own: a snare can drag while the kick on the same step stays put.</li>
+  <li><b>A colour for each drum</b>, the same on every page: its row, its steps, its pad, its key.</li>
+  <li><b>A sound browser</b>: PRESETS on a drum lists Hortator's 143 sounds by engine, each heard as you turn to it; ALGORITHM jumps to the next engine.</li>
   <li><b>Generators</b>: hold a drum and the knobs set its hits, turn it, vary it; the Generate page previews Euclid, mutate and Mutable Instruments' Grids before it writes them. <b>Grids is also a throw</b>: held, the kick, snare and hat play from the drum map, and SEL keeps what you hear.</li>
   <li><b>Held buttons, from any page</b>, each drawing its keys: GLO for the mutes, solo and a fill (at once or at the bar line), HOME for the scenes, FX for the throws. EDIT held, a knob turns every drum's.</li>
+  <li><b>Twenty-four throws</b>: @@LOOM@@'s twelve, and twelve more in the second octave: thin, roll, buzz, soft, hard, rise, drop, down, a low-pass, delay and reverb throws, a crusher.</li>
   <li>@@LOOM@@'s <b>sequencer</b>: eight patterns of up to 64 steps, tricks and parameter locks on any step, weave, throws, scenes and a song.</li>
   <li>Two <b>send effects</b>, a mixer with EQ and a compressor on the master.</li>
 </ul>
