@@ -1484,9 +1484,11 @@ static void key_down(int k)
                                                   * first three white keys the kit, the sample track, the slice track;
                                                   * white 15 clears them all; the last white key is a fill while held
                                                   * (KNOB 1: at once or at the bar, mutes_wait) */
-        if (b >= 0 && b < NDRUM)
+        if (b >= 0 && b < NDRUM) {
             kit_sound_mute(0, b);
-        else if (w >= 0 && w < 3)
+            ui.kmode[k] = KM_GSOLO;              /* (held on: the drum alone while it is, holds) */
+            ui.knote[k] = (uint8_t)b;
+        } else if (w >= 0 && w < 3)
             track_mute_key(w);
         else if (w == 14)
             mutes_clear();
@@ -1754,6 +1756,7 @@ static void key_down(int k)
     keyboard_down(k);
 }
 #define STEP_TAP_MS 700u                         /* a step's key let go sooner: a tap (toggles the step) */
+static uint16_t gsolo, gsolo_was;                /* WARP-8, GLO held: the drums soloed by their held keys, the mutes before */
 static void key_up(int k)
 {
     int trk = sel_trk(), m = ui.kmode[k];
@@ -1842,6 +1845,12 @@ static void key_up(int k)
         break;
     case KM_FILL:
         seq.fill = 0;
+        break;
+    case KM_GSOLO:
+        if (gsolo >> ui.knote[k] & 1u) {
+            gsolo &= (uint16_t)~(1u << ui.knote[k]);
+            seq.kmute[0] = gsolo ? (uint16_t)(((1u << NDRUM) - 1u) & ~gsolo) : gsolo_was;
+        }
         break;
     case KM_SOUND:
         engine_key(trk, ui.knote[k], 0, 0);
@@ -2033,6 +2042,22 @@ static void holds(void)
         }
     if (home_held() && now - ui.btn_t[B_HOME] >= CARD_MS)
         ui.btn_used |= 1u << B_HOME;
+    for (int k = 0; k < NKEYS; k++)               /* WARP-8, GLO held: a drum's key held on: the drum alone while it
+                                                  * is (more held: more of them); the press's mute is taken back */
+        if ((ui.keys >> k & 1u) && ui.kmode[k] == KM_GSOLO && !(gsolo >> ui.knote[k] & 1u) &&
+            now - ui.key_t[k] >= STEP_TAP_MS) {
+            uint16_t bit = (uint16_t)(1u << ui.knote[k]);
+            if (seq.kmute_cue & bit)
+                seq.kmute_cue ^= bit;
+            else if (!gsolo)
+                seq.kmute[0] ^= bit;
+            pats.scene[cur_scene()].kmute[0] ^= bit;
+            if (!gsolo)
+                gsolo_was = seq.kmute[0];
+            gsolo |= bit;
+            seq.kmute[0] = (uint16_t)(((1u << NDRUM) - 1u) & ~gsolo);
+            say("SOLO", KEYNM(ui.knote[k]));
+        }
     if (!seq.playing && (seq.kmute_cue || seq.mute_cue)) {   /* stopped with mutes waiting for a bar: now */
         seq.kmute[0] ^= seq.kmute_cue;
         seq.mute ^= seq.mute_cue;

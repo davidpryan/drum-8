@@ -93,6 +93,10 @@ wait 1500
 shot song_playing.png
 tap PLAY
 # Mix: a black key held solos, a tap mutes
+# (WARP-8: with the kit selected Mix's black keys pick its drums; from another track they are the tracks)
+press HOME
+turn ALGO 1
+release HOME
 tap GLO
 key b2 down
 wait 900

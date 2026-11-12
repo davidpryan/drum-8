@@ -1,0 +1,58 @@
+# WARP-8: on the kit a white key is the picked drum's step on every page (but Throws, the shared LFO, the master
+# pages); held, the knobs lock the page's own where a step can lock them, else they are the step's trig. GLO held,
+# a drum's key held on: the drum alone while it is
+wait 300
+listen
+expect trk 1
+tapkey b0
+# Envelope: a tap writes the step; held, knob 2 locks the page's second knob on it
+tap ENV
+wait 40
+expect page Envelope
+tapkey w0
+wait 40
+said step 1 on
+key w4 down
+wait 100
+turn K2 5
+wait 40
+key w4 up
+wait 40
+expect note 1 1 5 1
+expect lanes 1
+# Character (FX): the same
+tap FX
+wait 40
+tapkey w8
+wait 40
+said step 9 on
+# Mix: a step, and held, knob 1 its velocity
+tap GLO
+wait 40
+expect page Mix
+tapkey w12
+wait 40
+said step 13 on
+key w12 down
+wait 100
+turn K1 -40
+wait 40
+key w12 up
+wait 40
+expect stepvel 1 1 13 60
+# a black key picks the drum here too: its step beside the kick's
+tapkey b1
+tapkey w12
+wait 40
+said step 13 on
+# GLO held: a drum's key held on is the drum alone; let go, the mutes as they were
+press GLO
+tapkey b3
+key b0 down
+wait 900
+expect kmute 2046
+key b0 up
+wait 40
+expect kmute 8
+release GLO
+expect page Mix

@@ -195,7 +195,7 @@ static const uint8_t BLACK_K[11] = {1, 3, 5, 8, 10, 13, 15, 17, 20, 22, 25};
 #define KEY_BASE 53                                  /* F3 at octave 0 */
 enum { KM_NONE, KM_PLAY, KM_STEP, KM_SCENE, KM_MUTE, KM_PUNCH, KM_BRAIN, KM_SOUND,
        KM_TRACK, KM_SAVE, KM_SOLO, KM_SCALE, KM_ROUTE, KM_STEPSOUND, KM_IDLE, KM_WEAVE, KM_BARK,
-       KM_STEPCHORD, KM_FILL };   /* KM_IDLE: does nothing */   /* what a held key does */
+       KM_STEPCHORD, KM_FILL, KM_GSOLO };   /* KM_IDLE: does nothing */   /* what a held key does */
 
 /* the input's and the screen's state */
 static struct {
@@ -617,7 +617,12 @@ static int is_drum(int t) { return t < NTRK && proj.trk[t].par[TP_ENGINE] == EG_
 static int kit_ui(void) { return is_drum(sel_trk()) && !LARGE; }
 /* the pages whose white keys are the steps and whose held step's knobs are its trig: SEQ's, and WARP-8's HOME on
  * the kit (its scenes are HOME held: ui.c key_down) */
-static int trig_page(int p) { return steps_page(p) || (p == P_ARRANGE && kit_ui()); }
+static int trig_page(int p)                         /* (and the kit's pages with no knob a step can lock: the two
+                                                     * effects, Mix, ARP's) */
+{
+    return steps_page(p) || (kit_ui() && (p == P_ARRANGE || p == P_FX1 || p == P_FX2 || p == P_MIX ||
+                                          (p >= P_PLAYERS && p <= P_WEAVE)));
+}
 static int is_midi(int t) { return t < NTRK && proj.trk[t].par[TP_ENGINE] == EG_MIDI; }   /* (no sound: notes and CCs
                                                                                          * out, synth.h EG_MIDI) */
 static int is_acid(int t) { return t < NTRK && proj.trk[t].par[TP_ENGINE] == EG_ACID; }   /* (its 303's own envelope:
@@ -664,9 +669,12 @@ static int page_btn_held(int b);
  * recording, or with EDIT held, they play the kit as before */
 static int kit_edit_steps(void)
 {
-    int t = sel_trk();
-    return is_drum(t) && PAGE_BTN[page_group(ui.page)].btn == B_EDIT && !recording() && !page_btn_held(B_EDIT);
-}
+    int t = sel_trk(), b = PAGE_BTN[page_group(ui.page)].btn;
+    if (!is_drum(t) || recording() || page_btn_held(b))
+        return 0;
+    return b == B_EDIT || (!LARGE && (b == B_ENV || b == B_LFO || ui.page == P_CHARACTER || ui.page == P_SENDS));
+}                                                    /* (WARP-8: ENV's, LFO's, Character and Sends too: every page
+                                                      * whose knobs a step can lock) */
 static int step_shown(int i) { return ui.bar * 16 + i; }
 static step_t *chord_step(int t, int i)              /* chord mode's held cell i: in the bar and pattern it began in */
 {

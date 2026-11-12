@@ -1,6 +1,10 @@
 # Mix: a double tap on a track's black key solos it and the solo stays, let go (any page); a tap ends it and the
 # mutes come back. A hold still adds a track while held; a mute changed elsewhere ends the solo first
 wait 300
+# (WARP-8: with the kit selected Mix's black keys pick its drums; from another track they are the tracks)
+press HOME
+turn ALGO 1
+release HOME
 tap GLO
 expect mute 0
 tapkey b2
