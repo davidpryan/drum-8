@@ -605,7 +605,11 @@ static const bands_t *band = &BANDS[0];
                                                       * too, as the hints */
 enum { AL_INFO, AL_DONE, AL_UNDO, AL_REDO, AL_ASK, AL_NO };
 
-static int sel_trk(void) { return proj.trk_sel < NALLTRK ? proj.trk_sel : 0; }
+static int sel_trk(void)                             /* (WARP-8: tracks 4-8, the conductor and WEAVE are not reached) */
+{
+    int t = proj.trk_sel;
+    return t < 3 || t == AUX_PUNCH || t == AUX_FX1 || t == AUX_FX2 ? t : 0;
+}
 static int is_aux(int t) { return t >= NTRK; }
 static int is_seqt(int t) { return t < NSEQT; }
 static int is_drum(int t);
@@ -613,7 +617,7 @@ static int is_drum(int t);
 static int kit_ui(void);
 static int steps_page(int p) { return p == P_STEPS || p == P_BAR || p == P_GEN; }   /* SEQ's pages: all write steps
                                                                                     * (Generate: WARP-8's, a kit's third) */
-static int is_drum(int t) { return t < NTRK && proj.trk[t].par[TP_ENGINE] == EG_DRUMLINE; }
+static int is_drum(int t) { return t == 0; }          /* WARP-8: one kit, the first track (project.c keeps it so) */
 static int kit_ui(void) { return is_drum(sel_trk()) && !LARGE; }
 /* the pages whose white keys are the steps and whose held step's knobs are its trig: SEQ's, and WARP-8's HOME on
  * the kit (its scenes are HOME held: ui.c key_down) */
@@ -623,9 +627,9 @@ static int trig_page(int p)                         /* (and the kit's pages with
     return steps_page(p) || (kit_ui() && (p == P_ARRANGE || p == P_FX1 || p == P_FX2 || p == P_MIX ||
                                           (p >= P_PLAYERS && p <= P_WEAVE)));
 }
-static int is_midi(int t) { return t < NTRK && proj.trk[t].par[TP_ENGINE] == EG_MIDI; }   /* (no sound: notes and CCs
+static int is_midi(int t) { (void)t; return 0; }   /* (no sound: notes and CCs
                                                                                          * out, synth.h EG_MIDI) */
-static int is_acid(int t) { return t < NTRK && proj.trk[t].par[TP_ENGINE] == EG_ACID; }   /* (its 303's own envelope:
+static int is_acid(int t) { (void)t; return 0; }   /* (its 303's own envelope:
                                                                                          * no Filter env page) */
 /* a page's name: a drum track's Play page is its Key page, its Filter env page the kit's envelope */
 static const char *page_name_of(int p, int trk)
@@ -773,7 +777,7 @@ static int kit_x_page(int t)                         /* a kit whose key shown ha
 }
 static int x_page(int t)                             /* the engine has a second page of knobs (TP_X1..X4) */
 {
-    int e = t < NTRK ? proj.trk[t].par[TP_ENGINE] : -1, m = t < NTRK ? proj.trk[t].par[TP_E4] % NSM : 0;
+    int e = t < NTRK ? EG_LIVE(proj.trk[t].par[TP_ENGINE]) : -1, m = t < NTRK ? proj.trk[t].par[TP_E4] % NSM : 0;
     return e == EG_RAYON || e == EG_KNIT || e == EG_MIDI || e == EG_ACID || (e == EG_SAMPLE && (m == SM_LOOP || m == SM_PINGPONG)) ||   /* (the
                                                                                      * sample's loop page: looping) */
            kit_x_page(t);
@@ -4715,6 +4719,8 @@ static void draw_engine(void)
     int trk = sel_trk(), eg = proj.trk[trk].par[TP_ENGINE] % NENGINE;
     const uint8_t *p = par_now(trk);
     uint32_t h;
+    if (trk < NTRK)                                  /* (WARP-8: the engines in the build, synth.h) */
+        eg = EG_LIVE(eg);
     pic_clock(trk);
     h = hash_u(hash_u(2166136261u, 0xE0u), (uint32_t)trk | (uint32_t)eg << 4 | (uint32_t)ui.dsound << 8 |
                                           (eg == EG_SAMPLE || eg == EG_SLICE ? 0u : (pic_f / 2) << 12));
@@ -5229,7 +5235,7 @@ static void draw_acid_x(void)
 /* the Sub page: the engine's second page of knobs (TP_X1..X4), knit's layers, rayon's fall or acid's drive */
 static void draw_sub(void)
 {
-    int eg = proj.trk[sel_trk()].par[TP_ENGINE];
+    int eg = EG_LIVE(proj.trk[sel_trk()].par[TP_ENGINE]);
     if (eg == EG_RAYON)
         draw_rayon_fall();
     else if (eg == EG_ACID)

@@ -3476,7 +3476,7 @@ const tp_info_t *tp_info(int p, int engine)
 
 const tp_info_t *tp_info_par(int p, const uint8_t *par)
 {
-    int engine = par[TP_ENGINE], player = par[TP_PLAYER], lt = par[TP_LTYPE];
+    int engine = EG_LIVE(par[TP_ENGINE]), player = par[TP_PLAYER], lt = par[TP_LTYPE];
     if (!eknob_ready)
         eknob_init();
     if (p >= TP_P1 && p <= TP_AP4) {

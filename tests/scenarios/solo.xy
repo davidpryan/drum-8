@@ -15,33 +15,34 @@ expect mute 1019
 wait 1200
 expect mute 1019
 shot mix_solo_latched.png
-# a hold adds track 4 while held; let go, track 2 still alone
-key b4 down
+# (WARP-8: tracks 4-8 are not reached, so the sample and the slice tracks stand in for LOOM-8's)
+# a hold adds track 2 while held; let go, track 3 still alone
+key b1 down
 wait 900
-expect mute 1003
-key b4 up
+expect mute 1017
+key b1 up
 wait 40
 expect mute 1019
 # a tap: the solo ends
-tapkey b5
+tapkey b1
 wait 400
 expect mute 0
-# track 1 muted, then track 3 double tapped: the first tap's mute undone, track 1's kept to go back to
+# track 2 muted, then track 3 double tapped: the first tap's mute undone, track 2's kept to go back to
 tapkey b1
 wait 400
 expect mute 2
-tapkey b3
+tapkey b2
 wait 100
-tapkey b3
+tapkey b2
 wait 40
-expect mute 1015
+expect mute 1019
 # another track double tapped while soloed: it alone
-tapkey b6
+tapkey b1
 wait 100
-tapkey b6
+tapkey b1
 wait 40
-expect mute 959
-tapkey b6
+expect mute 1021
+tapkey b1
 wait 400
 expect mute 2
 # a muted track still shows its steps on its meter, in grey (an empty muted track none)
@@ -52,8 +53,8 @@ notes 2 1 13 1 100 65
 tap PLAY
 wait 600
 expect mute 2
-tapkey b3
+tapkey b2
 wait 900
-expect mute 10
+expect mute 6
 shot mix_muted_meter.png
 tap PLAY

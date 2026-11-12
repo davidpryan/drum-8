@@ -272,7 +272,7 @@ static const step_t *weave_at(seq_t *s, int t, const tpat_t *tp, int p)
                (uint32_t)tr->pass * (uint32_t)loop_len(tp) + (uint32_t)(p > loop_from(tp) ? p - loop_from(tp) : 0), &tr->wv_st);
     return &tr->wv_st;
 }
-static int is_drum(const seq_t *s, int t) { return t < NTRK && s->par[t][TP_ENGINE] == EG_DRUMLINE; }
+static int is_drum(const seq_t *s, int t) { (void)s; return t == 0; }   /* WARP-8: one kit, the first track */
 static int is_slice(const seq_t *s, int t) { return t < NTRK && s->par[t][TP_ENGINE] == EG_SLICE; }
 /* a percussive track for the throws: the kit, or a slice track (a break's parts). A slice track plays notes (a
  * note picks a slice) but takes the drums' throws: their octave, the drum fills on its own slices (fill_slices),
