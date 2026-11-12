@@ -1,0 +1,55 @@
+# WARP-8: the kit's ARP page is its Weave. A white key weaves the kit's pattern with another of its own (a black key
+# 1-3: the kit, the sample track, the slice track to weave in), KNOB 3 the rule. PLAYS "always", or "FX + 16": the
+# weave held as a throw, FX held and the last white key
+wait 300
+listen
+expect trk 1
+# P1: four kicks; P2: three snares
+tapkey b0
+tapkey w0
+tapkey w4
+tapkey w8
+tapkey w12
+turn PRESET 1
+wait 60
+tapkey b1
+tapkey w2
+tapkey w6
+tapkey w10
+turn PRESET -1
+wait 60
+expect drumhits 2
+# ARP: the Weave page, alone; white key 2: P1 woven with P2 by bars (a bar of P1, then a bar of P2)
+tap ARP
+wait 40
+expect page Weave
+tapkey w1
+wait 40
+said WEAVES
+shot kitweave.png
+# two bars woven: 4 kicks, then 3 snares
+tap PLAY
+wait 3900
+tap PLAY
+expect drumhits 9
+# PLAYS: FX + 16; now two bars plain: 8 kicks
+turn K4 1
+wait 40
+tap PLAY
+wait 3900
+tap PLAY
+expect drumhits 17
+# held as a throw: woven again
+press FX
+key w15 down
+wait 60
+expect page Throws
+said WEAVE
+tap PLAY
+wait 3900
+tap PLAY
+key w15 up
+release FX
+wait 40
+expect drumhits 24
+expect page Weave

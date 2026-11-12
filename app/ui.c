@@ -1833,6 +1833,8 @@ static void key_down(int k)
     }
     if (p == P_WEAVE) {                          /* ARP's Weave: black keys the track woven in (again: none), white its pattern */
         ui.kmode[k] = KM_IDLE;
+        if (b >= 3 && sel_trk() != AUX_PUNCH)    /* (WARP-8: the kit, the sample track, the slice track) */
+            return;
         if (b >= 0 && b < NSEQT)
             weave_set(trk, wv_from(trk) == b + 1 ? 0 : b + 1, -1, -1);
         else if (w >= 0 && w < NPATT)
@@ -1858,6 +1860,21 @@ static void key_down(int k)
         seq.grids_on = (uint8_t)(latch ? !seq.grids_on : 1);
         ui.kmode[k] = latch ? KM_IDLE : KM_GRIDS;
         say("GRIDS", seq.grids_on ? (latch ? "on" : "held") : "off");
+        return;
+    }
+    if (p == P_THROWS && w == 15 && kit_slot(0) >= 0) {   /* WARP-8: the last white key, the kit's weave (ARP) as a
+                                                  * throw: woven while held (LATCH on: a press on, the next off) */
+        if (proj.trk[AUX_PUNCH].par[TP_E1] & 1u)
+            ui.wv_latched ^= 1u;
+        else {
+            ui.wv_held |= 1u;
+            ui.kmode[k] = KM_WVTHR;
+        }
+        seq.wv_live = (uint16_t)(ui.wv_held | ui.wv_latched);
+        if (!wv_from(0))
+            say_no("NO WEAVE SET", "the kit's ARP page");
+        else
+            say("WEAVE", (seq.wv_live & 1u) ? "on" : "off");
         return;
     }
     if (p == P_THROWS) {                         /* the throws' page: the keys fire them (punch_key) */
@@ -1998,6 +2015,10 @@ static void key_up(int k)
         break;
     case KM_GRIDS:
         seq.grids_on = 0;
+        break;
+    case KM_WVTHR:
+        ui.wv_held &= (uint16_t)~1u;
+        seq.wv_live = (uint16_t)(ui.wv_held | ui.wv_latched);
         break;
     case KM_GSOLO:
         if (gsolo >> ui.knote[k] & 1u) {
@@ -2216,6 +2237,10 @@ static void fx_layer_out(void)
             ui.kmode[k] = KM_IDLE;
         } else if (ui.kmode[k] == KM_GRIDS) {
             seq.grids_on = 0;
+            ui.kmode[k] = KM_IDLE;
+        } else if (ui.kmode[k] == KM_WVTHR) {
+            ui.wv_held &= (uint16_t)~1u;
+            seq.wv_live = (uint16_t)(ui.wv_held | ui.wv_latched);
             ui.kmode[k] = KM_IDLE;
         }
     ui.page = (uint8_t)(fx_back - 1);
@@ -2665,7 +2690,8 @@ static void knob_do(int k, int32_t e)
             set_tp(AUX_PUNCH, TP_E1, clampi(proj.trk[AUX_PUNCH].par[TP_E1] + (e > 0 ? 1 : -1), 0, 1));
         return;
     case P_WEAVE:
-        weave_set(trk, k == 0 ? clampi(wv_from(trk) + (e > 0 ? 1 : -1), 0, NSEQT) : -1,
+        weave_set(trk, k == 0 ? clampi(wv_from(trk) + (e > 0 ? 1 : -1), 0, trk == AUX_PUNCH ? NSEQT : 3) : -1,   /* (WARP-8:
+                                                  * off, the kit, the sample track, the slice track) */
                   k == 1 ? clampi(wv_pat(trk) + (e > 0 ? 1 : -1), 0, NPATT - 1) : -1,
                   k == 2 ? clampi(wv_rule(trk) + (e > 0 ? 1 : -1), 0, NWV - 1) : -1);
         if (k == 3 && wv_from(trk)) {            /* PLAYS: always, or only on the WEAVE track */

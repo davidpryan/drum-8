@@ -196,7 +196,7 @@ static const uint8_t BLACK_K[11] = {1, 3, 5, 8, 10, 13, 15, 17, 20, 22, 25};
 #define KEY_BASE 53                                  /* F3 at octave 0 */
 enum { KM_NONE, KM_PLAY, KM_STEP, KM_SCENE, KM_MUTE, KM_PUNCH, KM_BRAIN, KM_SOUND,
        KM_TRACK, KM_SAVE, KM_SOLO, KM_SCALE, KM_ROUTE, KM_STEPSOUND, KM_IDLE, KM_WEAVE, KM_BARK,
-       KM_STEPCHORD, KM_FILL, KM_GSOLO, KM_GRIDS };   /* KM_IDLE: does nothing */   /* what a held key does */
+       KM_STEPCHORD, KM_FILL, KM_GSOLO, KM_GRIDS, KM_WVTHR };   /* KM_IDLE: does nothing */   /* what a held key does */
 
 /* the input's and the screen's state */
 static struct {
@@ -634,7 +634,7 @@ static int trig_page(int p)                         /* (and the kit's pages with
                                                      * effects, Mix, ARP's) */
 {
     return steps_page(p) || (kit_ui() && (p == P_ARRANGE || p == P_FX1 || p == P_FX2 || p == P_MIX ||
-                                          (p >= P_PLAYERS && p <= P_WEAVE)));
+                                          (p >= P_PLAYERS && p <= P_PLAYERS3)));   /* (not Weave: its keys pick) */
 }
 static int is_midi(int t) { (void)t; return 0; }   /* (no sound: notes and CCs
                                                                                          * out, synth.h EG_MIDI) */
@@ -814,8 +814,9 @@ static int group_n(int g)
         return trk == AUX_PUNCH || trk == AUX_WEAVE ? 1 : trk == AUX_BRAIN ? 3 : is_aux(trk) ? 2
              : x_page(trk) ? 4 : 3;      /* (a kit: Engine, Key, Sends: the key's own; Engine 2 after Engine when the
                                           * key's model has eight knobs) */
-    if (b == B_ARP)                                  /* (grp_page: Players, Players 2, Hold the arp's, Weave) */
-        return is_aux(trk) ? 1
+    if (b == B_ARP)                                  /* (grp_page: Players, Players 2, Hold the arp's, Weave; WARP-8's kit:
+                                                      * Weave alone) */
+        return is_aux(trk) || is_drum(trk) ? 1
              : is_drum(trk) || pl_type(trk) == PL_OFF ? 2
              : pl_type(trk) == PL_ARP || pl_type(trk) == PL_RAND ? 4 : 3;
     if (b == B_ENV)
@@ -862,7 +863,9 @@ static int grp_page(int g, int i)
         int trk = sel_trk();
         if (is_aux(trk))
             return P_WEAVE;
-        if (is_drum(trk) || pl_type(trk) == PL_OFF)
+        if (is_drum(trk))                            /* (WARP-8: the kit's ARP is its weave) */
+            return P_WEAVE;
+        if (pl_type(trk) == PL_OFF)
             return i & 1 ? P_WEAVE : P_PLAYERS;      /* (a kit, or no player: its page shows it off, then Weave) */
         return pl_type(trk) == PL_ARP || pl_type(trk) == PL_RAND ? ARPP[i & 3] : OTHER[(i % 3 + 3) % 3];
     }
@@ -2062,7 +2065,7 @@ static void page_knobs(knob_t *k)
         kv(&k[1], "PATTERN", f ? wt : "-", wv_pat(trk), NPATT - 1);
         kname(&k[2], "RULE", WEAVE_NAME, wv_rule(trk), NWV);
         if (f) {
-            static const char *const PLAYS[2] = {"always", "on WEAVE"};
+            static const char *const PLAYS[2] = {"always", "FX + 16"};   /* (WARP-8: held as a throw) */
             kname(&k[3], "PLAYS", PLAYS, wv_cued(trk), 2);
         }
         break;
@@ -2578,10 +2581,10 @@ static void page_footer(char *t)
         s_cat(t, home_held() ? "KNOBS tempo, groove" : "WHITE scene|BLACK 1-5 mute|KNOBS patterns");
         break;
     case P_THROWS:
-        s_cat(t, seq.grids_on ? "KNOBS the drum map|SEL keep it" : "KEYS throws, two octaves|WHITE 15 grids");
+        s_cat(t, seq.grids_on ? "KNOBS the drum map|SEL keep it" : "KEYS throws|WHITE 15 grids|16 weave");
         break;
     case P_WEAVE:
-        s_cat(t, "BLACK the track woven in|WHITE its pattern");
+        s_cat(t, "BLACK 1-3 KIT SMP SLC|WHITE its pattern");
         break;
     case P_MASTER3:
         s_cat(t, "SEL pump by, level|KEYS play");
@@ -5289,7 +5292,7 @@ static void draw_punch(void)
 {
     uint32_t dm = eng_punch_drum, mm = eng_punch_mel;
     uint32_t h = hash_u(hash_u(2166136261u, 0xD0u), dm ^ (mm << 12) ^ (ui.keys << 3) ^ (ui.punch_latched << 7) ^
-                                          ((uint32_t)seq.grids_on << 31));
+                                          ((uint32_t)seq.grids_on << 31) ^ ((uint32_t)(seq.wv_live & 1u) << 30));
     char t[64], *e;
     int n = 0;
     if (!begin_main(h))
@@ -5321,9 +5324,11 @@ static void draw_punch(void)
         int on = fx >= 0 && (fx < PX_MEL ? (dm >> fx & 1u) : (mm >> (fx - PX_MEL) & 1u));
         if (k == 14)
             on = seq.grids_on, fx = 0;
+        if (k == 15)                                 /* (WARP-8: the weave, held) */
+            on = (seq.wv_live | seq.wv_rec) & 1u, fx = 0;
         cv_round(x, 40, 13, 60, 2, on ? K_NOW : fx < 0 ? K_PANEL : K_PANEL2);
-        if (k == 14)
-            text_c(x + 6, 102, &FONT_XS, "g", K_DIM);
+        if (k == 14 || k == 15)
+            text_c(x + 6, 102, &FONT_XS, k == 14 ? "g" : "w", K_DIM);
         else if (fx >= 0) {                          /* the throws' initials: m s r e b f j, t r b s r d d */
             char ini[2] = {PX_NAME(fx)[0], 0};
             text_c(x + 6, 102, &FONT_XS, ini, K_DIM);
@@ -6667,7 +6672,7 @@ static void draw_weave(void)
     else if ((seq.wv_live | seq.wv_rec) >> trk & 1u)
         s_cat(t, "weaving now");
     else
-        num_s((uint32_t)trk + 1u, s_cat(t, "plays while the WEAVE track's white key ")), s_cat(t + s_len(t), " is on");
+        s_cat(t, trk == 0 ? "plays while FX + white 16 is held" : "plays while its WEAVE key is on");   /* (WARP-8) */
     text_fit(8, LY(98, 64), F_CAP, t, LY(228, 160), !wv_cued(trk) || (seq.wv_live | seq.wv_rec) >> trk & 1u ? K_NOW : K_DIM);
     cv_blit(0, MAIN_Y);
 }

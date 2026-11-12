@@ -223,6 +223,37 @@ muted, no amount is applied. EDIT, ENV, LFO and ARP have nothing for it and go b
 It differs from the throws in that a throw is on or off and this has an amount, and in that it only reaches the two
 effects: FX I and FX II, whatever they are set to.
 
+## ARP: weave the kit's patterns
+
+<img src="img/warp-weave.png" width="240" alt="ARP's Weave page on the kit: KIT weaves P1 with P2, by bars; rows for P1's steps, P2's, and what plays" title="The weave">
+
+ARP on the kit is LOOM-8's Weave, alone: the kit's pattern crossed live with another pattern, without writing
+anything.
+
+| Control | Does |
+|---|---|
+| White keys 1 to 8 | The pattern to weave with: the kit's own P1 to P8 |
+| Black keys 1 to 3 | What to weave in: the kit, the sample track, the slice track (again: none) |
+| Knob 1, 2 | The same: what, and its pattern |
+| Knob 3 | The rule (below) |
+| Knob 4 | PLAYS: **always**, or **FX + 16**: only while FX and the last white key are held, as a throw |
+| OCT−, OCT+ | The bar shown |
+| SEL | KEEP AS PATTERN writes what plays into the first empty pattern |
+
+| Rule | The kit plays |
+|---|---|
+| bars | a bar of its pattern, then a bar of the other, in turn |
+| steps | its steps and the other's in turn |
+| rhythm | its own rhythm with the other pattern's drums, in order |
+| pitch | the other pattern's rhythm with its own drums |
+
+So two patterns become a third: a groove's kicks with a fill's snares, or a busy pattern thinned by an empty one.
+With the sample or slice track woven in, its notes become drums (and the kit's drums its notes). The page draws both
+patterns and what plays. A drum with its own length plays its own steps, not the weave.
+
+As a throw: set PLAYS to FX + 16, then hold FX and press white key 16 (white key 15 is GRIDS). With LATCH on the
+Throws page, a press turns the weave on and the next off.
+
 ## Mix: an effect on every track
 
 <img src="img/warp-allfx.png" width="240" alt="Mix with the FX I strip selected: knob 1 reads ALL 31%, knob 4 its level" title="ALL on an effect's strip">
@@ -295,6 +326,7 @@ With LATCH on, a press turns it on and the next turns it off. X, Y and FILL are 
 | Held step: velocity, length, chance, pitch | Velocity, chance, ratchets, nudge; SELECT for length and pitch |
 | Mix with the kit selected: black keys mute and solo tracks | They pick drums. From another track they are the tracks, as before |
 | Throws: on their page | Also FX held, from anywhere |
+| ARP on the kit: players (off) and Weave | Weave alone, also held as a throw |
 | The second octave: the melodic tracks' throws | Twelve more throws |
 | EDIT: PRESETS steps through the sounds of the drum's type | A list of all the sounds by engine; ALGORITHM jumps engines |
 | A nudge moves the whole step | Knob 4 moves the picked drum alone; OCT the whole step |
